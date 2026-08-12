@@ -8,11 +8,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 ---
 
-## Blokujące etap 2 (silnik gry)
-
-- [ ] **Cała zawartość `ZASADY-GRY.md`** — wariant, tabela punktacji, bonus, remisy, zakresy
-      stritów, punkty za yatzy. Bez tego silnika nie da się napisać.
-
 ## Blokujące etap 1 (fundament)
 
 - [ ] **Prisma czy Drizzle?**

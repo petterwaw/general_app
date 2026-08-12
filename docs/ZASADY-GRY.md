@@ -1,11 +1,7 @@
 # Zasady gry
 
-> **STATUS: NIEWYPEŁNIONE.** To jest szkielet do uzupełnienia w etapie 0 przez właściciela
-> projektu. Dopóki tabela punktacji nie jest wypełniona, **nie zaczynaj pisać silnika gry**
-> (`packages/game-core`) — zapytaj o brakujące wartości.
->
-> Claude: nie wypełniaj tego pliku wartościami z własnej wiedzy o Yatzy. Warianty różnią się
-> między sobą i wybór należy do właściciela projektu.
+> **STATUS: WYPEŁNIONE.** Zasady ustalone z właścicielem projektu w rozmowie z Claude. Etap 0
+> zamknięty — można zaczynać pisanie silnika gry (`packages/game-core`).
 
 ---
 
@@ -16,8 +12,6 @@ Z opisu właściciela wynika, że chodzi o **Yatzy** (wariant skandynawski, w Po
 
 To **nie jest** amerykański Yahtzee, który nie ma kategorii „dwie pary".
 
-Dokładny wariant: **DO USTALENIA**
-
 ---
 
 ## Parametry podstawowe
@@ -26,52 +20,64 @@ Dokładny wariant: **DO USTALENIA**
 |---|---|
 | Liczba kości | 5 |
 | Rzutów na turę | 3 (pierwszy obowiązkowy, kolejne opcjonalne) |
-| Liczba kategorii | 15 (do potwierdzenia) |
+| Liczba kategorii | 15 |
 | Liczba rund | tyle, ile kategorii |
 
 ---
 
 ## Kategorie
 
-Wstępny podział do potwierdzenia — **6 kategorii w sekcji górnej + 9 w sekcji dolnej = 15**.
-To zgadza się z progiem 10/15 przyjętym w `DECYZJE.md` (67%).
+Podział: **6 kategorii w sekcji górnej + 9 w sekcji dolnej = 15**. To zgadza się z progiem
+10/15 przyjętym w `DECYZJE.md` (67%).
 
 ### Sekcja górna
 
 | Kategoria | Warunek | Punkty |
 |---|---|---|
-| Jedynki | | DO USTALENIA |
-| Dwójki | | DO USTALENIA |
-| Trójki | | DO USTALENIA |
-| Czwórki | | DO USTALENIA |
-| Piątki | | DO USTALENIA |
-| Szóstki | | DO USTALENIA |
+| Jedynki | | punktow tyle co na liczacej sie kosci |
+| Dwójki | | punktow tyle co na liczacej sie kosci |
+| Trójki | | punktow tyle co na liczacej sie kosci |
+| Czwórki | | punktow tyle co na liczacej sie kosci |
+| Piątki | | punktow tyle co na liczacej sie kosci |
+| Szóstki | | punktow tyle co na liczacej sie kosci |
 
-**Bonus sekcji górnej:** próg — DO USTALENIA, wartość — DO USTALENIA
+Żeby wpisać realny wynik w kategorii górnej sekcji, potrzeba minimum 3 kości o danej wartości
+(np. 3x6 daje 18 pkt). Może wypaść nawet 5 takich kości — wtedy liczymy 5x6, czyli 30 pkt.
+
+Sekcja dolna odblokowuje się do **aktywnego** uzupełniania dopiero, gdy wypełnione są 3
+kategorie w sekcji górnej (obojętnie, realnym wynikiem czy zerem). Jeśli w danej turze gracz
+nie osiąga progu 3 sztuk w żadnej kategorii górnej, a sekcja dolna nie jest jeszcze
+odblokowana, to mimo blokady **musi** wpisać zero w wybraną kategorię w sekcji dolnej —
+blokada dotyczy tylko aktywnego, korzystnego wpisywania wyniku, nie wymuszonego zera.
+
+**Bonus sekcji górnej:** próg — 63, wartość — 35
 
 ### Sekcja dolna
 
 | Kategoria | Warunek | Punkty |
 |---|---|---|
-| Para | | DO USTALENIA |
-| Dwie pary | | DO USTALENIA |
-| Trójka | | DO USTALENIA |
-| Kareta | | DO USTALENIA |
-| Mały strit | DO USTALENIA (1-2-3-4-5 czy 2-3-4-5-6?) | DO USTALENIA |
-| Duży strit | DO USTALENIA | DO USTALENIA |
-| Full | | DO USTALENIA |
-| Szansa | | DO USTALENIA |
-| Yatzy (5 jednakowych) | | DO USTALENIA |
+| Para | | tyle ile na kosciach tworzacych pare |
+| Dwie pary | | tyle ile na kosciach tworzacych dwie pary |
+| Trójka | | tyle ile na kosciach wszystkich |
+| Kareta | | tyle ile na kosciach wszystkich |
+
+Jeśli w rzucie pasuje więcej niż jedna wartość do danej kategorii (np. dwie różne pary przy
+kategorii „Para", albo kareta/general przy kategorii „Trójka") — liczy się zawsze **najwyższa**
+pasująca wartość.
+| Mały strit |  (4 wartosci pod rzad nie wazne jakie) | 25 |
+| Duży strit | 5 wartosci pod rzad nie wazne jakie | 40 |
+| Full | trójka + para (dwie różne wartości) **albo** generał (5 jednakowych) | 25 |
+| Szansa | | tyle ile na kosciach |
+| General (5 jednakowych) | | 50 |
 
 ---
 
 ## Pozostałe reguły
 
 - **Gdy żadna kategoria nie pasuje:** gracz musi wpisać zero w wybraną wolną kategorię.
-  Doprecyzowanie — DO USTALENIA.
-- **Rozstrzyganie remisu:** DO USTALENIA.
-- **Czy kategoria raz zapisana jest zablokowana:** DO USTALENIA (domyślnie tak).
-- **Czy yatzy można zapisać wielokrotnie / czy jest premia za drugiego yatzy:** DO USTALENIA.
+- **Rozstrzyganie remisu:** dwie osoby jako wygrane 
+- **Czy kategoria raz zapisana jest zablokowana:** tak
+- **Czy yatzy można zapisać wielokrotnie / czy jest premia za drugiego yatzy:** nie ma
 
 ---
 

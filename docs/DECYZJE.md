@@ -78,6 +78,15 @@ z serwera. Edytowalne jest wyłącznie to, które kości odkłada przed kolejnym
 Krok potwierdzenia przed zapisem kategorii to decyzja frontendowa, podejmowana przy budowie UI.
 Silnik gry dostaje gotową akcję „zapisz kategorię X" i nie musi o tym nic wiedzieć.
 
+**Śledzenie kolejnych rzutów różni się między kośćmi fizycznymi a wirtualnymi.** Przy kościach
+wirtualnych serwer sam rzuca i musi pilnować liczby rzutów (max. 3) oraz tego, które kości
+zostały odłożone między rzutami — to on jest jedynym źródłem prawdy o przebiegu tury. Przy
+kościach fizycznych ludzie rzucają przy stole, poza kontrolą aplikacji, więc reducer **nie**
+modeluje osobno rzutu 1/2/3 ani nie waliduje „czy odłożone kości pochodzą z bieżącego rzutu" —
+host wpisuje końcowy wynik tury (dowolnie go poprawiając w obrębie szkicu, patrz wyżej) i to
+jedyne, co aplikacja o tym wie. Reducer ma więc dwa różne zestawy walidacji zależnie od źródła
+kości, nie jeden uniwersalny.
+
 ---
 
 ## 5. Host wychodzi z gry (tryb lokalny)
