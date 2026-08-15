@@ -1,8 +1,5 @@
 
-export type Category = 'one' | 'two' | 'three' | 'four' | 'five' | 'six' | 'pair' | 'twoPairs' |
-                'threeOfKind' | 'fourOfKind' | 'full' | 'smallStraight' | 'largeStraight' |
-                'general' | 'chance'
-export type DiceRoll = [number, number, number, number, number]
+import type { Category, DiceRoll } from './types'
 
 const scorers: Record<Category, (dice: DiceRoll) => number> = {
     one: (dice) => countTopSection(1, dice),

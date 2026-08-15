@@ -40,6 +40,35 @@ To jest najważniejsza paczka w projekcie i jedyna z pokryciem testami bliskim 1
 
 **Gotowe gdy:** w teście da się rozegrać całą partię od początku do końca, bez UI i bez bazy.
 
+**Postęp:** funkcja punktująca gotowa — `packages/game-core/src/scoring.ts`, wszystkie 15
+kategorii + `dispatchPoints`, testy w `scoring.test.ts` ze 100% pokryciem. Typy wspólne
+(`Category`, `DiceRoll`) wydzielone do `types.ts`.
+
+Warstwa walidacji gotowa — `validation.ts`: `isCategoryFree`, `isLowerSectionUnlocked` (próg
+≥3 wypełnionych kategorii górnych), `isRollScoringInCategory` (uniwersalna — działa dla
+dowolnej z 15 kategorii, deleguje do `dispatchPoints`), `isForcedZero` (sprawdza 14 kategorii
+bez `chance` — patrz uwaga niżej), `canWriteChance`. Testy w `validation.test.ts`, 61
+przypadków, wszystkie przechodzą.
+
+**Nowa zasada ustalona w rozmowie, jeszcze NIEZAPISANA w `ZASADY-GRY.md`:** `chance` jest
+wyjątkiem od blokady sekcji dolnej — można ją wpisać zawsze, gdy wolna, niezależnie od tego,
+czy sekcja dolna jest odblokowana (min. 3 kategorie górne wypełnione). Trzeba to dopisać do
+`ZASADY-GRY.md`, żeby dokument się zgadzał z kodem.
+
+**Reducer (`reducer.ts`) — jeszcze nie zaczęty.** Zaprojektowany, ale niezaimplementowany typ
+stanu całej gry (wielu graczy, nie jedna karta):
+```
+type GameState = {
+    players: { name: string, card: ScoreCard }[]
+    currentPlayerIndex: number
+}
+```
+Otwarte pytanie na start następnej sesji: czy zmiana tury (`currentPlayerIndex`) ma być
+automatyczna wewnątrz akcji „zapisz kategorię", czy osobną, jawną akcją wywoływaną przez hosta.
+
+Uwaga: walidacja „czwarty rzut" / „kości z bieżącego rzutu" dotyczy tylko kości wirtualnych
+(etap 7, POZA obecnym zakresem) — patrz `DECYZJE.md` §4.
+
 ---
 
 ## Etap 3 — API i baza
