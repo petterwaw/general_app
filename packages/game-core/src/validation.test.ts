@@ -4,7 +4,8 @@ import {
     isLowerSectionUnlocked,
     isRollScoringInCategory,
     isForcedZero,
-    canWriteChance
+    canWriteChance,
+    isLowerSectionCategory
 } from './validation'
 import type { ScoreCard } from './types'
 
@@ -84,5 +85,27 @@ describe('canWriteChance', () => {
 
     it('zwraca true gdy mozna wpisac chance', () => {
         expect(canWriteChance(createEmptyScoreCard())).toBe(true)
+    })
+})
+
+describe('isLowerSectionCategory', () => {
+    it('zwraca false dla kategorii gornej sekcji (one)', () => {
+        expect(isLowerSectionCategory('one')).toBe(false)
+    })
+
+    it('zwraca false dla kategorii gornej sekcji (six)', () => {
+        expect(isLowerSectionCategory('six')).toBe(false)
+    })
+
+    it('zwraca true dla kategorii dolnej sekcji (pair)', () => {
+        expect(isLowerSectionCategory('pair')).toBe(true)
+    })
+
+    it('zwraca true dla kategorii dolnej sekcji (full)', () => {
+        expect(isLowerSectionCategory('full')).toBe(true)
+    })
+
+    it('zwraca false dla chance (wyjatek od dolnej sekcji, na tym polega reducer)', () => {
+        expect(isLowerSectionCategory('chance')).toBe(false)
     })
 })

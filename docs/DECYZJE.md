@@ -87,6 +87,13 @@ host wpisuje końcowy wynik tury (dowolnie go poprawiając w obrębie szkicu, pa
 jedyne, co aplikacja o tym wie. Reducer ma więc dwa różne zestawy walidacji zależnie od źródła
 kości, nie jeden uniwersalny.
 
+**Akcja nigdy nie niesie gotowego wyniku.** `saveCategory` przekazuje surowe kości oraz wybraną
+przez gracza kategorię — punkty przelicza reducer, po swojej stronie. Wybór kategorii przychodzi
+z zewnątrz (host klika w UI), ale wynik nigdy. Podpowiedź „ta kategoria da Ci X punktów"
+wyświetlana w interfejsie jest wyłącznie podpowiedzią; nic, co przyszło od klienta, nie może
+zostać zapisane jako punkty bez przeliczenia. To dotyczy również wymuszonego zera — o tym, że
+zapis daje 0, decyduje reducer, nie klient.
+
 ---
 
 ## 5. Host wychodzi z gry (tryb lokalny)
@@ -190,13 +197,18 @@ zdarzenia albo cały stan.
 | Monorepo | pnpm workspaces (ew. Turborepo) | ustalone |
 | Walidacja | Zod, schematy współdzielone przez web i api | ustalone |
 | Realtime | Socket.IO (ma gotowy reconnect, backoff, heartbeat) | rekomendacja |
-| ORM | Prisma albo Drizzle | **DO USTALENIA** |
+| ORM | Prisma | ustalone |
 | Auth | — | **DO USTALENIA** |
 | Testy | Vitest (jednostkowe) + Playwright (e2e) | rekomendacja |
 | Hosting | — | **DO USTALENIA** |
 
 **Ważne przy hostingu:** NestJS z WebSocketami wymaga długo żyjącego procesu. Nie zadziała na
 serverless. Next może stać osobno.
+
+**Przy Prismie — do sprawdzenia na etapie 3:** częściowy indeks unikalny wymagany przez §6
+(jedno konto = jedna aktywna gra) prawdopodobnie nie da się wyrazić w `schema.prisma` — trzeba
+go dopisać ręcznie jako SQL w wygenerowanej migracji. Zweryfikować w aktualnej dokumentacji
+przy budowie schematu.
 
 **Redis** będzie potrzebny dopiero przy trybie online z więcej niż jedną instancją API (pub/sub
 między instancjami). Nie dodawaj go wcześniej.

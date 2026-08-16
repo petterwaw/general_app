@@ -50,6 +50,14 @@ nie osiąga progu 3 sztuk w żadnej kategorii górnej, a sekcja dolna nie jest j
 odblokowana, to mimo blokady **musi** wpisać zero w wybraną kategorię w sekcji dolnej —
 blokada dotyczy tylko aktywnego, korzystnego wpisywania wyniku, nie wymuszonego zera.
 
+**Wyjątek — Szansa.** Kategoria „Szansa" **nie podlega blokadzie sekcji dolnej**. Można ją
+wpisać zawsze, gdy jest wolna, niezależnie od tego, ile kategorii górnych jest wypełnionych.
+
+Szansa nie liczy się także przy ustalaniu, czy gracz jest zmuszony wpisać zero: to, że Szansa
+jest jeszcze wolna i punktowałaby, **nie znosi** wymuszonego zera w innej kategorii. Wymuszone
+zero sprawdzamy wyłącznie wśród pozostałych 14 kategorii (górnych zawsze, dolnych tylko gdy
+sekcja dolna jest odblokowana).
+
 **Bonus sekcji górnej:** próg — 63, wartość — 35
 
 ### Sekcja dolna

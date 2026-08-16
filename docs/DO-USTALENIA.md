@@ -10,7 +10,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 ## Blokujące etap 1 (fundament)
 
-- [ ] **Prisma czy Drizzle?**
 - [ ] **Gdzie hostujemy?** Frontend i backend mogą stać osobno; backend musi być długo żyjącym
       procesem (nie serverless).
 - [ ] **Nazwa aplikacji.** Nie może być „Yahtzee". Do czasu wyboru w kodzie: `dice-app`.

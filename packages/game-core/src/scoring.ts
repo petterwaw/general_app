@@ -1,5 +1,5 @@
 
-import type { Category, DiceRoll } from './types'
+import type { Category, DiceRoll, DieFace } from './types'
 
 const scorers: Record<Category, (dice: DiceRoll) => number> = {
     one: (dice) => countTopSection(1, dice),
@@ -125,7 +125,7 @@ export function countFull(dice: DiceRoll) {
 
 export function countSmallStraight(dice: DiceRoll) {
     const uniqueValues = new Set(dice)
-    const possibleStraights = [
+    const possibleStraights: DieFace[][] = [
         [1, 2, 3, 4],
         [2, 3, 4, 5],
         [3, 4, 5, 6],
@@ -140,7 +140,7 @@ export function countSmallStraight(dice: DiceRoll) {
 
 export function countLargeStraight(dice: DiceRoll) {
     const uniqueValues = new Set(dice)
-    const possibleStraights = [
+    const possibleStraights: DieFace[][] = [
         [1, 2, 3, 4, 5],
         [2, 3, 4, 5, 6],
     ]
