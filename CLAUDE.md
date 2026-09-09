@@ -53,6 +53,25 @@ nieoczywista opcja.
 
 Kod, nazwy zmiennych, commity i komentarze w kodzie — po angielsku.
 
+### Agenci i skille
+
+- **`/commit`** — commit zgodny z konwencją tego repo (status/diff/log → wiadomość po
+  angielsku → `git add` konkretnych plików, nigdy `-A`). Jeśli commit zamyka etap, skill
+  przypomni o dopisaniu notatek postępu do `docs/etapy/etap-N.md`.
+- **`/etap-postep`** — dopisuje notatkę postępu do bieżącego `docs/etapy/etap-N.md` (w stylu
+  już istniejących wpisów) i aktualizuje status w `docs/STAN.md`. Pokazuje diff do akceptacji
+  przed uznaniem za skończone — to nie jest commit, tylko aktualizacja dokumentacji.
+- **`/etap-review`** — niezależny przegląd zaimplementowanego etapu (agent `etap-review`,
+  odpalany w izolowanym kontekście — nie widzi historii rozmowy, w której powstawał kod).
+  Sprawdza kryterium „gotowe gdy" z pliku etapu oraz jakość kodu wg zasad code review z tego
+  pliku (błąd vs. gust, najważniejsze pierwsze, pochwały też). Nie nanosi poprawek.
+- **Agent `doradca`** — gdy pytam o coś w formie otwartej/porównawczej ("jak to lepiej zrobić",
+  "co polecasz X czy Y", pytanie o architekturę bez konkretnego błędu do naprawienia),
+  deleguj sam, bez pytania mnie, do agenta `doradca` zamiast szukać odpowiedzi w tym oknie —
+  żeby nie zaśmiecać kontekstu przeszukiwaniem kodu. **Nie dotyczy** to pytań z drabiny pomocy
+  ("utknąłem na X", "nie działa mi Y") — tam eskalacja zależy od mojej reakcji krok po kroku i
+  zostaje w tej rozmowie.
+
 ---
 
 ## ZASADA NADRZĘDNA co do zakresu
@@ -73,9 +92,14 @@ Dokumentacja w `docs/` zawiera **wyłącznie to, co zostało faktycznie ustalone
 ## Kontekst
 
 @docs/DECYZJE.md
-@docs/PLAN.md
+@docs/STAN.md
 @docs/DO-USTALENIA.md
 @docs/ZASADY-GRY.md
+
+Szczegóły każdego etapu (cel, kryterium „gotowe gdy", notatki postępu, dług) są w
+`docs/etapy/etap-N.md` — nie są importowane automatycznie, żeby nie ładować całej historii
+projektu na start każdej sesji. Czytaj tylko plik odpowiadający etapowi, którego dotyczy
+bieżące pytanie (patrz `docs/STAN.md`).
 
 ## Skrót — co budujemy
 
