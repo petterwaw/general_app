@@ -166,6 +166,7 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
 
     it('rzuca, gdy typ akcji jest nieznany', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
+        // @ts-expect-error
         const action: Action = { type: 'somethingElse', playerId: 'p1', category: 'one', dice: [1, 1, 1, 2, 3] }
 
         expect(() => reducer(state, action)).toThrow(/Nieznany typ akcji/)

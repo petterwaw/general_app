@@ -1,0 +1,11 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+/generated/prisma
+
+# Docs bundle auto-installed by `prisma init` (v7+) — reference material, not project code
+.claude/skills
+.windsurf/skills
+.agents/skills
+skills-lock.json
