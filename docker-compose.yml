@@ -23,6 +23,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL_DOCKER}
       CI: "true"
+      CHOKIDAR_USEPOLLING: "true"
     volumes:
       - .:/app
       - api_node_modules:/app/node_modules

@@ -15,6 +15,7 @@ model Gra {
   dataUtworzenia    DateTime     @default(now())
   aktualnyGraczId   String?      @unique
   aktualnyGracz     Uczestnik?   @relation("AktualnyGraczGry", fields: [aktualnyGraczId], references: [id])
+  aktualneKosci     Json?
   zdarzenia         LogZdarzen[]
   uczestnicy        Uczestnik[]  @relation("UczestnicyGry")
 }

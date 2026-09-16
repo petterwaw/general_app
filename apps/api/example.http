@@ -1,0 +1,24 @@
+# POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/join HTTP/1.1
+# content-type: application/json
+
+# {
+#     "imie": "karolina"
+# }
+
+# POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/start HTTP/1.1
+
+# POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/roll
+# Content-Type: application/json
+
+# {
+#   "playerId": "cmu49r3g5000210mnzcurjkyh",
+#   "dice": [6, 4, 4, 2, 1]
+# }
+
+POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/score
+Content-Type: application/json
+
+{
+  "playerId": "cmu49r3g5000210mnzcurjkyh",
+  "category": "four"
+}
