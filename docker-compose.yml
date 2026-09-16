@@ -3,10 +3,34 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: dice_app
-      POSTGRES_PASSWORD: dice_app
-      POSTGRES_DB: dice_app
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:5432"
     volumes:
       - ./.docker/postgres-data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "${API_PORT}:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER}
+      CI: "true"
+    volumes:
+      - .:/app
+      - api_node_modules:/app/node_modules
+      - api_app_node_modules:/app/apps/api/node_modules
+      - game_core_node_modules:/app/packages/game-core/node_modules
+    command: pnpm --filter api start:dev
+
+volumes:
+  api_node_modules:
+  api_app_node_modules:
+  game_core_node_modules:

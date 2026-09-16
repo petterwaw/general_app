@@ -28,3 +28,6 @@ coverage/
 
 # Docker volumes (lokalne dane Postgresa, nie wersjonujemy)
 .docker/
+
+# pnpm store
+.pnpm-store/

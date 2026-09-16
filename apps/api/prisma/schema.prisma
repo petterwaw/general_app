@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,26 +7,16 @@ datasource db {
   provider = "postgresql"
 }
 
-enum StatusGry {
-  LOBBY
-  TRWA
-  ZAKONCZONA
-  PORZUCONA
-  WYGASLA
-}
-
 model Gra {
-  id                String    @id @default(cuid())
-  status            StatusGry @default(LOBBY)
-  revision          Int       @default(0)
-  ostatniaAktywnosc DateTime  @default(now())
-  dataUtworzenia    DateTime  @default(now())
-
-  uczestnicy Uczestnik[]  @relation("UczestnicyGry")
-  zdarzenia  LogZdarzen[]
-
-  aktualnyGraczId String?    @unique
-  aktualnyGracz   Uczestnik? @relation("AktualnyGraczGry", fields: [aktualnyGraczId], references: [id])
+  id                String       @id @default(cuid())
+  status            StatusGry    @default(LOBBY)
+  revision          Int          @default(0)
+  ostatniaAktywnosc DateTime     @default(now())
+  dataUtworzenia    DateTime     @default(now())
+  aktualnyGraczId   String?      @unique
+  aktualnyGracz     Uczestnik?   @relation("AktualnyGraczGry", fields: [aktualnyGraczId], references: [id])
+  zdarzenia         LogZdarzen[]
+  uczestnicy        Uczestnik[]  @relation("UczestnicyGry")
 }
 
 model Uczestnik {
@@ -39,11 +24,9 @@ model Uczestnik {
   imie         String
   kartaWynikow Json
   kolejnosc    Int
-
-  gameId String
-  gra    Gra    @relation("UczestnicyGry", fields: [gameId], references: [id])
-
-  aktualnaGraW Gra? @relation("AktualnyGraczGry")
+  gameId       String
+  aktualnaGraW Gra?   @relation("AktualnyGraczGry")
+  gra          Gra    @relation("UczestnicyGry", fields: [gameId], references: [id])
 }
 
 model LogZdarzen {
@@ -53,9 +36,16 @@ model LogZdarzen {
   revisionPo        Int
   kluczIdempotencji String
   dataUtworzenia    DateTime @default(now())
-
-  gameId String
-  gra    Gra    @relation(fields: [gameId], references: [id])
+  gameId            String
+  gra               Gra      @relation(fields: [gameId], references: [id])
 
   @@unique([gameId, kluczIdempotencji])
+}
+
+enum StatusGry {
+  LOBBY
+  TRWA
+  ZAKONCZONA
+  PORZUCONA
+  WYGASLA
 }
