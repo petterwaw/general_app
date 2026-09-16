@@ -6,8 +6,8 @@ import {
     isForcedZero,
     canWriteChance,
     isLowerSectionCategory
-} from './validation'
-import type { ScoreCard } from './types'
+} from './validation.js'
+import type { ScoreCard } from './types.js'
 
 function createEmptyScoreCard(overrides: Partial<ScoreCard> = {}): ScoreCard {
     return {

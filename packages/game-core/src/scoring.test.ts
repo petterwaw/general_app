@@ -13,7 +13,7 @@ import {
     dispatchPoints,
     countFrequencies,
     countEveryDice
-} from './scoring'
+} from './scoring.js'
 
 describe('countFrequencies', () => {
     it('zwraca ilosc wystapień danej liczby', () => {

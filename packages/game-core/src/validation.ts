@@ -1,5 +1,5 @@
-import type { Category, DiceRoll, ScoreCard } from './types'
-import { dispatchPoints } from './scoring'
+import type { Category, DiceRoll, ScoreCard } from './types.js'
+import { dispatchPoints } from './scoring.js'
 
 type Section = 'upper' | 'lower' | 'chance'
 

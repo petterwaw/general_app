@@ -1,13 +1,13 @@
-import type { Category, DiceRoll, ScoreCard } from './types'
-import { dispatchPoints } from './scoring'
-import { isCategoryFree, isForcedZero, isLowerSectionCategory, isLowerSectionUnlocked } from './validation'
+import type { Category, DiceRoll, ScoreCard } from './types.js'
+import { dispatchPoints } from './scoring.js'
+import { isCategoryFree, isForcedZero, isLowerSectionCategory, isLowerSectionUnlocked } from './validation.js'
 
 export type Player = { id: string, name: string }
 export type PlayersList = Player[]
 export type GameState = { players: (Player & { card: ScoreCard })[], currentPlayerId: string }
 export type Action = { type: 'saveCategory', playerId: string, category: Category, dice: DiceRoll }
 
-function createEmptyScoreCard(): ScoreCard {
+export function createEmptyScoreCard(): ScoreCard {
     return {
         one: null, two: null, three: null, four: null, five: null, six: null,
         pair: null, twoPairs: null, threeOfKind: null, fourOfKind: null,

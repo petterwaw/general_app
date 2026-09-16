@@ -5,9 +5,9 @@ import {
     nextPlayerId,
     isGameOver,
     reducer
-} from './reducer'
-import type { Action } from './reducer'
-import type { Category, DiceRoll } from './types'
+} from './reducer.js'
+import type { Action } from './reducer.js'
+import type { Category, DiceRoll } from './types.js'
 
 describe('createInitialState', () => {
     it('rzuca blad, gdy lista graczy jest pusta', () => {

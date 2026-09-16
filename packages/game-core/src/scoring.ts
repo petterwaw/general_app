@@ -1,5 +1,5 @@
 
-import type { Category, DiceRoll, DieFace } from './types'
+import type { Category, DiceRoll, DieFace } from './types.js'
 
 const scorers: Record<Category, (dice: DiceRoll) => number> = {
     one: (dice) => countTopSection(1, dice),
