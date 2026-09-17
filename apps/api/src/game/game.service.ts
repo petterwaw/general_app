@@ -218,6 +218,8 @@ export class GameService {
       throw new BadRequestException('Idempotency-Key header is required');
     }
 
+    await this.verifyHost(id, hostSecret)
+
     try {
       return await this.prisma.$transaction(async (tx) => {
 

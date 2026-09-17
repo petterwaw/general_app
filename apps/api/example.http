@@ -53,6 +53,14 @@
 #   "hostName": "Piotr"
 # }
 
-POST http://localhost:3000/games/cmu5vafze000c10qlv1fuo12z/start HTTP/1.1
-Idempotency-Key: start-fake-cookie-004
+POST http://localhost:3000/games/cmu5vgtvs00001fql1fg2zs6c/start HTTP/1.1
+Idempotency-Key: start-fake-cookie-005
 Cookie: host_secret=THIS_IS_NOT_THE_REAL_SECRET
+
+# POST http://localhost:3000/games HTTP/1.1
+# Content-Type: application/json
+# Idempotency-Key: auth-test-005
+
+# {
+#   "hostName": "Piotr"
+# }
