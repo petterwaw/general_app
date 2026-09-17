@@ -1,21 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
+import { Controller, Req, Get, Post, Body, Patch, Param, Delete, Headers, Res } from '@nestjs/common';
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { JoinGameDto } from './dto/join-game.dto';
 import { RollGameDto } from './dto/roll-game.dto'
 import { ScoreGameDto } from './dto/score-game.dto'
+import type { Response, Request } from 'express';
 
 @Controller('games')
 export class GameController {
-  constructor(private readonly gameService: GameService) {}
+  constructor(private readonly gameService: GameService) { }
 
   @Post()
-  create(
+  async create(
     @Body() createGameDto: CreateGameDto,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.gameService.create(createGameDto, idempotencyKey);
+    const result = await this.gameService.create(
+      createGameDto,
+      idempotencyKey,
+    );
+
+    if (result.hostSecret) {
+      response.cookie('host_secret', result.hostSecret, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+      });
+    }
+
+    return result.game;
   }
 
   @Get()
@@ -39,10 +54,15 @@ export class GameController {
 
   @Post(':id/start')
   start(
-    @Param('id') id:string,
+    @Param('id') id: string,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request
   ) {
-    return this.gameService.start(id, idempotencyKey)
+    return this.gameService.start(
+      id,
+      idempotencyKey,
+      request.cookies.host_secret,
+    );
   }
 
   @Post(':id/roll')
@@ -50,7 +70,7 @@ export class GameController {
     @Param('id') id: string,
     @Body() rollGameDto: RollGameDto,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
-   ) {
+  ) {
     return this.gameService.roll(id, rollGameDto, idempotencyKey);
   }
 

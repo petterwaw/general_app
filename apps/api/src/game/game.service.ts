@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,7 @@ import { RollGameDto } from './dto/roll-game.dto'
 import { ScoreGameDto } from './dto/score-game.dto'
 import type { DiceRoll, ScoreCard } from '@dice-app/game-core';
 import { Prisma } from '../../generated/prisma/client';
+import { randomBytes, createHash } from 'crypto';
 
 @Injectable()
 export class GameService {
@@ -18,30 +19,67 @@ export class GameService {
       throw new BadRequestException('Idempotency-Key header is required');
     }
 
-    const existing = await this.prisma.game.findUnique({ where: { creationKey: idempotencyKey } });
-    if (existing) return existing;
+    const existing = await this.prisma.game.findUnique({
+      where: { creationKey: idempotencyKey },
+    });
+
+    if (existing) {
+      return {
+        game: existing,
+        hostSecret: null,
+      };
+    }
+
+    const hostSecret = randomBytes(32).toString('hex');
+    const secretHash = createHash('sha256')
+      .update(hostSecret)
+      .digest('hex');
 
     try {
       const game = await this.prisma.game.create({
         data: {
           creationKey: idempotencyKey,
+
           participants: {
             create: {
               name: createGameDto.hostName,
               scoreCard: createEmptyScoreCard(),
               turnOrder: 1,
               role: 'HOST',
+
+              identity: {
+                create: {
+                  secretHash,
+                },
+              },
             },
           },
         },
-        include: { participants: true },
+
+        include: {
+          participants: true,
+        },
       });
 
-      return game;
+      return {
+        game,
+        hostSecret,
+      };
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return this.prisma.game.findUniqueOrThrow({ where: { creationKey: idempotencyKey } });
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existingGame = await this.prisma.game.findUniqueOrThrow({
+          where: { creationKey: idempotencyKey },
+        });
+
+        return {
+          game: existingGame,
+          hostSecret: null,
+        };
       }
+
       throw error;
     }
   }
@@ -173,6 +211,7 @@ export class GameService {
   async start(
     id: string,
     idempotencyKey: string | undefined,
+    hostSecret: string,
   ) {
 
     if (!idempotencyKey) {
@@ -519,4 +558,24 @@ export class GameService {
       throw error;
     }
   }
+  private async verifyHost(gameId: string, hostSecret: string) {
+  const host = await this.prisma.participant.findFirst({
+    where: {
+      gameId,
+      role: 'HOST',
+      identity: {
+        secretHash: createHash('sha256')
+          .update(hostSecret)
+          .digest('hex'),
+      },
+    },
+  });
+
+  if (!host) {
+    throw new ForbiddenException('Invalid host credentials');
+  }
+
+  return host;
 }
+}
+

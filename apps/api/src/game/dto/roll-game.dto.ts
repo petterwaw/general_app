@@ -10,7 +10,6 @@ export class RollGameDto {
   @IsArray()
   @ArrayMinSize(5)
   @ArrayMaxSize(5)
-  @ValidateNested({ each: true })
   @Type(() => Number)
   @IsInt({ each: true })
   @Min(1, { each: true })

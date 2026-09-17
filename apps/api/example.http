@@ -5,21 +5,54 @@
 #     "imie": "karolina"
 # }
 
-# POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/start HTTP/1.1
+# GET http://localhost:3000/games/cmu45txyw000022qjlgt4d6ny HTTP/1.1
 
-# POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/roll
+
+# POST http://localhost:3000/games/cmu45txyw000022qjlgt4d6ny/roll
+# content-Type: application/json
+# Idempotency-Key: test-roll-001
+
+# { 
+#   "playerId": "cmu49r3g5000210mnzcurjkyh",
+#   "dice": [6, 1, 4, 1, 1]
+# }
+
+# POST http://localhost:3000/games/cmu45txyw000022qjlgt4d6ny/score
 # Content-Type: application/json
+# Idempotency-Key: test-score-001
 
 # {
 #   "playerId": "cmu49r3g5000210mnzcurjkyh",
-#   "dice": [6, 4, 4, 2, 1]
+#   "category": "four"
 # }
 
-POST http://localhost:3000/game/cmu45txyw000022qjlgt4d6ny/score
-Content-Type: application/json
-Idempotency-Key: test-score-001
+# POST http://localhost:3000/games
+# Content-Type: application/json
+# Idempotency-Key: create-game-test-002
 
-{
-  "playerId": "cmu49r3g5000210mnzcurjkyh",
-  "category": "four"
-}
+# {
+#   "hostName": "piotr"
+# }
+
+# POST http://localhost:3000/games HTTP/1.1
+# Content-Type: application/json
+# Idempotency-Key: auth-test-003
+
+# {
+#   "hostName": "Piotr"
+# }
+
+# POST http://localhost:3000/games/cmu5v91zh000810qllz26magn/start HTTP/1.1
+# Idempotency-Key: start-no-cookie-003
+
+# POST http://localhost:3000/games HTTP/1.1
+# Content-Type: application/json
+# Idempotency-Key: auth-test-004
+
+# {
+#   "hostName": "Piotr"
+# }
+
+POST http://localhost:3000/games/cmu5vafze000c10qlv1fuo12z/start HTTP/1.1
+Idempotency-Key: start-fake-cookie-004
+Cookie: host_secret=THIS_IS_NOT_THE_REAL_SECRET

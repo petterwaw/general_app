@@ -28,12 +28,22 @@ model Participant {
   turnOrder   Int
   role        ParticipantRole @default(PLAYER)
   userId      String?
-  currentGame Game?            @relation("CurrentPlayerGame")
+  identityId  String?
+  identity    Identity?       @relation(fields: [identityId], references: [id])
+  currentGame Game?           @relation("CurrentPlayerGame")
   gameId      String
   game        Game             @relation(fields: [gameId], references: [id])
 
   @@index([userId])
+  @@index([identityId])
   @@index([gameId, turnOrder])
+}
+
+model Identity {
+  id           String        @id @default(cuid())
+  secretHash   String
+  createdAt    DateTime      @default(now())
+  participants Participant[]
 }
 
 model EventLog {
