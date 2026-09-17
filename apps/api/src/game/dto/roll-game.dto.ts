@@ -1,10 +1,19 @@
 import type { DiceRoll } from '@dice-app/game-core';
+import { IsArray, IsInt, IsNotEmpty, IsString, Max, Min, ArrayMinSize, ArrayMaxSize, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class RollGameDto {
+  @IsString()
+  @IsNotEmpty()
   playerId!: string;
 
-  // TODO(validation): Validate this value at runtime: it must be an array of
-  // exactly five integers, each between 1 and 6. TypeScript's DiceRoll type
-  // does not validate data received over HTTP.
+  @IsArray()
+  @ArrayMinSize(5)
+  @ArrayMaxSize(5)
+  @ValidateNested({ each: true })
+  @Type(() => Number)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(6, { each: true })
   dice!: DiceRoll;
 }

@@ -6,13 +6,16 @@ import { JoinGameDto } from './dto/join-game.dto';
 import { RollGameDto } from './dto/roll-game.dto'
 import { ScoreGameDto } from './dto/score-game.dto'
 
-@Controller('game')
+@Controller('games')
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Post()
-  create(@Body() createGameDto: CreateGameDto) {
-    return this.gameService.create(createGameDto);
+  create(
+    @Body() createGameDto: CreateGameDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+  ) {
+    return this.gameService.create(createGameDto, idempotencyKey);
   }
 
   @Get()

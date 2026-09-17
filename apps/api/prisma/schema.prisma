@@ -7,46 +7,58 @@ datasource db {
   provider = "postgresql"
 }
 
-model Gra {
-  id                String       @id @default(cuid())
-  status            StatusGry    @default(LOBBY)
-  revision          Int          @default(0)
-  ostatniaAktywnosc DateTime     @default(now())
-  dataUtworzenia    DateTime     @default(now())
-  aktualnyGraczId   String?      @unique
-  aktualnyGracz     Uczestnik?   @relation("AktualnyGraczGry", fields: [aktualnyGraczId], references: [id])
-  aktualneKosci     Json?
-  zdarzenia         LogZdarzen[]
-  uczestnicy        Uczestnik[]  @relation("UczestnicyGry")
+model Game {
+  id              String       @id @default(cuid())
+  creationKey     String?      @unique
+  status          GameStatus   @default(LOBBY)
+  revision        Int          @default(0)
+  lastActivity    DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  currentPlayerId String?      @unique
+  currentPlayer   Participant? @relation("CurrentPlayerGame", fields: [currentPlayerId], references: [id])
+  currentDice     Json?
+  events          EventLog[]
+  participants    Participant[]
 }
 
-model Uczestnik {
-  id           String @id @default(cuid())
-  imie         String
-  kartaWynikow Json
-  kolejnosc    Int
-  gameId       String
-  aktualnaGraW Gra?   @relation("AktualnyGraczGry")
-  gra          Gra    @relation("UczestnicyGry", fields: [gameId], references: [id])
+model Participant {
+  id          String          @id @default(cuid())
+  name        String
+  scoreCard   Json
+  turnOrder   Int
+  role        ParticipantRole @default(PLAYER)
+  userId      String?
+  currentGame Game?            @relation("CurrentPlayerGame")
+  gameId      String
+  game        Game             @relation(fields: [gameId], references: [id])
+
+  @@index([userId])
+  @@index([gameId, turnOrder])
 }
 
-model LogZdarzen {
-  id                String   @id @default(cuid())
-  typAkcji          String
-  dane              Json
-  revisionPo        Int
-  kluczIdempotencji String
-  dataUtworzenia    DateTime @default(now())
-  gameId            String
-  gra               Gra      @relation(fields: [gameId], references: [id])
+model EventLog {
+  id             String   @id @default(cuid())
+  actionType     String
+  payload        Json
+  revisionAfter  Int
+  idempotencyKey String
+  createdAt      DateTime @default(now())
+  gameId         String
+  game           Game     @relation(fields: [gameId], references: [id])
 
-  @@unique([gameId, kluczIdempotencji])
+  @@unique([gameId, idempotencyKey])
 }
 
-enum StatusGry {
+enum GameStatus {
   LOBBY
-  TRWA
-  ZAKONCZONA
-  PORZUCONA
-  WYGASLA
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  EXPIRED
+}
+
+enum ParticipantRole {
+  HOST
+  PLAYER
+  OBSERVER
 }

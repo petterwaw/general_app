@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+jest.mock('./game.service', () => ({ GameService: class GameService {} }));
 import { GameController } from './game.controller';
 import { GameService } from './game.service';
 
@@ -8,7 +9,7 @@ describe('GameController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GameController],
-      providers: [GameService],
+      providers: [{ provide: GameService, useValue: {} }],
     }).compile();
 
     controller = module.get<GameController>(GameController);

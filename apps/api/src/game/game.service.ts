@@ -13,20 +13,45 @@ import { Prisma } from '../../generated/prisma/client';
 export class GameService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(createGameDto: CreateGameDto) {
-    const game = await this.prisma.gra.create({
-      data: {},
-    });
+  async create(createGameDto: CreateGameDto, idempotencyKey?: string) {
+    if (!idempotencyKey) {
+      throw new BadRequestException('Idempotency-Key header is required');
+    }
 
-    return `Game has been created, id: ${game.id}`
+    const existing = await this.prisma.game.findUnique({ where: { creationKey: idempotencyKey } });
+    if (existing) return existing;
+
+    try {
+      const game = await this.prisma.game.create({
+        data: {
+          creationKey: idempotencyKey,
+          participants: {
+            create: {
+              name: createGameDto.hostName,
+              scoreCard: createEmptyScoreCard(),
+              turnOrder: 1,
+              role: 'HOST',
+            },
+          },
+        },
+        include: { participants: true },
+      });
+
+      return game;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return this.prisma.game.findUniqueOrThrow({ where: { creationKey: idempotencyKey } });
+      }
+      throw error;
+    }
   }
 
   findAll() {
-    return this.prisma.gra.findMany()
+    return this.prisma.game.findMany()
   }
 
   async findOne(id: string) {
-    const game = await this.prisma.gra.findUnique({
+    const game = await this.prisma.game.findUnique({
       where: { id },
     });
 
@@ -58,7 +83,7 @@ export class GameService {
     try {
       return await this.prisma.$transaction(async (tx) => {
 
-        const game = await tx.gra.findUnique({
+        const game = await tx.game.findUnique({
           where: { id },
         });
 
@@ -66,22 +91,26 @@ export class GameService {
           throw new NotFoundException('Game not found');
         }
 
-        const count = await tx.uczestnik.count({
+        if (game.status !== 'LOBBY') {
+          throw new BadRequestException('Players can only join a lobby');
+        }
+
+        const count = await tx.participant.count({
           where: {
             gameId: id,
           },
         });
 
-        const player = await tx.uczestnik.create({
+        const player = await tx.participant.create({
           data: {
-            imie: joinGameDto.imie,
-            kartaWynikow: createEmptyScoreCard(),
-            kolejnosc: count + 1,
+            name: joinGameDto.name,
+            scoreCard: createEmptyScoreCard(),
+            turnOrder: count + 1,
             gameId: id
           }
         })
 
-        const updateResult = await tx.gra.updateMany({
+        const updateResult = await tx.game.updateMany({
           where: {
             id,
             revision: game.revision,
@@ -90,7 +119,7 @@ export class GameService {
             revision: {
               increment: 1,
             },
-            ostatniaAktywnosc: new Date(),
+            lastActivity: new Date(),
           },
         });
 
@@ -100,19 +129,19 @@ export class GameService {
           );
         }
 
-        const updatedGame = await tx.gra.findUniqueOrThrow({
+        const updatedGame = await tx.game.findUniqueOrThrow({
           where: { id },
         });
 
-        await tx.logZdarzen.create({
+        await tx.eventLog.create({
           data: {
             gameId: id,
-            typAkcji: 'playerJoined',
-            dane: {
+            actionType: 'playerJoined',
+            payload: {
               playerId: player.id
             },
-            revisionPo: updatedGame.revision,
-            kluczIdempotencji: idempotencyKey,
+            revisionAfter: updatedGame.revision,
+            idempotencyKey,
           },
         });
 
@@ -123,11 +152,11 @@ export class GameService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const previousEvent = await this.prisma.logZdarzen.findUnique({
+        const previousEvent = await this.prisma.eventLog.findUnique({
           where: {
-            gameId_kluczIdempotencji: {
+            gameId_idempotencyKey: {
               gameId: id,
-              kluczIdempotencji: idempotencyKey,
+              idempotencyKey,
             },
           },
         });
@@ -153,12 +182,15 @@ export class GameService {
     try {
       return await this.prisma.$transaction(async (tx) => {
 
-        const game = await tx.gra.findUnique({
+        const previousEvent = await tx.eventLog.findUnique({ where: { gameId_idempotencyKey: { gameId: id, idempotencyKey } } });
+        if (previousEvent) return tx.game.findUniqueOrThrow({ where: { id } });
+
+        const game = await tx.game.findUnique({
           where: { id },
           include: {
-            uczestnicy: {
+            participants: {
               orderBy: {
-                kolejnosc: 'asc',
+                turnOrder: 'asc',
               },
             },
           },
@@ -168,25 +200,25 @@ export class GameService {
           throw new NotFoundException('Game not found');
         }
 
-        if (game.uczestnicy.length === 0) {
+        if (game.participants.length === 0) {
           throw new BadRequestException('Game needs at least one player');
         }
 
-        const firstPlayer = game.uczestnicy[0];
+        const firstPlayer = game.participants[0];
 
-        const updateResult = await tx.gra.updateMany({
+        const updateResult = await tx.game.updateMany({
           where: {
             id,
             revision: game.revision,
             status: 'LOBBY',
           },
           data: {
-            status: 'TRWA',
-            aktualnyGraczId: firstPlayer.id,
+            status: 'IN_PROGRESS',
+            currentPlayerId: firstPlayer.id,
             revision: {
               increment: 1,
             },
-            ostatniaAktywnosc: new Date(),
+            lastActivity: new Date(),
           },
         });
 
@@ -196,19 +228,19 @@ export class GameService {
           );
         }
 
-        const updatedGame = await tx.gra.findUniqueOrThrow({
+        const updatedGame = await tx.game.findUniqueOrThrow({
           where: { id },
         });
 
-        await tx.logZdarzen.create({
+        await tx.eventLog.create({
           data: {
             gameId: id,
-            typAkcji: 'gameStarted',
-            dane: {
+            actionType: 'gameStarted',
+            payload: {
               firstPlayerId: firstPlayer.id,
             },
-            revisionPo: updatedGame.revision,
-            kluczIdempotencji: idempotencyKey,
+            revisionAfter: updatedGame.revision,
+            idempotencyKey,
           },
         });
 
@@ -221,11 +253,11 @@ export class GameService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const previousEvent = await this.prisma.logZdarzen.findUnique({
+        const previousEvent = await this.prisma.eventLog.findUnique({
           where: {
-            gameId_kluczIdempotencji: {
+            gameId_idempotencyKey: {
               gameId: id,
-              kluczIdempotencji: idempotencyKey,
+              idempotencyKey,
             },
           },
         });
@@ -249,20 +281,20 @@ export class GameService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const previousEvent = await tx.logZdarzen.findUnique({
+        const previousEvent = await tx.eventLog.findUnique({
           where: {
-            gameId_kluczIdempotencji: {
+            gameId_idempotencyKey: {
               gameId: id,
-              kluczIdempotencji: idempotencyKey,
+              idempotencyKey,
             },
           },
         });
 
         if (previousEvent) {
-          return tx.gra.findUniqueOrThrow({ where: { id } });
+          return tx.game.findUniqueOrThrow({ where: { id } });
         }
 
-        const game = await tx.gra.findUnique({
+        const game = await tx.game.findUnique({
           where: { id },
         });
 
@@ -270,29 +302,29 @@ export class GameService {
           throw new NotFoundException('Game not found');
         }
 
-        if (game.status !== 'TRWA') {
+        if (game.status !== 'IN_PROGRESS') {
           throw new BadRequestException('Game is not in progress');
         }
 
-        if (game.aktualnyGraczId !== rollGameDto.playerId) {
+        if (game.currentPlayerId !== rollGameDto.playerId) {
           throw new BadRequestException('It is not this player\'s turn');
         }
 
-        if (game.aktualneKosci) {
+        if (game.currentDice) {
           throw new BadRequestException('Roll was already made');
         }
 
-        const updateResult = await tx.gra.updateMany({
+        const updateResult = await tx.game.updateMany({
           where: {
             id,
             revision: game.revision,
           },
           data: {
-            aktualneKosci: rollGameDto.dice,
+            currentDice: rollGameDto.dice,
             revision: {
               increment: 1,
             },
-            ostatniaAktywnosc: new Date(),
+            lastActivity: new Date(),
           },
         });
 
@@ -302,20 +334,20 @@ export class GameService {
           );
         }
 
-        const updatedGame = await tx.gra.findUniqueOrThrow({
+        const updatedGame = await tx.game.findUniqueOrThrow({
           where: { id },
         });
 
-        await tx.logZdarzen.create({
+        await tx.eventLog.create({
           data: {
             gameId: id,
-            typAkcji: 'diceConfirmation',
-            dane: {
+            actionType: 'diceConfirmation',
+            payload: {
               playerId: rollGameDto.playerId,
               roll: rollGameDto.dice,
             },
-            revisionPo: updatedGame.revision,
-            kluczIdempotencji: idempotencyKey,
+            revisionAfter: updatedGame.revision,
+            idempotencyKey,
           },
         });
         return updatedGame;
@@ -325,11 +357,11 @@ export class GameService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const previousEvent = await this.prisma.logZdarzen.findUnique({
+        const previousEvent = await this.prisma.eventLog.findUnique({
           where: {
-            gameId_kluczIdempotencji: {
+            gameId_idempotencyKey: {
               gameId: id,
-              kluczIdempotencji: idempotencyKey,
+              idempotencyKey,
             },
           },
         });
@@ -353,23 +385,25 @@ export class GameService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const previousEvent = await tx.logZdarzen.findUnique({
+        const previousEvent = await tx.eventLog.findUnique({
           where: {
-            gameId_kluczIdempotencji: {
+            gameId_idempotencyKey: {
               gameId: id,
-              kluczIdempotencji: idempotencyKey,
+              idempotencyKey,
             },
           },
         });
 
         if (previousEvent) {
-          return tx.gra.findUniqueOrThrow({ where: { id } });
+          return tx.game.findUniqueOrThrow({ where: { id } });
         }
 
-        const game = await tx.gra.findUnique({
+        const game = await tx.game.findUnique({
           where: { id },
           include: {
-            uczestnicy: true,
+            participants: {
+              orderBy: { turnOrder: 'asc' },
+            },
           },
         });
 
@@ -377,53 +411,53 @@ export class GameService {
           throw new NotFoundException('Game not found');
         }
 
-        if (game.status !== 'TRWA') {
+        if (game.status !== 'IN_PROGRESS') {
           throw new BadRequestException('Game is not in progress');
         }
 
-        if (!game.aktualneKosci) {
+        if (!game.currentDice) {
           throw new BadRequestException('There is no dice roll to score');
         }
 
-        if (game.aktualnyGraczId !== scoreGameDto.playerId) {
+        if (game.currentPlayerId !== scoreGameDto.playerId) {
           throw new BadRequestException('It is not this player\'s turn');
         }
 
         const gameState = {
-          players: game.uczestnicy.map((player) => ({
+          players: game.participants.map((player) => ({
             id: player.id,
-            name: player.imie,
-            card: player.kartaWynikow as ScoreCard,
+            name: player.name,
+            card: player.scoreCard as ScoreCard,
           })),
-          currentPlayerId: game.aktualnyGraczId!,
+          currentPlayerId: game.currentPlayerId!,
         };
 
         const newState = reducer(gameState, {
           type: 'saveCategory',
           playerId: scoreGameDto.playerId,
           category: scoreGameDto.category,
-          dice: game.aktualneKosci as DiceRoll,
+          dice: game.currentDice as DiceRoll,
         });
 
         const gameOver = isGameOver(newState);
 
-        const updateResult = await tx.gra.updateMany({
+        const updateResult = await tx.game.updateMany({
           where: {
             id,
             revision: game.revision,
           },
           data: {
-            aktualnyGraczId: gameOver
+            currentPlayerId: gameOver
               ? null
               : newState.currentPlayerId,
-            aktualneKosci: Prisma.DbNull,
+            currentDice: Prisma.DbNull,
             status: gameOver
-              ? 'ZAKONCZONA'
-              : 'TRWA',
+              ? 'COMPLETED'
+              : 'IN_PROGRESS',
             revision: {
               increment: 1,
             },
-            ostatniaAktywnosc: new Date(),
+            lastActivity: new Date(),
           },
         });
 
@@ -433,31 +467,31 @@ export class GameService {
           );
         }
 
-        const updatedGame = await tx.gra.findUniqueOrThrow({
+        const updatedGame = await tx.game.findUniqueOrThrow({
           where: { id },
         });
 
         await Promise.all(
           newState.players.map((player) =>
-            tx.uczestnik.update({
+            tx.participant.update({
               where: { id: player.id },
               data: {
-                kartaWynikow: player.card,
+                scoreCard: player.card,
               },
             }),
           ),
         );
 
-        await tx.logZdarzen.create({
+        await tx.eventLog.create({
           data: {
             gameId: id,
-            typAkcji: 'saveCategory',
-            dane: {
+            actionType: 'saveCategory',
+            payload: {
               playerId: scoreGameDto.playerId,
               category: scoreGameDto.category,
             },
-            revisionPo: updatedGame.revision,
-            kluczIdempotencji: idempotencyKey,
+            revisionAfter: updatedGame.revision,
+            idempotencyKey,
           },
         });
 
@@ -468,11 +502,11 @@ export class GameService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const previousEvent = await this.prisma.logZdarzen.findUnique({
+        const previousEvent = await this.prisma.eventLog.findUnique({
           where: {
-            gameId_kluczIdempotencji: {
+            gameId_idempotencyKey: {
               gameId: id,
-              kluczIdempotencji: idempotencyKey,
+              idempotencyKey,
             },
           },
         });
