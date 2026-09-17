@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers } from '@nestjs/common';
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
@@ -28,32 +28,36 @@ export class GameController {
   @Post(':id/join')
   join(
     @Param('id') id: string,
-    @Body() joinGameDto: JoinGameDto
+    @Body() joinGameDto: JoinGameDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
   ) {
-    return this.gameService.join(id, joinGameDto)
+    return this.gameService.join(id, joinGameDto, idempotencyKey)
   }
 
   @Post(':id/start')
   start(
-    @Param('id') id:string
+    @Param('id') id:string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
   ) {
-    return this.gameService.start(id)
+    return this.gameService.start(id, idempotencyKey)
   }
 
   @Post(':id/roll')
   roll(
     @Param('id') id: string,
     @Body() rollGameDto: RollGameDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
    ) {
-    return this.gameService.roll(id, rollGameDto);
+    return this.gameService.roll(id, rollGameDto, idempotencyKey);
   }
 
   @Post(':id/score')
   score(
     @Param('id') id: string,
-    @Body() scoreGameDto: ScoreGameDto
+    @Body() scoreGameDto: ScoreGameDto,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
   ) {
-    return this.gameService.score(id, scoreGameDto)
+    return this.gameService.score(id, scoreGameDto, idempotencyKey)
   }
 
 
