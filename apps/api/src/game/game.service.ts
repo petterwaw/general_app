@@ -315,10 +315,13 @@ export class GameService {
     id: string,
     rollGameDto: RollGameDto,
     idempotencyKey: string | undefined,
+    hostSecret: string,
   ) {
     if (!idempotencyKey) {
       throw new BadRequestException('Idempotency-Key header is required');
     }
+
+    await this.verifyHost(id, hostSecret)
 
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -419,10 +422,13 @@ export class GameService {
     id: string,
     scoreGameDto: ScoreGameDto,
     idempotencyKey: string | undefined,
+    hostSecret: string,
   ) {
     if (!idempotencyKey) {
       throw new BadRequestException('Idempotency-Key header is required');
     }
+
+    await this.verifyHost(id, hostSecret)
 
     try {
       return await this.prisma.$transaction(async (tx) => {

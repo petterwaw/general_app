@@ -58,6 +58,7 @@ export class GameController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request
   ) {
+
     return this.gameService.start(
       id,
       idempotencyKey,
@@ -70,8 +71,14 @@ export class GameController {
     @Param('id') id: string,
     @Body() rollGameDto: RollGameDto,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request
   ) {
-    return this.gameService.roll(id, rollGameDto, idempotencyKey);
+    return this.gameService.roll(
+      id, 
+      rollGameDto, 
+      idempotencyKey, 
+      request.cookies.host_secret,
+    );
   }
 
   @Post(':id/score')
@@ -79,8 +86,14 @@ export class GameController {
     @Param('id') id: string,
     @Body() scoreGameDto: ScoreGameDto,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request
   ) {
-    return this.gameService.score(id, scoreGameDto, idempotencyKey)
+    return this.gameService.score(
+      id, 
+      scoreGameDto, 
+      idempotencyKey, 
+      request.cookies.host_secret, 
+    )
   }
 
 
