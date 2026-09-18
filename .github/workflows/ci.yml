@@ -8,6 +8,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: dice_app_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d dice_app_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,3 +36,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm --filter @dice-app/game-core test
+
+      - run: pnpm --filter api prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      - run: pnpm --filter api test:e2e
+        env:
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
