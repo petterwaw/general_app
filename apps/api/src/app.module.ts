@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
   imports: [PrismaModule, GameModule, 
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../../.env',
     }),
   ],
   controllers: [AppController],
