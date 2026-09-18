@@ -3,6 +3,7 @@ packages:
   - "packages/*"
 allowBuilds:
   '@prisma/engines': true
+  '@swc/core': set this to true or false
   esbuild: true
   prisma: true
   unrs-resolver: true
