@@ -15,12 +15,14 @@
           "target": "es2022"
         },
         "module": {
-          "type": "commonjs"
+          "type": "es6"
         }
       }
     ]
   },
   "moduleNameMapper": {
-    "^@dice-app/game-core$": "<rootDir>/../../../packages/game-core/dist/index.js"
+    "^src/(.*)$": "<rootDir>/../src/$1",
+    "^@dice-app/game-core$": "<rootDir>/../../../packages/game-core/src/index.ts",
+    "^(\\.{1,2}/.*)\\.js$": "$1"
   }
 }
