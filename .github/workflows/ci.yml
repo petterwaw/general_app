@@ -37,7 +37,7 @@ jobs:
 
       - run: pnpm --filter @dice-app/game-core test
 
-      - run: pnpm --filter api prisma migrate deploy
+      - run: pnpm --filter api exec prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
