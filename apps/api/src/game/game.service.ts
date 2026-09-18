@@ -566,6 +566,7 @@ export class GameService {
       throw error;
     }
   }
+  
   private async verifyHost(gameId: string, hostSecret: string) {
   const host = await this.prisma.participant.findFirst({
     where: {

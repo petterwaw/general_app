@@ -68,6 +68,10 @@ export function countTwoPairs(dice: DiceRoll) {
         .map(Number)
         .filter((value) => frequencies[value] >= 2)
 
+    if (pairValues.length === 1 && frequencies[pairValues[0]] >= 4) {
+        return pairValues[0] * 4
+    }
+
     if (pairValues.length < 2) {
         return 0
     }

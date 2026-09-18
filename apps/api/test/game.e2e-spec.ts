@@ -1,30 +1,18 @@
 import { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { cleanDatabase, createTestApp } from './test-app';
 
 describe('Games API', () => {
     let app: INestApplication;
     let prisma: PrismaService;
 
     beforeAll(async () => {
-        const moduleRef = await Test.createTestingModule({
-            imports: [AppModule],
-        }).compile();
-
-        app = moduleRef.createNestApplication();
-
-        await app.init();
-
-        prisma = app.get(PrismaService);
+        ({ app, prisma } = await createTestApp());
     });
 
     beforeEach(async () => {
-        await prisma.eventLog.deleteMany();
-        await prisma.identity.deleteMany();
-        await prisma.participant.deleteMany();
-        await prisma.game.deleteMany();
+        await cleanDatabase(prisma);
     });
 
     afterAll(async () => {
@@ -65,4 +53,111 @@ describe('Games API', () => {
         expect(joinResponse.body.gameId).toBe(gameId);
         expect(joinResponse.body.turnOrder).toBe(2);
     });
-});
+
+    it('should start a game', async () => {
+        const agent = request.agent(app.getHttpServer());
+
+        const createResponse = await agent
+            .post('/games')
+            .set('Idempotency-Key', 'test-create-for-start')
+            .send({ hostName: 'Piotr' });
+
+        expect(createResponse.status).toBe(201);
+
+        const gameId = createResponse.body.id;
+        const hostId = createResponse.body.participants[0].id;
+
+        const startResponse = await agent
+            .post(`/games/${gameId}/start`)
+            .set('Idempotency-Key', 'test-start-game')
+            .send();
+
+        expect(startResponse.status).toBe(201);
+        expect(startResponse.body.status).toBe('IN_PROGRESS');
+        expect(startResponse.body.currentPlayerId).toBe(hostId);
+    });
+
+    it('should roll dice', async () => {
+        const agent = request.agent(app.getHttpServer());
+
+        const createResponse = await agent
+            .post('/games')
+            .set('Idempotency-Key', 'test-create-for-roll')
+            .send({ hostName: 'Piotr' });
+
+        expect(createResponse.status).toBe(201);
+
+        const gameId = createResponse.body.id;
+        const playerId = createResponse.body.participants[0].id;
+
+        const startResponse = await agent
+            .post(`/games/${gameId}/start`)
+            .set('Idempotency-Key', 'test-start-for-roll')
+            .send();
+
+        expect(startResponse.status).toBe(201);
+
+        const rollResponse = await agent
+            .post(`/games/${gameId}/roll`)
+            .set('Idempotency-Key', 'test-roll')
+            .send({
+                playerId,
+                dice: [1, 2, 3, 4, 5],
+            });
+
+        expect(rollResponse.status).toBe(201);
+        expect(rollResponse.body.currentDice).toEqual([1, 2, 3, 4, 5]);
+    });
+
+    it('should score', async () => {
+        const agent = request.agent(app.getHttpServer());
+
+        const createResponse = await agent
+            .post('/games')
+            .set('Idempotency-Key', 'test-create-for-score')
+            .send({ hostName: 'Piotr' });
+
+        expect(createResponse.status).toBe(201);
+
+        const gameId = createResponse.body.id;
+        const playerId = createResponse.body.participants[0].id;
+
+        const startResponse = await agent
+            .post(`/games/${gameId}/start`)
+            .set('Idempotency-Key', 'test-start-for-score')
+            .send();
+
+        expect(startResponse.status).toBe(201);
+
+        const rollResponse = await agent
+            .post(`/games/${gameId}/roll`)
+            .set('Idempotency-Key', 'test-roll-for-score')
+            .send({
+                playerId,
+                dice: [3, 3, 3, 4, 5],
+            });
+
+        expect(rollResponse.status).toBe(201);
+        expect(rollResponse.body.currentDice).toEqual([3, 3, 3, 4, 5]);
+
+        const scoreResponse = await agent
+            .post(`/games/${gameId}/score`)
+            .set('Idempotency-Key', 'test-score')
+            .send({
+                playerId,
+                category: 'three',
+            });
+
+        expect(scoreResponse.status).toBe(201);
+
+        const player = await prisma.participant.findUnique({
+            where: {
+                id: playerId,
+            },
+        });
+
+        expect(player?.scoreCard).toMatchObject({
+            three: 9,
+        });
+    });
+})
