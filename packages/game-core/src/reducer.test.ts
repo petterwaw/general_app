@@ -10,11 +10,11 @@ import type { Action } from './reducer.js'
 import type { Category, DiceRoll } from './types.js'
 
 describe('createInitialState', () => {
-    it('rzuca blad, gdy lista graczy jest pusta', () => {
+    it('should throw when the player list is empty', () => {
         expect(() => createInitialState([])).toThrow()
     })
 
-    it('buduje stan z pustymi kartami (wszystkie 15 kategorii = null) dla kazdego gracza', () => {
+    it('should create a state with empty score cards for each player', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
 
         state.players.forEach((player) => {
@@ -24,7 +24,7 @@ describe('createInitialState', () => {
         })
     })
 
-    it('ustawia currentPlayerId na id pierwszego gracza z listy', () => {
+    it('should set currentPlayerId to the first player in the list', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
 
         expect(state.currentPlayerId).toBe('p1')
@@ -32,13 +32,13 @@ describe('createInitialState', () => {
 })
 
 describe('isPlayerTurn', () => {
-    it('zwraca true, gdy playerId zgadza sie z currentPlayerId', () => {
+    it('should return true when playerId matches currentPlayerId', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
 
         expect(isPlayerTurn(state, 'p1')).toBe(true)
     })
 
-    it('zwraca false, gdy playerId to inny gracz', () => {
+    it('should return false when playerId belongs to another player', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
 
         expect(isPlayerTurn(state, 'p2')).toBe(false)
@@ -46,20 +46,20 @@ describe('isPlayerTurn', () => {
 })
 
 describe('nextPlayerId', () => {
-    it('zwraca id kolejnego gracza w kolejnosci', () => {
+    it('should return the next player id in turn order', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
 
         expect(nextPlayerId(state)).toBe('p2')
     })
 
-    it('zawija sie z powrotem na poczatek listy po ostatnim graczu', () => {
+    it('should wrap around to the first player after the last player', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
         state.currentPlayerId = 'p2'
 
         expect(nextPlayerId(state)).toBe('p1')
     })
 
-    it('rzuca blad, gdy currentPlayerId nie odpowiada zadnemu graczowi w state (stan niespojny)', () => {
+    it('should throw when currentPlayerId does not match any player in the state', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         state.currentPlayerId = 'nieistniejacy'
 
@@ -68,20 +68,20 @@ describe('nextPlayerId', () => {
 })
 
 describe('isGameOver', () => {
-    it('zwraca false na swiezo utworzonym stanie (wszystko null)', () => {
+    it('should return false for a newly created state', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
 
         expect(isGameOver(state)).toBe(false)
     })
 
-    it('zwraca false, gdy tylko czesc kategorii jest wypelniona', () => {
+    it('should return false when only some categories are filled', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         state.players[0].card.one = 3
 
         expect(isGameOver(state)).toBe(false)
     })
 
-    it('zwraca true, gdy wszyscy gracze maja wszystkie 15 kategorii wypelnionych', () => {
+    it('should return true when all players have all 15 categories filled', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         Object.keys(state.players[0].card).forEach((category) => {
             state.players[0].card[category as Category] = 0
@@ -92,7 +92,7 @@ describe('isGameOver', () => {
 })
 
 describe('reducer — saveCategory (legalne ruchy)', () => {
-    it('zapisuje realny wynik w wolnej kategorii gornej i przesuwa ture do kolejnego gracza', () => {
+    it('should save the score in a free upper section category and move the turn to the next player', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'six', dice: [6, 6, 6, 2, 3] }
 
@@ -102,7 +102,7 @@ describe('reducer — saveCategory (legalne ruchy)', () => {
         expect(newState.currentPlayerId).toBe('p2')
     })
 
-    it('zapisuje wynik w kategorii dolnej, gdy sekcja dolna jest odblokowana', () => {
+    it('should save the score in a lower section category when the lower section is unlocked', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         state.players[0].card.one = 3
         state.players[0].card.two = 6
@@ -114,7 +114,7 @@ describe('reducer — saveCategory (legalne ruchy)', () => {
         expect(newState.players[0].card.pair).toBe(10)
     })
 
-    it("pozwala zapisac 'chance' nawet gdy sekcja dolna zablokowana", () => {
+    it('should allow saving "chance" even when the lower section is locked', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'chance', dice: [1, 2, 3, 4, 5] }
 
@@ -123,7 +123,7 @@ describe('reducer — saveCategory (legalne ruchy)', () => {
         expect(newState.players[0].card.chance).toBe(15)
     })
 
-    it('zapisuje wymuszone zero w kategorii dolnej, gdy sekcja zablokowana i isForcedZero === true', () => {
+    it('should save a forced zero in a lower section category when the section is locked', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'pair', dice: [1, 1, 2, 3, 4] }
 
@@ -134,14 +134,14 @@ describe('reducer — saveCategory (legalne ruchy)', () => {
 })
 
 describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
-    it('rzuca, gdy playerId z akcji nie jest currentPlayerId (nie jego tura)', () => {
+    it('should throw when playerId does not match currentPlayerId', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
         const action: Action = { type: 'saveCategory', playerId: 'p2', category: 'one', dice: [1, 1, 1, 2, 3] }
 
         expect(() => reducer(state, action)).toThrow()
     })
 
-    it('rzuca, gdy kategoria jest juz zajeta', () => {
+    it('should throw when the category is already occupied', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         state.players[0].card.one = 3
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'one', dice: [1, 1, 1, 2, 3] }
@@ -149,14 +149,14 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
         expect(() => reducer(state, action)).toThrow()
     })
 
-    it('rzuca, gdy kategoria dolna zablokowana i NIE jest to sytuacja forced zero', () => {
+    it('should throw when a lower section category is locked and forced zero does not apply', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'pair', dice: [6, 6, 6, 2, 3] }
 
         expect(() => reducer(state, action)).toThrow()
     })
 
-    it('rzuca, gdy playerId w ogole nie istnieje w state', () => {
+    it('should throw when playerId does not exist in the state', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         state.players = []
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'one', dice: [1, 1, 1, 2, 3] }
@@ -164,7 +164,7 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
         expect(() => reducer(state, action)).toThrow()
     })
 
-    it('rzuca, gdy typ akcji jest nieznany', () => {
+    it('should throw when the action type is unknown', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         // @ts-expect-error
         const action: Action = { type: 'somethingElse', playerId: 'p1', category: 'one', dice: [1, 1, 1, 2, 3] }
@@ -174,7 +174,7 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
 })
 
 describe('reducer — pelna partia', () => {
-    it('rozgrywa cala partie od createInitialState do isGameOver === true, w tym jedna runde forced zero', () => {
+    it('should play the entire game from createInitialState to isGameOver === true, including one forced zero round', () => {
         let state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
 
         const rolls: Record<Category, DiceRoll> = {
