@@ -1,7 +1,11 @@
+import RollOffline from './components/rollOffline'
+
 export default async function Home() {
-  const res = await fetch('http://localhost:3001/health', { cache: 'no-store' });
+  const res = await fetch('http://localhost:3000/games', { cache: 'no-store' });
   const healthStatus = await res.text();
 
-  return <h1>{healthStatus}</h1>;
+  return <>
+    <RollOffline gameId={'cmu5ukx07000010ql3uw3fbf6'}/>
+  </>;
 }
 

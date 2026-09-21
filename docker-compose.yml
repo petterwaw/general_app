@@ -25,7 +25,8 @@ services:
       CI: "true"
       CHOKIDAR_USEPOLLING: "true"
     volumes:
-      - .:/app
+      - ./apps/api:/app/apps/api
+      - ./packages/game-core:/app/packages/game-core
       - api_node_modules:/app/node_modules
       - api_app_node_modules:/app/apps/api/node_modules
       - game_core_node_modules:/app/packages/game-core/node_modules

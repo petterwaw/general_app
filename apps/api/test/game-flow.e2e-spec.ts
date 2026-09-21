@@ -22,7 +22,7 @@ describe('Games full flow', () => {
     it('should complete a full game', async () => {
         const agent = request.agent(app.getHttpServer());
 
-        // 1. Create game
+        
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-full-game-create')
@@ -140,7 +140,6 @@ describe('Games full flow', () => {
 
         for (const participant of game!.participants) {
             const scoreCard = participant.scoreCard as Record<string, number | null>;
-            console.log(scoreCard)
 
             for (const category of categories) {
                 expect(scoreCard[category]).not.toBeNull();
