@@ -11,25 +11,39 @@ export default function GameView({
 }) {
   const { game, loading, error } = useGame(gameId);
 
-  if (loading) {
-    return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (!game) return <div>Game not found</div>;
+
+  if (game.status === 'LOBBY') {
+    return <div>Waiting for players...</div>;
   }
 
-  if (error) {
-    return <div>{error}</div>;
+  if (game.status === 'COMPLETED') {
+    return <div>Game completed</div>;
   }
 
-  if (!game) {
-    return <div>Game not found</div>;
+  if (game.status === 'ABANDONED' || game.status === 'EXPIRED') {
+    return <div>Game is no longer available</div>;
   }
 
-  return (
-    <>
-      {/* <GameScoreBoard participants={game.participants} /> */}
+  if (game.status === 'IN_PROGRESS') {
+    if (!game.currentPlayerId) {
+      return <div>Waiting for active player...</div>;
+    }
 
-      <RollOffline
-        currentDice={game.currentDice}
-      />
-    </>
-  );
+    return (
+      <>
+        <RollOffline
+          gameId={game.id}
+          playerId={game.currentPlayerId}
+          currentDice={game.currentDice}
+        />
+
+        <GameScoreBoard participants={game.participants} />
+      </>
+    );
+  }
+
+  return null;
 }

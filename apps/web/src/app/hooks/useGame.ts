@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
-import type { DiceRoll, ScoreCard } from '@dice-app/game-core';
-import type { Game, Participant } from '../types/gameTypes'
+import { useEffect, useState } from 'react';
+import type { Game } from '../types/gameTypes';
+import type { ApiResponse } from '../types/apiTypes';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function useGame(gameId: string) {
   const [game, setGame] = useState<Game | null>(null);
@@ -14,16 +16,16 @@ export default function useGame(gameId: string) {
         setError(null);
 
         const res = await fetch(
-          `http://localhost:3000/games/${gameId}`,
+          `${API_URL}/games/${gameId}`,
         );
 
         if (!res.ok) {
           throw new Error('Could not fetch game');
         }
 
-        const data: Game = await res.json();
+        const response: ApiResponse<Game> = await res.json();
 
-        setGame(data);
+        setGame(response.data);
       } catch (err) {
         setError(
           err instanceof Error

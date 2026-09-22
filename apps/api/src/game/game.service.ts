@@ -91,6 +91,13 @@ export class GameService {
   async findOne(id: string) {
     const game = await this.prisma.game.findUnique({
       where: { id },
+      include: {
+        participants: {
+          orderBy: {
+            turnOrder: 'asc',
+          },
+        },
+      },
     });
 
     if (!game) {
@@ -566,25 +573,25 @@ export class GameService {
       throw error;
     }
   }
-  
+
   private async verifyHost(gameId: string, hostSecret: string) {
-  const host = await this.prisma.participant.findFirst({
-    where: {
-      gameId,
-      role: 'HOST',
-      identity: {
-        secretHash: createHash('sha256')
-          .update(hostSecret)
-          .digest('hex'),
+    const host = await this.prisma.participant.findFirst({
+      where: {
+        gameId,
+        role: 'HOST',
+        identity: {
+          secretHash: createHash('sha256')
+            .update(hostSecret)
+            .digest('hex'),
+        },
       },
-    },
-  });
+    });
 
-  if (!host) {
-    throw new ForbiddenException('Invalid host credentials');
+    if (!host) {
+      throw new ForbiddenException('Invalid host credentials');
+    }
+
+    return host;
   }
-
-  return host;
-}
 }
 
