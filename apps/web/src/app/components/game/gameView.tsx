@@ -1,7 +1,7 @@
 'use client';
 
 import RollOffline from '../offlineGames/rollOffline';
-import GameScoreBoard from '../gameScoreBoard';
+import GameScoreBoard from './gameScoreBoard';
 import useGame from '../../hooks/useGame';
 import GameLobby from '../gameLobby/gameLobby';
 
@@ -16,9 +16,7 @@ export default function GameView({ gameId }: { gameId: string }) {
     return (
       <GameLobby
         gameId={game.id}
-        onGameStarted={(updatedGame) =>
-          setGame((currentGame) => (currentGame ? { ...currentGame, ...updatedGame } : currentGame))
-        }
+        onGameStarted={setGame}
       />
     );
   }

@@ -1,5 +1,4 @@
-import type { ApiResponse } from '../types/apiTypes';
-import type { Game } from '../types/gameTypes'
+import type { ApiResponse, CreateGameResponse } from '../types/apiTypes';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -22,7 +21,7 @@ export async function createOfflineGame(
         throw new Error('Failed to create game');
     }
 
-    const result: ApiResponse<Game> = await response.json();
+    const result: ApiResponse<CreateGameResponse> = await response.json();
 
     return result.data;
 }

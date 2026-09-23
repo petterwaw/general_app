@@ -1,4 +1,4 @@
-import type { DiceRoll } from '../types/gameTypes';
+import type { DiceRoll, Game } from '../types/gameTypes';
 import type { ApiResponse } from '../types/apiTypes';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -25,7 +25,7 @@ export async function rollDice(
         throw new Error('Failed to submit dice');
     }
 
-    const result: ApiResponse<unknown> = await response.json();
+    const result: ApiResponse<Game> = await response.json();
 
     return result.data;
 }

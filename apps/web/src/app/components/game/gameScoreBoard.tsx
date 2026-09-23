@@ -1,4 +1,4 @@
-import type { Category, Participant } from '../types/gameTypes';
+import type { Category, Participant } from '../../types/gameTypes';
 
 type Props = {
   participants: Participant[];

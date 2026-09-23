@@ -1,10 +1,10 @@
 import { Button } from '../ui/button';
 import { startGame } from '../../api/startApi';
-import type { StartGameResponse } from '../../types/gameTypes'
+import type { Game } from '../../types/gameTypes'
 
 type GameLobbyProps = {
   gameId: string;
-  onGameStarted: (game: StartGameResponse) => void;
+  onGameStarted: (game: Game) => void;
 };
 
 export default function GameLobby({ gameId, onGameStarted }: GameLobbyProps) {
