@@ -21,6 +21,7 @@ services:
     ports:
       - "${API_PORT}:3000"
     environment:
+      FRONTEND_URL: ${FRONTEND_URL}
       DATABASE_URL: ${DATABASE_URL_DOCKER}
       CI: "true"
       CHOKIDAR_USEPOLLING: "true"

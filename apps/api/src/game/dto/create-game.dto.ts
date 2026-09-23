@@ -1,9 +1,16 @@
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  ArrayMinSize,
+} from 'class-validator';
 
 export class CreateGameDto {
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(1)
-  @MaxLength(50)
-  hostName!: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @MaxLength(50, { each: true })
+  players!: string[];
 }

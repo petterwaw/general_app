@@ -27,7 +27,7 @@ describe('Games full flow', () => {
             .post('/games')
             .set('Idempotency-Key', 'test-full-game-create')
             .send({
-                hostName: 'Piotr',
+                players: ['Piotr'],
             });
 
         expect(createResponse.status).toBe(201);

@@ -44,5 +44,6 @@ export default function useGame(gameId: string) {
     game,
     loading,
     error,
+    setGame,
   };
 }

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import RolledNumber from './rolledNumber';
 import ChooseNumber from './chooseNumber';
 import type { DiceRoll, LocalRoll, DieFace } from '../../types/gameTypes';
-import { rollDice } from '../../api/gameApi';
+import { rollDice } from '../../api/rollApi';
 
 type Props = {
   gameId: string;

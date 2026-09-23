@@ -41,23 +41,29 @@ export class GameService {
           creationKey: idempotencyKey,
 
           participants: {
-            create: {
-              name: createGameDto.hostName,
+            create: createGameDto.players.map((name, index) => ({
+              name,
               scoreCard: createEmptyScoreCard(),
-              turnOrder: 1,
-              role: 'HOST',
+              turnOrder: index + 1,
+              role: index === 0 ? 'HOST' : 'PLAYER',
 
-              identity: {
-                create: {
-                  secretHash,
+              ...(index === 0 && {
+                identity: {
+                  create: {
+                    secretHash,
+                  },
                 },
-              },
-            },
+              }),
+            })),
           },
         },
 
         include: {
-          participants: true,
+          participants: {
+            orderBy: {
+              turnOrder: "asc",
+            },
+          },
         },
       });
 
@@ -190,7 +196,16 @@ export class GameService {
           },
         });
 
-        return player
+        return tx.game.findUniqueOrThrow({
+          where: { id },
+          include: {
+            participants: {
+              orderBy: {
+                turnOrder: 'asc',
+              },
+            },
+          },
+        });
       })
     } catch (error) {
       if (
@@ -231,7 +246,19 @@ export class GameService {
       return await this.prisma.$transaction(async (tx) => {
 
         const previousEvent = await tx.eventLog.findUnique({ where: { gameId_idempotencyKey: { gameId: id, idempotencyKey } } });
-        if (previousEvent) return tx.game.findUniqueOrThrow({ where: { id } });
+
+        if (previousEvent) {
+          return tx.game.findUniqueOrThrow({
+            where: { id },
+            include: {
+              participants: {
+                orderBy: {
+                  turnOrder: 'asc',
+                },
+              },
+            },
+          });
+        }
 
         const game = await tx.game.findUnique({
           where: { id },
@@ -278,6 +305,13 @@ export class GameService {
 
         const updatedGame = await tx.game.findUniqueOrThrow({
           where: { id },
+          include: {
+            participants: {
+              orderBy: {
+                turnOrder: 'asc',
+              },
+            },
+          },
         });
 
         await tx.eventLog.create({
@@ -342,7 +376,16 @@ export class GameService {
         });
 
         if (previousEvent) {
-          return tx.game.findUniqueOrThrow({ where: { id } });
+          return tx.game.findUniqueOrThrow({
+            where: { id },
+            include: {
+              participants: {
+                orderBy: {
+                  turnOrder: 'asc',
+                },
+              },
+            },
+          });
         }
 
         const game = await tx.game.findUnique({
@@ -387,6 +430,13 @@ export class GameService {
 
         const updatedGame = await tx.game.findUniqueOrThrow({
           where: { id },
+          include: {
+            participants: {
+              orderBy: {
+                turnOrder: 'asc',
+              },
+            },
+          },
         });
 
         await tx.eventLog.create({
@@ -449,7 +499,16 @@ export class GameService {
         });
 
         if (previousEvent) {
-          return tx.game.findUniqueOrThrow({ where: { id } });
+          return tx.game.findUniqueOrThrow({
+            where: { id },
+            include: {
+              participants: {
+                orderBy: {
+                  turnOrder: 'asc',
+                },
+              },
+            },
+          });
         }
 
         const game = await tx.game.findUnique({
@@ -521,10 +580,6 @@ export class GameService {
           );
         }
 
-        const updatedGame = await tx.game.findUniqueOrThrow({
-          where: { id },
-        });
-
         await Promise.all(
           newState.players.map((player) =>
             tx.participant.update({
@@ -535,6 +590,18 @@ export class GameService {
             }),
           ),
         );
+
+        const updatedGame = await tx.game.findUniqueOrThrow({
+          where: { id },
+          include: {
+            participants: {
+              orderBy: {
+                turnOrder: 'asc',
+              },
+            },
+          },
+        });
+
 
         await tx.eventLog.create({
           data: {

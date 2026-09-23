@@ -25,7 +25,7 @@ describe('Games API validation', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-score-without-roll')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -56,7 +56,7 @@ describe('Games API validation', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-double-roll')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -97,7 +97,7 @@ describe('Games API validation', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-wrong-turn')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -147,7 +147,7 @@ describe('Games API validation', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-idempotency-roll')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -195,7 +195,7 @@ describe('Games API validation', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-idempotency-score')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 

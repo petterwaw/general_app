@@ -21,7 +21,10 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new TransfromInterceptor())
   app.useGlobalFilters(new HttpExceptionFilter())
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  });
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

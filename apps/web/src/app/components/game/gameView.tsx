@@ -3,20 +3,24 @@
 import RollOffline from '../offlineGames/rollOffline';
 import GameScoreBoard from '../gameScoreBoard';
 import useGame from '../../hooks/useGame';
+import GameLobby from '../gameLobby/gameLobby';
 
-export default function GameView({
-  gameId,
-}: {
-  gameId: string;
-}) {
-  const { game, loading, error } = useGame(gameId);
+export default function GameView({ gameId }: { gameId: string }) {
+  const { game, loading, error, setGame } = useGame(gameId);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
   if (!game) return <div>Game not found</div>;
 
   if (game.status === 'LOBBY') {
-    return <div>Waiting for players...</div>;
+    return (
+      <GameLobby
+        gameId={game.id}
+        onGameStarted={(updatedGame) =>
+          setGame((currentGame) => (currentGame ? { ...currentGame, ...updatedGame } : currentGame))
+        }
+      />
+    );
   }
 
   if (game.status === 'COMPLETED') {

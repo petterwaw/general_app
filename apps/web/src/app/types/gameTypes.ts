@@ -39,3 +39,6 @@ export type LocalRoll = [
   DieFace | null,
 ];
 
+export type StartGameResponse = Omit<Game, "participants"> & {
+  creationKey: string | null;
+};
