@@ -1,24 +1,22 @@
 'use client';
 
 import RollOffline from '../offlineGames/rollOffline';
-import GameScoreBoard from './gameScoreBoard';
+import GameScoreBoard from '../gameScoreBoard/gameScoreBoard';
 import useGame from '../../hooks/useGame';
 import GameLobby from '../gameLobby/gameLobby';
+import { useState } from 'react';
+import type { Category } from '../../types/gameTypes';
 
 export default function GameView({ gameId }: { gameId: string }) {
   const { game, loading, error, setGame } = useGame(gameId);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
   if (!game) return <div>Game not found</div>;
 
   if (game.status === 'LOBBY') {
-    return (
-      <GameLobby
-        gameId={game.id}
-        onGameStarted={setGame}
-      />
-    );
+    return <GameLobby gameId={game.id} onGameStarted={setGame} />;
   }
 
   if (game.status === 'COMPLETED') {
@@ -42,7 +40,16 @@ export default function GameView({ gameId }: { gameId: string }) {
           currentDice={game.currentDice}
         />
 
-        <GameScoreBoard participants={game.participants} />
+        <GameScoreBoard
+          participants={game.participants}
+          currentPlayerId={game.currentPlayerId}
+          selectedCategory={selectedCategory}
+          onCategorySelect={setSelectedCategory}
+          onCategorySubmit={(category) => {
+            console.log('submit', category);
+            setSelectedCategory(null);
+          }}
+        />
       </>
     );
   }
