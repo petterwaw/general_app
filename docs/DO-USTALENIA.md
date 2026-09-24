@@ -14,6 +14,21 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       procesem (nie serverless).
 - [ ] **Nazwa aplikacji.** Nie może być „Yahtzee". Do czasu wyboru w kodzie: `dice-app`.
 
+## Blokujące domknięcie etapu 3 (wyszło z przeglądu 2026-09-24)
+
+- [ ] **Czy `POST /games/:id/join` ma w ogóle zostać?** W `DECYZJE.md` §3 graczy wpisuje
+      wyłącznie host, a dołączeni przez QR są tylko do podglądu. Dziś endpoint pozwala
+      każdemu, kto zna `id` gry, dopisać się jako pełnoprawny gracz.
+- [ ] **Jak długo ma żyć ciasteczko hosta?** `DECYZJE.md` §5 mówi, że host wraca do gry po
+      zamknięciu przeglądarki — to wymaga konkretnego `maxAge`, a dziś ciasteczko jest sesyjne.
+- [ ] **Czy host może prowadzić kilka gier z jednego urządzenia?** Jeśli tak, ciasteczko musi
+      być per gra (dziś jedna nazwa `host_secret` nadpisuje poprzedni sekret).
+- [ ] **Zod i `packages/contracts` czy `class-validator`?** `DECYZJE.md` §11 mówi o wspólnych
+      schematach Zod; kod poszedł w `class-validator`, a paczka `contracts` jest pusta.
+      Jedno z dwojga trzeba poprawić — albo kod, albo decyzję.
+- [ ] **Gdzie liczy się suma punktów i bonus?** Dziś tylko na froncie. Serwer nie zna wyniku
+      końcowego partii, więc etap 8 nie ma z czego zbudować statystyk.
+
 ## Blokujące etap 5 (konta)
 
 - [ ] **Czym się logujemy?** E-mail + hasło, logowanie przez Google/Discord, magic link?

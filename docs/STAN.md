@@ -1,6 +1,6 @@
 # Stan projektu
 
-Etapy realizuję **sam i po kolei** (patrz „Tryb pracy" w `CLAUDE.md`). Nie przechodzę do
+Etapy realizuję **po kolei** (patrz „Tryb pracy" w `CLAUDE.md`). Nie przechodzę do
 kolejnego, dopóki poprzedni nie ma spełnionego kryterium „gotowe gdy" opisanego w jego pliku
 w `docs/etapy/`.
 
@@ -16,10 +16,10 @@ to uwagę. Rzeczy z listy „Świadomie POZA MVP" niżej nie proponuj.
 | Etap | Temat | Status |
 |---|---|---|
 | [0](etapy/etap-0.md) | Specyfikacja zasad | ZROBIONE (`ZASADY-GRY.md`: WYPEŁNIONE) |
-| [1](etapy/etap-1.md) | Fundament | brak jawnej notatki postępu w dokumentacji — etapy 2 i 3 już budują na tym fundamencie, ale nikt nie potwierdził wprost kryterium „gotowe gdy"; do sprawdzenia i dopisania przy okazji |
+| [1](etapy/etap-1.md) | Fundament | KRYTERIUM SPEŁNIONE — `pnpm dev` w korzeniu odpala `web` i `api` naraz (`concurrently`), front woła API; nadal brak notatki postępu w `etap-1.md` |
 | [2](etapy/etap-2.md) | Silnik gry (`game-core`) | KRYTERIUM SPEŁNIONE |
-| [3](etapy/etap-3.md) | API i baza | **W TRAKCIE** ← tu jesteśmy |
-| [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | nierozpoczęte |
+| [3](etapy/etap-3.md) | API i baza | **W TRAKCIE** ← tu jesteśmy (endpointy działają, przegląd z 2026-09-24 zostawił listę uwag w pliku etapu) |
+| [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | **rozpoczęte równolegle z etapem 3** — `apps/web` ma tworzenie gry, lobby, wpisywanie kości i tabelę wyników; zapis kategorii z UI jeszcze nie woła API |
 | [5](etapy/etap-5.md) | Konta i goście | nierozpoczęte |
 | [6](etapy/etap-6.md) | QR i realtime | nierozpoczęte |
 | [7](etapy/etap-7.md) | Kości wirtualne | nierozpoczęte |
