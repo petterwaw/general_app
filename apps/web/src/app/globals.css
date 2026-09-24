@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens — see docs/DESIGN.md.
+ * Single light look (pastel lavender/pink); no dark theme yet.
+ */
+@theme {
+  /* text */
+  --color-ink: #2b2545;
+  --color-ink-muted: #6e6688;
+  --color-ink-faint: #a49cbb;
+
+  /* page backdrop (fallback until the 3D stage lands) */
+  --color-backdrop: #c7a9dc;
+  --color-backdrop-top: #efd9ef;
+  --color-backdrop-bottom: #a996dc;
+
+  /* cards */
+  --color-surface: rgb(252 244 250 / 0.84);
+  --color-surface-solid: #fbf3f9;
+  --color-surface-sunken: #f1e5f2;
+  --color-surface-line: rgb(255 255 255 / 0.75);
+  --color-hairline: #e6d8ea;
+
+  /* actions */
+  --color-primary: #5b45e8;
+  --color-primary-hover: #4a34d6;
+  --color-primary-ink: #ffffff;
+  --color-primary-soft: #e7e2fd;
+  --color-secondary: #f6b1ee;
+  --color-secondary-hover: #f09ce6;
+  --color-secondary-ink: #4b2fc9;
+
+  /* dice tray */
+  --color-tray-rim: #f5c1ad;
+  --color-tray-rim-shade: #e3a28c;
+  --color-felt: #6d5c9f;
+  --color-felt-deep: #574889;
+  --color-die: #fff7f5;
+  --color-die-shade: #ecd9dc;
+  --color-pip: #2b2545;
+
+  /* semantic */
+  --color-good: #2f9e7a;
+  --color-good-soft: #dcf3ea;
+  --color-danger: #d64a6b;
+  --color-danger-soft: #fbe1e8;
+
+  /* players, one per seat (MAX_PLAYERS = 8) */
+  --color-player-1: #5b45e8;
+  --color-player-2: #ef6fc2;
+  --color-player-3: #a98af0;
+  --color-player-4: #f2bd3f;
+  --color-player-5: #3fbf9c;
+  --color-player-6: #4aa8ec;
+  --color-player-7: #ff8a70;
+  --color-player-8: #9a4db3;
+
+  --radius-card: 28px;
+  --radius-panel: 20px;
+  --radius-tile: 14px;
+
+  --shadow-card: 0 18px 40px -18px rgb(76 52 140 / 0.35), 0 2px 6px rgb(76 52 140 / 0.08);
+  --shadow-press: 0 8px 18px -6px rgb(91 69 232 / 0.55);
+  --shadow-die: 0 6px 0 var(--color-die-shade), 0 14px 20px -6px rgb(30 18 70 / 0.55);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-nunito), "Segoe UI", system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-backdrop);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
