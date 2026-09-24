@@ -1,9 +1,9 @@
 # Design
 
-Kierunek wizualny ustalony z właścicielem projektu (2026-09-24) na podstawie `docs/mockup.png`
-i prototypu w artifakcie „Pastelowe sukno” (https://claude.ai/artifact/EJXY5uukMcfcs1ZWdpJEcq).
-Mockup jest wygenerowany — liczy się **styl**, nie szczegóły (nazwa, liczba kategorii, czat
-z mockupu nie obowiązują).
+Kierunek wizualny ustalony z właścicielem projektu (2026-09-24) na podstawie wygenerowanego
+mockupu (niezachowanego w repo) i prototypu w artifakcie „Pastelowe sukno”
+(https://claude.ai/artifact/EJXY5uukMcfcs1ZWdpJEcq). Z mockupu liczy się **styl**, nie
+szczegóły (nazwa, liczba kategorii i czat nie obowiązują).
 
 Tokeny są w `apps/web/src/app/globals.css` (Tailwind v4, `@theme`) — to jedyne źródło
 wartości. Ten plik opisuje, **jak** ich używać.
