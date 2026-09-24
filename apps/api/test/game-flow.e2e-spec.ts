@@ -27,15 +27,15 @@ describe('Games full flow', () => {
             .post('/games')
             .set('Idempotency-Key', 'test-full-game-create')
             .send({
-                hostName: 'Piotr',
+                players: ['Piotr'],
             });
 
         expect(createResponse.status).toBe(201);
-        expect(createResponse.body.status).toBe('LOBBY');
-        expect(createResponse.body.participants).toHaveLength(1);
+        expect(createResponse.body.data.status).toBe('LOBBY');
+        expect(createResponse.body.data.participants).toHaveLength(1);
 
-        const gameId = createResponse.body.id;
-        const hostId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const hostId = createResponse.body.data.participants[0].id;
 
         // 2. Join second player
         const joinResponse = await agent
@@ -46,9 +46,9 @@ describe('Games full flow', () => {
             });
 
         expect(joinResponse.status).toBe(201);
-        expect(joinResponse.body.name).toBe('Jan');
+        expect(joinResponse.body.data.participants[1].name).toBe('Jan');
 
-        const playerId = joinResponse.body.id;
+        const playerId = joinResponse.body.data.participants[1].id;
 
         // 3. Start game
         const startResponse = await agent
@@ -57,8 +57,8 @@ describe('Games full flow', () => {
             .send();
 
         expect(startResponse.status).toBe(201);
-        expect(startResponse.body.status).toBe('IN_PROGRESS');
-        expect(startResponse.body.currentPlayerId).toBe(hostId);
+        expect(startResponse.body.data.status).toBe('IN_PROGRESS');
+        expect(startResponse.body.data.currentPlayerId).toBe(hostId);
 
         const categories = [
             'one',
@@ -94,8 +94,8 @@ describe('Games full flow', () => {
                 });
 
             expect(rollResponse.status).toBe(201);
-            expect(rollResponse.body.currentDice).toEqual([1, 1, 1, 1, 1]);
-            expect(rollResponse.body.currentPlayerId).toBe(currentPlayerId);
+            expect(rollResponse.body.data.currentDice).toEqual([1, 1, 1, 1, 1]);
+            expect(rollResponse.body.data.currentPlayerId).toBe(currentPlayerId);
 
             const scoreResponse = await agent
                 .post(`/games/${gameId}/score`)
@@ -108,12 +108,12 @@ describe('Games full flow', () => {
             expect(scoreResponse.status).toBe(201);
 
             if (turn < categories.length * players.length - 1) {
-                expect(scoreResponse.body.status).toBe('IN_PROGRESS');
-                expect(scoreResponse.body.currentDice).toBeNull();
+                expect(scoreResponse.body.data.status).toBe('IN_PROGRESS');
+                expect(scoreResponse.body.data.currentDice).toBeNull();
             } else {
-                expect(scoreResponse.body.status).toBe('COMPLETED');
-                expect(scoreResponse.body.currentDice).toBeNull();
-                expect(scoreResponse.body.currentPlayerId).toBeNull();
+                expect(scoreResponse.body.data.status).toBe('COMPLETED');
+                expect(scoreResponse.body.data.currentDice).toBeNull();
+                expect(scoreResponse.body.data.currentPlayerId).toBeNull();
             }
         }
 

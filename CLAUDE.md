@@ -2,52 +2,42 @@
 
 ## TRYB PRACY — najważniejsza sekcja tego pliku
 
-**Ten projekt piszę sam. Uczę się.** Celem nie jest działająca aplikacja — celem jest to, żebym
-po drodze zrozumiał, jak się takie rzeczy buduje. Gotowy kod od Ciebie ten cel niszczy.
+**Priorytetem jest teraz tempo budowy projektu, nie nauka.** Kod piszesz Ty, ja robię review
+tego, co powstaje. Tryb nauki włączam tylko wtedy, gdy o niego wprost poproszę.
 
-### Domyślnie NIE piszesz kodu
+### Kiedy piszesz kod
 
-Nie edytuj plików i nie twórz plików, dopóki nie poproszę o to **wprost**. „Utknąłem na X",
-„nie działa mi Y", „jak się robi Z" to **nie jest** prośba o kod.
+- **Piszesz kod, gdy o to proszę.** „Napisz X", „popraw Y", „uprość Z" — robisz to.
+- **Pytania to nie są prośby o kod.** „Jak działa X?", „dlaczego Y?" — odpowiadasz, nie edytujesz.
+- **Duże zmiany najpierw proponujesz.** Zanim ruszysz coś większego (nowa funkcja, kilka plików,
+  zmiana schematu bazy, zmiana architektury, nowa zależność) — opisz krótko, co chcesz zrobić
+  i jak, i **poczekaj na moją akceptację**. Małe, jednoznaczne poprawki rób od razu.
 
-### Drabina pomocy
+### Czego nie robisz bez pytania
 
-Kiedy przychodzę z problemem, zaczynasz od najniższego szczebla i **czekasz na moją reakcję**,
-zanim wejdziesz wyżej. Nie przeskakuj szczebli sam.
+- Nie „poprawiasz przy okazji" rzeczy spoza zakresu prośby — zauważone problemy wypisz na końcu.
+- Nie refaktoryzujesz kodu, o który nie prosiłem.
+- Nie dopisujesz funkcji spoza bieżącego etapu (`docs/STAN.md`, `docs/etapy/`).
 
-1. **Pytanie naprowadzające.** Co już sprawdziłem? Co dokładnie się dzieje, a czego się
-   spodziewałem? Gdzie moim zdaniem leży problem?
-2. **Wskazanie kierunku.** Nazwa koncepcji, której mi brakuje, plik albo warstwa, w której
-   siedzi błąd, fragment dokumentacji do przeczytania. Bez rozwiązania.
-3. **Wyjaśnienie mechanizmu.** Jak działa rzecz, o którą się potykam — na abstrakcyjnym
-   przykładzie, nie na moim kodzie.
-4. **Pseudokod albo szkielet** z lukami do wypełnienia przeze mnie.
-5. **Konkretne rozwiązanie.** Tylko na moje wyraźne żądanie — powiem „pokaż rozwiązanie" albo
-   „napisz to". Wtedy dorzuć wyjaśnienie, dlaczego akurat tak.
+### Tryb nauki — tylko na żądanie
 
-Jeżeli poproszę o wyższy szczebel od razu („po prostu pokaż mi kod") — daj go, bez marudzenia.
-To moja decyzja.
+Gdy poproszę o naukę (np. „wytłumacz mi to", „chcę to napisać sam", learning output style),
+przechodzisz na drabinę pomocy: pytanie naprowadzające → wskazanie kierunku → wyjaśnienie
+mechanizmu na abstrakcyjnym przykładzie → szkielet z lukami → pełne rozwiązanie. Wyżej wchodzisz
+dopiero po mojej reakcji albo gdy poproszę o konkretny szczebel.
 
-### Czego nie robisz nigdy
+### Weryfikacja
 
-- Nie „poprawiasz przy okazji" rzeczy, o które nie pytałem.
-- Nie refaktoryzujesz mojego kodu bez prośby.
-- Nie dopisujesz brakujących funkcji, które zauważyłeś obok.
-- Nie robisz za mnie testów. Testy są dowodem, że rozumiem — piszę je sam.
+- Po zmianach w kodzie uruchom typecheck i testy dotkniętej paczki i powiedz wprost, czy są
+  zielone.
+- Testy możesz pisać. Testy `packages/game-core` wyprowadzaj z `docs/ZASADY-GRY.md`, nie
+  z implementacji — mają sprawdzać zasady, a nie to, co akurat zostało napisane.
 
-### Code review — proszę o nie często
+### Code review
 
-Kiedy proszę o przejrzenie kodu: **wskaż problem i wytłumacz, dlaczego to problem. Nie podawaj
-poprawki.** Sortuj uwagi od najważniejszych. Rozdzielaj „to jest błąd" od „to kwestia gustu" —
-i mów wprost, które jest które.
-
-Chwal to, co jest zrobione dobrze. Serio, potrzebuję wiedzieć, co już umiem.
-
-### Gdzie kod od Ciebie jest w porządku
-
-Konfiguracja narzędzi (tsconfig, ESLint, Docker Compose, konfiguracja CI). To nie jest materiał
-do nauki, tylko podatek. Tu możesz dawać gotowe rzeczy — ale wyjaśnij, co robi każda
-nieoczywista opcja.
+Kiedy proszę o przejrzenie kodu: wskaż problem i wytłumacz, dlaczego to problem. Poprawki nanosisz
+dopiero, gdy o to poproszę. Sortuj uwagi od najważniejszych, rozdzielaj „to jest błąd" od „to
+kwestia gustu" i mów wprost, które jest które. Wskaż też, co jest zrobione dobrze.
 
 ### Odpowiadaj po polsku
 

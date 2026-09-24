@@ -25,6 +25,10 @@ Rozróżniamy dwie niezależne osie. Nie myl ich ze sobą.
 
 W trybie online kości fizyczne **nie istnieją**.
 
+**Liczba graczy w grze lokalnej: od 1 do 8** (ustalone 2026-09-24). Limit egzekwuje serwer —
+zarówno przy tworzeniu gry, jak i przy dołączaniu (`MAX_PLAYERS` w `packages/contracts`).
+Dla trybu online obowiązuje osobno ustalone 2–5.
+
 ---
 
 ## 2. Role uczestników
@@ -56,6 +60,9 @@ wyrzucić.
   partii wchodzi do jego statystyk.
 - **Nikt dołączony przez QR nie może edytować niczego.** Wpisywanie wyników pozostaje wyłącznie
   po stronie urządzenia hosta.
+- **`POST /games/:id/join` zostaje** (ustalone 2026-09-24). Posłuży do dodawania graczy
+  w lobby przed kliknięciem „start" oraz w trybie online. To, kto może go wołać w trybie
+  lokalnym, jest otwarte — patrz `DO-USTALENIA.md`.
 
 ---
 
@@ -195,7 +202,7 @@ zdarzenia albo cały stan.
 | Język | TypeScript wszędzie | ustalone |
 | Baza | PostgreSQL | ustalone |
 | Monorepo | pnpm workspaces (ew. Turborepo) | ustalone |
-| Walidacja | Zod, schematy współdzielone przez web i api | ustalone |
+| Walidacja | Zod, schematy współdzielone przez web i api (`packages/contracts`) | ustalone (potwierdzone 2026-09-24) |
 | Realtime | Socket.IO (ma gotowy reconnect, backoff, heartbeat) | rekomendacja |
 | ORM | Prisma | ustalone |
 | Auth | — | **DO USTALENIA** |
@@ -204,6 +211,12 @@ zdarzenia albo cały stan.
 
 **Ważne przy hostingu:** NestJS z WebSocketami wymaga długo żyjącego procesu. Nie zadziała na
 serverless. Next może stać osobno.
+
+**Kontrakt API** (ustalone 2026-09-24): schematy żądań (Zod) oraz typy odpowiedzi
+(`GameView`, `ParticipantView`, koperta `ApiResponse`) żyją w `packages/contracts` i importują
+je oba końce. Serwer zwraca wyłącznie kształt z kontraktu — jedno miejsce mapowania
+(`toGameView`) decyduje, które pola wychodzą; pola wewnętrzne (`creationKey`, `identityId`,
+`userId` itp.) nigdy nie trafiają do klienta. `class-validator` nie jest używany.
 
 **Przy Prismie — do sprawdzenia na etapie 3:** częściowy indeks unikalny wymagany przez §6
 (jedno konto = jedna aktywna gra) prawdopodobnie nie da się wyrazić w `schema.prisma` — trzeba

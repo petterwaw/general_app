@@ -24,24 +24,24 @@ describe('Games API', () => {
             .post('/games')
             .set('Idempotency-Key', 'test-create-game12')
             .send({
-                hostName: 'Piotr',
+                players: ['Piotr'],
             });
 
         expect(response.status).toBe(201);
-        expect(response.body.status).toBe('LOBBY');
-        expect(response.body.id).toBeDefined();
-        expect(response.body.participants).toHaveLength(1);
+        expect(response.body.data.status).toBe('LOBBY');
+        expect(response.body.data.id).toBeDefined();
+        expect(response.body.data.participants).toHaveLength(1);
     });
 
     it('should allow a player to join a game', async () => {
         const createResponse = await request(app.getHttpServer())
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-join23')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
+        const gameId = createResponse.body.data.id;
 
         const joinResponse = await request(app.getHttpServer())
             .post(`/games/${gameId}/join`)
@@ -49,9 +49,34 @@ describe('Games API', () => {
             .send({ name: 'Jan' });
 
         expect(joinResponse.status).toBe(201);
-        expect(joinResponse.body.name).toBe('Jan');
-        expect(joinResponse.body.gameId).toBe(gameId);
-        expect(joinResponse.body.turnOrder).toBe(2);
+        expect(joinResponse.body.data.id).toBe(gameId);
+        expect(joinResponse.body.data.participants).toHaveLength(2);
+        expect(joinResponse.body.data.participants[1].name).toBe('Jan');
+        expect(joinResponse.body.data.participants[1].turnOrder).toBe(2);
+    });
+
+    it('should create a game with multiple players', async () => {
+        const response = await request(app.getHttpServer())
+            .post('/games')
+            .set('Idempotency-Key', 'test-create-multiple-players')
+            .send({
+                players: ['Piotr', 'Ania', 'Kuba'],
+            });
+
+        expect(response.status).toBe(201);
+        expect(response.body.data.participants).toHaveLength(3);
+
+        expect(response.body.data.participants[0].name).toBe('Piotr');
+        expect(response.body.data.participants[0].turnOrder).toBe(1);
+        expect(response.body.data.participants[0].role).toBe('HOST');
+
+        expect(response.body.data.participants[1].name).toBe('Ania');
+        expect(response.body.data.participants[1].turnOrder).toBe(2);
+        expect(response.body.data.participants[1].role).toBe('PLAYER');
+
+        expect(response.body.data.participants[2].name).toBe('Kuba');
+        expect(response.body.data.participants[2].turnOrder).toBe(3);
+        expect(response.body.data.participants[2].role).toBe('PLAYER');
     });
 
     it('should start a game', async () => {
@@ -60,12 +85,12 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-start')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const hostId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const hostId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -73,8 +98,8 @@ describe('Games API', () => {
             .send();
 
         expect(startResponse.status).toBe(201);
-        expect(startResponse.body.status).toBe('IN_PROGRESS');
-        expect(startResponse.body.currentPlayerId).toBe(hostId);
+        expect(startResponse.body.data.status).toBe('IN_PROGRESS');
+        expect(startResponse.body.data.currentPlayerId).toBe(hostId);
     });
 
     it('should roll dice', async () => {
@@ -83,12 +108,12 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-roll')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const playerId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const playerId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -106,7 +131,7 @@ describe('Games API', () => {
             });
 
         expect(rollResponse.status).toBe(201);
-        expect(rollResponse.body.currentDice).toEqual([1, 2, 3, 4, 5]);
+        expect(rollResponse.body.data.currentDice).toEqual([1, 2, 3, 4, 5]);
     });
 
     it('should score', async () => {
@@ -115,12 +140,12 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-score')
-            .send({ hostName: 'Piotr' });
+            .send({ players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const playerId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const playerId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -138,7 +163,7 @@ describe('Games API', () => {
             });
 
         expect(rollResponse.status).toBe(201);
-        expect(rollResponse.body.currentDice).toEqual([3, 3, 3, 4, 5]);
+        expect(rollResponse.body.data.currentDice).toEqual([3, 3, 3, 4, 5]);
 
         const scoreResponse = await agent
             .post(`/games/${gameId}/score`)
