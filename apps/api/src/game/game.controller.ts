@@ -1,11 +1,17 @@
-import { Controller, Req, Get, Post, Body, Patch, Param, Delete, Headers, Res } from '@nestjs/common';
-import { GameService } from './game.service';
-import { CreateGameDto } from './dto/create-game.dto';
-import { UpdateGameDto } from './dto/update-game.dto';
-import { JoinGameDto } from './dto/join-game.dto';
-import { RollGameDto } from './dto/roll-game.dto'
-import { ScoreGameDto } from './dto/score-game.dto'
+import { Controller, Req, Get, Post, Body, Param, Headers, Res } from '@nestjs/common';
 import type { Response, Request } from 'express';
+import {
+  createGameSchema,
+  joinGameSchema,
+  rollSchema,
+  scoreSchema,
+  type CreateGameInput,
+  type JoinGameInput,
+  type RollInput,
+  type ScoreInput,
+} from '@dice-app/contracts';
+import { GameService } from './game.service';
+import { ZodValidationPipe } from '../utils/zod-validation.pipe';
 
 @Controller('games')
 export class GameController {
@@ -13,14 +19,11 @@ export class GameController {
 
   @Post()
   async create(
-    @Body() createGameDto: CreateGameDto,
+    @Body(new ZodValidationPipe(createGameSchema)) input: CreateGameInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.gameService.create(
-      createGameDto,
-      idempotencyKey,
-    );
+    const result = await this.gameService.create(input, idempotencyKey);
 
     if (result.hostSecret) {
       response.cookie('host_secret', result.hostSecret, {
@@ -46,64 +49,43 @@ export class GameController {
   @Post(':id/join')
   join(
     @Param('id') id: string,
-    @Body() joinGameDto: JoinGameDto,
+    @Body(new ZodValidationPipe(joinGameSchema)) input: JoinGameInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
   ) {
-    return this.gameService.join(id, joinGameDto, idempotencyKey)
+    return this.gameService.join(id, input, idempotencyKey);
   }
 
   @Post(':id/start')
   start(
     @Param('id') id: string,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
-    @Req() request: Request
+    @Req() request: Request,
   ) {
-
-    return this.gameService.start(
-      id,
-      idempotencyKey,
-      request.cookies.host_secret,
-    );
+    return this.gameService.start(id, idempotencyKey, hostSecretFrom(request));
   }
 
   @Post(':id/roll')
   roll(
     @Param('id') id: string,
-    @Body() rollGameDto: RollGameDto,
+    @Body(new ZodValidationPipe(rollSchema)) input: RollInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
-    @Req() request: Request
+    @Req() request: Request,
   ) {
-    return this.gameService.roll(
-      id, 
-      rollGameDto, 
-      idempotencyKey, 
-      request.cookies.host_secret,
-    );
+    return this.gameService.roll(id, input, idempotencyKey, hostSecretFrom(request));
   }
 
   @Post(':id/score')
   score(
     @Param('id') id: string,
-    @Body() scoreGameDto: ScoreGameDto,
+    @Body(new ZodValidationPipe(scoreSchema)) input: ScoreInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
-    @Req() request: Request
+    @Req() request: Request,
   ) {
-    return this.gameService.score(
-      id, 
-      scoreGameDto, 
-      idempotencyKey, 
-      request.cookies.host_secret, 
-    )
+    return this.gameService.score(id, input, idempotencyKey, hostSecretFrom(request));
   }
+}
 
-
-  /*@Patch(':id')
-  update(@Param('id') id: string, @Body() updateGameDto: UpdateGameDto) {
-    return this.gameService.update(+id, updateGameDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.gameService.remove(+id);
-  }*/
+function hostSecretFrom(request: Request): string | undefined {
+  const secret: unknown = request.cookies?.host_secret;
+  return typeof secret === 'string' ? secret : undefined;
 }

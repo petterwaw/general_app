@@ -1,12 +1,12 @@
 import type {
   Category,
-  Participant,
-} from '../../types/gameTypes';
+  ParticipantView,
+} from '@dice-app/contracts';
 
 import { ScoreCell } from './scoreCell';
 
 type Props = {
-  participants: Participant[];
+  participants: ParticipantView[];
   currentPlayerId: string | null;
   selectedCategory: Category | null;
   predictedScores?: Partial<Record<Category, number>>;
@@ -41,7 +41,7 @@ const lowerCategories: {
   { key: 'general', label: 'Generał' },
 ];
 
-function getUpperTotal(participant: Participant) {
+function getUpperTotal(participant: ParticipantView) {
   return upperCategories.reduce(
     (total, { key }) =>
       total + (participant.scoreCard[key] ?? 0),
@@ -49,7 +49,7 @@ function getUpperTotal(participant: Participant) {
   );
 }
 
-function getLowerTotal(participant: Participant) {
+function getLowerTotal(participant: ParticipantView) {
   return lowerCategories.reduce(
     (total, { key }) =>
       total + (participant.scoreCard[key] ?? 0),
@@ -57,11 +57,11 @@ function getLowerTotal(participant: Participant) {
   );
 }
 
-function getBonus(participant: Participant) {
+function getBonus(participant: ParticipantView) {
   return getUpperTotal(participant) >= 63 ? 35 : 0;
 }
 
-function getTotal(participant: Participant) {
+function getTotal(participant: ParticipantView) {
   return (
     getUpperTotal(participant) +
     getBonus(participant) +

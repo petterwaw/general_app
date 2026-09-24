@@ -1,7 +1,7 @@
 import { Popover } from "@base-ui/react/popover";
 
 import { Button } from "../ui/button";
-import type { Category } from "../../types/gameTypes";
+import type { Category } from "@dice-app/contracts";
 
 type ScoreCellProps = {
   category: Category;

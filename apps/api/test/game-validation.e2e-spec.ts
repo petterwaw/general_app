@@ -29,8 +29,8 @@ describe('Games API validation', () => {
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const playerId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const playerId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -60,8 +60,8 @@ describe('Games API validation', () => {
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const playerId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const playerId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -101,8 +101,8 @@ describe('Games API validation', () => {
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const hostId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const hostId = createResponse.body.data.participants[0].id;
 
         const joinResponse = await agent
             .post(`/games/${gameId}/join`)
@@ -111,7 +111,7 @@ describe('Games API validation', () => {
 
         expect(joinResponse.status).toBe(201);
 
-        const playerId = joinResponse.body.id;
+        const playerId = joinResponse.body.data.participants[1].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -151,8 +151,8 @@ describe('Games API validation', () => {
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const playerId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const playerId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
@@ -180,7 +180,7 @@ describe('Games API validation', () => {
             });
 
         expect(secondRollResponse.status).toBe(201);
-        expect(secondRollResponse.body.currentDice).toEqual([1, 2, 3, 4, 5]);
+        expect(secondRollResponse.body.data.currentDice).toEqual([1, 2, 3, 4, 5]);
 
         const game = await prisma.game.findUnique({
             where: { id: gameId },
@@ -199,8 +199,8 @@ describe('Games API validation', () => {
 
         expect(createResponse.status).toBe(201);
 
-        const gameId = createResponse.body.id;
-        const playerId = createResponse.body.participants[0].id;
+        const gameId = createResponse.body.data.id;
+        const playerId = createResponse.body.data.participants[0].id;
 
         const startResponse = await agent
             .post(`/games/${gameId}/start`)

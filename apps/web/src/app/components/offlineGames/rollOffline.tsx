@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import RolledNumber from './rolledNumber';
 import ChooseNumber from './chooseNumber';
-import type { DiceRoll, LocalRoll, DieFace } from '../../types/gameTypes';
-import { rollDice } from '../../api/rollApi';
+import type { DiceRoll, DieFace } from '@dice-app/contracts';
+import type { LocalRoll } from '../../types/gameTypes';
+import { submitRoll } from '../../api/games';
 
 type Props = {
   gameId: string;
@@ -47,7 +48,7 @@ export default function RollOffline({ gameId, playerId, currentDice }: Props) {
     const dice = roll as DiceRoll;
 
     try {
-      const result = await rollDice(gameId, playerId, dice);
+      const result = await submitRoll(gameId, playerId, dice);
       console.log(result);
     } catch (error) {
       console.error(error);

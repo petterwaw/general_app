@@ -1,30 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { TransfromInterceptor } from './utils/transfrom.interceptor'
-import { HttpExceptionFilter } from './utils/http-exception.filter'
-import { ValidationPipe } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
-
+import { configureApp } from './app.setup';
 
 async function bootstrap() {
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (!frontendUrl) {
+    throw new Error('FRONTEND_URL environment variable is required');
+  }
+
   const app = await NestFactory.create(AppModule);
+  configureApp(app, frontendUrl);
 
-  app.use(cookieParser());
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  app.useGlobalInterceptors(new TransfromInterceptor())
-  app.useGlobalFilters(new HttpExceptionFilter())
-  app.enableCors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  });
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();

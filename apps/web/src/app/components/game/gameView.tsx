@@ -5,7 +5,7 @@ import GameScoreBoard from '../gameScoreBoard/gameScoreBoard';
 import useGame from '../../hooks/useGame';
 import GameLobby from '../gameLobby/gameLobby';
 import { useState } from 'react';
-import type { Category } from '../../types/gameTypes';
+import type { Category } from '@dice-app/contracts';
 
 export default function GameView({ gameId }: { gameId: string }) {
   const { game, loading, error, setGame } = useGame(gameId);

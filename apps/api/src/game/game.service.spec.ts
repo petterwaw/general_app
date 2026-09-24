@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 jest.mock('@dice-app/game-core', () => ({
+  ...jest.requireActual<object>('@dice-app/game-core'),
   createEmptyScoreCard: jest.fn(),
   reducer: jest.fn(),
   isGameOver: jest.fn(),

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { createOfflineGame } from '../../api/createOfflineApi';
+import { createGame } from '../../api/games';
 
 export function OfflineGameForm() {
   const [players, setPlayers] = useState<string[]>(['']);
@@ -25,12 +25,7 @@ export function OfflineGameForm() {
     }
 
     try {
-      const game = await createOfflineGame(players);
-
-      if (!game) {
-        throw new Error('Failed to create game');
-      }
-
+      const game = await createGame(players);
       router.push(`/games/${game.id}`);
     } catch (err) {
       console.log(err);
