@@ -18,7 +18,8 @@ wartości. Ten plik opisuje, **jak** ich używać.
 | Krój pisma | **Nunito** (400/600/700/800), jeden krój na wszystko, cyfry `tabular-nums` |
 | Motyw | jeden, jasny — pastelowa lawenda i róż. Tryb ciemny nie był omawiany |
 | Awatary | **blobatar** (`blobatar` + `@blobatar/react`, generowane w przeglądarce, bez zapytań sieciowych), seed = **ID uczestnika**, odcień zablokowany na kolor gracza. Bez tła i obwódki — sam stworek |
-| Kości i tło | jedna scena **three.js** za całym interfejsem: stół, miska z rantem i suknem, kości, rekwizyty (poduszki, kubek, notes). Kamera lekko reaguje na kursor (paralaksa). Wdrożenie — kolejny krok, nie w tym |
+| Kości i tło | jedna scena **three.js** za całym interfejsem: gładki różowo-lawendowy stół bez faktury, **drewniana** tacka z fioletowym suknem, kości, rekwizyty (tort na talerzyku, filiżanka kawy, makaroniki, notes z ołówkiem, luźna kość). Ciepłe światło. Kamera lekko reaguje na kursor (paralaksa). Karty w stylu mlecznego szkła — liquid glass był testowany i **odrzucony**. Wdrożenie — kolejny krok, nie w tym |
+| Suma punktów | **ukryta do końca gry** — w trakcie przy graczu widać „???” z kłódką, suma odsłania się po ostatniej rundzie. Tabela nie ma wiersza Total; suma jest tylko w panelu Players |
 | Nazwy kategorii (EN) | Ones, Twos, Threes, Fours, Fives, Sixes, One Pair, Two Pairs, Three of a Kind, Four of a Kind, Small Straight, Large Straight, Full House, Chance, **General**. Nigdy „Yahtzee” (znak towarowy) |
 
 ---
@@ -32,7 +33,7 @@ wartości. Ten plik opisuje, **jak** ich używać.
 | `primary-soft` | kolumna aktywnego gracza, tła ikon |
 | `secondary` | akcje drugorzędne („Leave game”), wybrana kość. Nigdy akcja główna |
 | `surface` | półprzezroczyste karty z `backdrop-blur` |
-| `felt`, `tray-rim` | miska z kośćmi — jedyny ciemny, nasycony obiekt na ekranie |
+| `felt`, `tray-rim` | tacka z kośćmi: fioletowe sukno w drewnianym rancie — jedyny ciemny, nasycony obiekt na ekranie |
 | `danger` | zapisane zero, usuwanie |
 | `good` | potwierdzenia, zdobyty bonus |
 | `player-1` … `player-8` | kolor gracza wg miejsca; ten sam w tabeli, awatarze i logu |

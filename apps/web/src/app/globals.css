@@ -11,7 +11,7 @@
   --color-ink-faint: #a49cbb;
 
   /* page backdrop (fallback until the 3D stage lands) */
-  --color-backdrop: #c7a9dc;
+  --color-backdrop: #dcb8cf;
   --color-backdrop-top: #efd9ef;
   --color-backdrop-bottom: #a996dc;
 
@@ -31,9 +31,9 @@
   --color-secondary-hover: #f09ce6;
   --color-secondary-ink: #4b2fc9;
 
-  /* dice tray */
-  --color-tray-rim: #f5c1ad;
-  --color-tray-rim-shade: #e3a28c;
+  /* dice tray: wooden rim, violet felt */
+  --color-tray-rim: #d9a877;
+  --color-tray-rim-shade: #b9844f;
   --color-felt: #6d5c9f;
   --color-felt-deep: #574889;
   --color-die: #fff7f5;

@@ -59,6 +59,8 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 - [ ] **Krok potwierdzenia przed zapisem kategorii** — decyzja frontendowa, do podjęcia przy
       budowie UI etapu 4. Silnika nie dotyczy.
+- [ ] **Czy ukryć do końca gry także postęp bonusu (np. „53/63”)?** Suma jest ukryta
+      (`DESIGN.md`), ale z postępu bonusu i pojedynczych wyników da się zgadywać, kto prowadzi.
 - [ ] **Tryb ciemny** — interfejs ma dziś jeden, jasny motyw (`DESIGN.md`). Czy potrzebny
       jest ciemny?
 - [ ] **Do czego ma służyć `GET /games`?** Endpoint zostaje, ale dziś zwraca wszystkie gry
