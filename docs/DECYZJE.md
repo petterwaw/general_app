@@ -225,3 +225,14 @@ przy budowie schematu.
 
 **Redis** będzie potrzebny dopiero przy trybie online z więcej niż jedną instancją API (pub/sub
 między instancjami). Nie dodawaj go wcześniej.
+
+---
+
+## 12. Wygląd i język (ustalone 2026-09-24)
+
+- Interfejs jest **po angielsku**.
+- Krój pisma: **Nunito**. Paleta, tokeny i zasady stylu: `DESIGN.md` (wartości w
+  `apps/web/src/app/globals.css`).
+- Awatary: **blobatar**, generowane w przeglądarce z **ID uczestnika**.
+- Kości i tło: scena **three.js**. Animacja wyłącznie odtwarza wynik znany z serwera — patrz
+  zasada architektoniczna w `CLAUDE.md`.

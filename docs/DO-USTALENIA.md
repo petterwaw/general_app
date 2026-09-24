@@ -59,8 +59,8 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 - [ ] **Krok potwierdzenia przed zapisem kategorii** — decyzja frontendowa, do podjęcia przy
       budowie UI etapu 4. Silnika nie dotyczy.
-- [ ] **Język interfejsu** — polski, angielski, oba?
-- [ ] **Wygląd, kolorystyka, identyfikacja wizualna** — nie było omawiane.
+- [ ] **Tryb ciemny** — interfejs ma dziś jeden, jasny motyw (`DESIGN.md`). Czy potrzebny
+      jest ciemny?
 - [ ] **Do czego ma służyć `GET /games`?** Endpoint zostaje, ale dziś zwraca wszystkie gry
       z pełnymi kartami wyników, bez filtra i stronicowania. Rozważana publiczna lista gier
       w statusie LOBBY do dołączenia — nie ma jej w planie i zahacza o tryb online (POZA MVP).
