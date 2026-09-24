@@ -16,16 +16,14 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 ## Blokujące domknięcie etapu 3 (wyszło z przeglądu 2026-09-24)
 
-- [ ] **Czy `POST /games/:id/join` ma w ogóle zostać?** W `DECYZJE.md` §3 graczy wpisuje
-      wyłącznie host, a dołączeni przez QR są tylko do podglądu. Dziś endpoint pozwala
-      każdemu, kto zna `id` gry, dopisać się jako pełnoprawny gracz.
+- [ ] **Kto może wołać `POST /games/:id/join` w trybie lokalnym?** Endpoint zostaje
+      (`DECYZJE.md` §3), ale dziś pozwala każdemu, kto zna `id` gry, dopisać się jako
+      pełnoprawny gracz — a w trybie lokalnym graczy dodaje host. Czy wymagać ciasteczka
+      hosta (`verifyHost`)?
 - [ ] **Jak długo ma żyć ciasteczko hosta?** `DECYZJE.md` §5 mówi, że host wraca do gry po
       zamknięciu przeglądarki — to wymaga konkretnego `maxAge`, a dziś ciasteczko jest sesyjne.
 - [ ] **Czy host może prowadzić kilka gier z jednego urządzenia?** Jeśli tak, ciasteczko musi
       być per gra (dziś jedna nazwa `host_secret` nadpisuje poprzedni sekret).
-- [ ] **Zod i `packages/contracts` czy `class-validator`?** `DECYZJE.md` §11 mówi o wspólnych
-      schematach Zod; kod poszedł w `class-validator`, a paczka `contracts` jest pusta.
-      Jedno z dwojga trzeba poprawić — albo kod, albo decyzję.
 - [ ] **Gdzie liczy się suma punktów i bonus?** Dziś tylko na froncie. Serwer nie zna wyniku
       końcowego partii, więc etap 8 nie ma z czego zbudować statystyk.
 
@@ -39,7 +37,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 - [ ] **Po jakim czasie bezczynności gra lokalna wygasa?** (godziny? dni?)
 - [ ] **Po jakim czasie bezczynności host jest uznany za nieobecnego?** Właściciel wspominał
       o „wyrzuceniu za bezczynność", ale bez konkretnej wartości.
-- [ ] **Maksymalna liczba graczy w grze lokalnej?** Dla online ustalono 2–5, dla lokalnej nie.
 
 ## Blokujące etap 8 (statystyki)
 
@@ -64,6 +61,10 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       budowie UI etapu 4. Silnika nie dotyczy.
 - [ ] **Język interfejsu** — polski, angielski, oba?
 - [ ] **Wygląd, kolorystyka, identyfikacja wizualna** — nie było omawiane.
+- [ ] **Do czego ma służyć `GET /games`?** Endpoint zostaje, ale dziś zwraca wszystkie gry
+      z pełnymi kartami wyników, bez filtra i stronicowania. Rozważana publiczna lista gier
+      w statusie LOBBY do dołączenia — nie ma jej w planie i zahacza o tryb online (POZA MVP).
+      Historia gier gracza to osobne zapytanie po `userId` (etap 5+), nie ten endpoint.
 - [ ] **Czy jest historia rozegranych partii dostępna dla użytkownika?** Log zdarzeń to
       umożliwia, ale nie ustalono, czy ma być wystawiony w UI.
 

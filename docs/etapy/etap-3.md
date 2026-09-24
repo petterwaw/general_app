@@ -21,7 +21,9 @@ walidacje (brak rzutu, podwójny rzut, obcy sekret hosta, powtórzony klucz idem
 niczego nie psuje" nie zostało przećwiczone jako scenariusz. Cały stan siedzi w bazie,
 więc powinno działać, ale to hipoteza, nie sprawdzony fakt.
 
-Do przeglądu z 2026-09-24 — lista uwag jest na końcu tego pliku.
+Do przeglądu z 2026-09-24 — lista uwag jest na końcu tego pliku, a pod nią sekcja
+„Poprawki po przeglądzie" z tego samego dnia (kontrakt API w `packages/contracts`,
+`runAction` w serwisie, testy e2e na konfiguracji produkcyjnej).
 
 Środowisko lokalne (do odtworzenia w nowej sesji terminala/maszyny):
 
@@ -120,7 +122,8 @@ Znany, niespłacony dług (nie blokuje dalszej pracy):
 ## Przegląd etapu 3 — 2026-09-24
 
 Lista uwag z przeglądu pod kątem poprawności, bezpieczeństwa i rozbudowy poza MVP.
-**Nic z tego nie zostało poprawione** — to lista do przepracowania przez właściciela.
+**Stan w chwili przeglądu — nic z tego nie było poprawione.** Co poprawiono później, jest
+w sekcji „Poprawki po przeglądzie" na końcu pliku.
 
 ### Rozjazdy z ustaleniami w `docs/`
 
@@ -213,3 +216,126 @@ Lista uwag z przeglądu pod kątem poprawności, bezpieczeństwa i rozbudowy poz
   kości z bazy i kategorię, wynik liczy `game-core`. Zgodnie z `DECYZJE.md` §4.
 - **Zestaw testów e2e obejmuje pełną partię i cztery scenariusze negatywne** — na tym etapie
   projektu to więcej, niż się zwykle spotyka.
+
+---
+
+## Poprawki po przeglądzie — 2026-09-24
+
+Zmiany na gałęzi `sendRollFeature`, **jeszcze niezacommitowane** w chwili pisania. Punkt
+wyjścia: code review `apps/api` z tego samego dnia plus decyzje właściciela (limit 8 graczy,
+Zod w `packages/contracts`, `join` zostaje, `GET /games` zostaje) — wpisane do `DECYZJE.md`.
+
+`packages/contracts` — paczka przestała być pustym `package.json`:
+
+- `src/game.ts` — schematy żądań w Zod: `createGameSchema` (1–`MAX_PLAYERS` = 8 imion,
+  każde `trim()` i 1–50 znaków), `joinGameSchema`, `rollSchema` (`diceRollSchema` — krotka
+  pięciu wartości 1–6), `scoreSchema` (`categorySchema = z.enum(CATEGORIES)`). Wszystkie
+  `z.strictObject` — nieznane pola to `400`. Typy wejścia (`CreateGameInput` itd.) przez
+  `z.infer`.
+- Typy odpowiedzi `GameView` / `ParticipantView` oraz `GameStatus` / `ParticipantRole` —
+  zwykłe typy TS, nie schematy, bo odpowiedź buduje serwer, nie przychodzi z zewnątrz.
+- `src/api.ts` — koperta `ApiResponse<T>` i `ApiErrorResponse = ApiResponse<null>`.
+- Re-eksportuje typy domenowe z `game-core` (`Category`, `DiceRoll`, `DieFace`, `ScoreCard`),
+  więc front importuje wszystko z jednego miejsca.
+- Budowana jak `game-core` (`tsc` do `dist`, `"type": "module"`). **Front bierze typy
+  z `dist`** — po zmianie w `contracts` albo `game-core` trzeba
+  `pnpm --filter "./packages/*" build`.
+
+`packages/game-core` — eksportuje `CATEGORIES` (`as const`), a typ `Category` jest z niej
+wyprowadzony (`(typeof CATEGORIES)[number]`). Powód: lista 15 kategorii była przepisana
+ręcznie w trzech miejscach (uwaga 5 z przeglądu). `CATEGORY_SECTION` w `validation.ts`
+i `createEmptyScoreCard` w `reducer.ts` nadal wypisują klucze same — nie ruszane.
+
+`apps/api` — walidacja i kształt odpowiedzi:
+
+- `utils/zod-validation.pipe.ts` — `ZodValidationPipe` (~15 linii, bez `nestjs-zod`),
+  podpinany per parametr: `@Body(new ZodValidationPipe(createGameSchema))`. Błąd walidacji
+  to `400` z komunikatem `ścieżka: opis; ...`. Usunięte: `dto/`, `entities/`, globalny
+  `ValidationPipe`, zależności `class-validator`, `class-transformer`,
+  `@nestjs/mapped-types`, `ts-jest`.
+- `game/game.view.ts` — `gameInclude` (uczestnicy po `turnOrder`), typ
+  `GameWithParticipants` i `toGameView()` — **jedyne miejsce, które decyduje, co wychodzi
+  z serwera**. Nie wychodzą `creationKey`, `identityId`, `userId`, `gameId`,
+  `lastActivity`, `createdAt`. Każdy endpoint gry (łącznie z `join` i powtórzeniami
+  idempotentnymi) zwraca `GameView`.
+- `TransfromInterceptor` i `HttpExceptionFilter` budują kopertę z adnotacją typów
+  z `contracts`.
+- `app.setup.ts` — `configureApp(app, frontendUrl)`: `cookieParser`, interceptor, filtr,
+  CORS. Woła go `main.ts` i `test/test-app.ts`, więc e2e idą przez ten sam pipeline co
+  produkcja. `main.ts` przerywa start, gdy brakuje `FRONTEND_URL` (dopisane do
+  `.env.example`, wartość `http://localhost:8080`).
+
+`apps/api/src/game/game.service.ts` — przepisany wokół jednego mechanizmu:
+
+- `runAction(id, idempotencyKey, access, apply)` — wspólna ścieżka dla `join`/`start`/
+  `roll`/`score`: sprawdzenie hosta (dla akcji `hostOnly`), wymagany `Idempotency-Key`,
+  transakcja z powtórką po `EventLog`, `apply()` z walidacją i zapisami danej akcji,
+  optymistyczna blokada, wpis do `EventLog`, a przy `P2002` zwrot wyniku zwycięskiego
+  żądania. Plik zmalał o ok. 370 linii.
+- Blokada optymistyczna to teraz `tx.game.update({ where: { id, revision }, include })`
+  zamiast `updateMany` + `count === 1` + ponownego odczytu: brak dopasowania (`P2025`)
+  zamieniany na `409`, a zaktualizowana gra z uczestnikami wraca z tego samego zapytania.
+- `create()` nie sprawdza już `creationKey` przed zapisem — powtórkę łapie `P2002`
+  i zwraca grę z uczestnikami (bez sekretu).
+- `join` przechodzi przez `runAction`, więc też jest pod blokadą `revision`; `turnOrder`
+  liczony z ostatniego uczestnika. Limit `MAX_PLAYERS` sprawdzany przy dołączaniu.
+- `verifyHost` przy braku ciasteczka rzuca `403` przed liczeniem skrótu.
+- Usunięte martwe `update()` / `remove()` i zakomentowane trasy w kontrolerze. Kontroler
+  czyta ciasteczko przez `hostSecretFrom(request)`.
+- **Świadomie bez zmian (decyzja właściciela):** `score()` nadal zapisuje karty wszystkich
+  uczestników, choć reducer zmienia tylko jedną.
+
+Testy:
+
+- Wszystkie e2e czytają `body.data`. W `game-validation.e2e-spec.ts` test „obcy gracz
+  zapisuje" brał wcześniej `id` gry zamiast id gracza (przechodził przypadkiem) — poprawiony.
+- Nowy `test/game-contract.e2e-spec.ts` (23 testy): koperta sukcesu i błędu, dokładna lista
+  pól `GameView`/`ParticipantView`, powtórka `create` bez nowego ciasteczka, `403` dla
+  `start`/`roll`/`score` bez ciasteczka i z ciasteczkiem innej gry, limit 8 (create i join),
+  walidacja wejścia (puste/spacje/za długie imię, nieznane pole, brak klucza, złe kości,
+  nieznana kategoria), `trim` imion.
+- `test/test-app.ts` ma helper `createGame(app, players, key)` (na razie używa go tylko nowy
+  plik).
+- Jest: testy jednostkowe przeszły z `ts-jest` na `@swc/jest` (CommonJS) — `ts-jest`
+  kompilował `contracts/src` jako ESM, bo paczka ma `"type": "module"`. Obie konfiguracje
+  mają jedno mapowanie `^@dice-app/(.*)$` na `packages/$1/src/index.ts`.
+- `Dockerfile` kopiuje `package.json` z `contracts` i buduje wszystkie `./packages/*` jednym
+  poleceniem.
+- Wyniki: `game-core` 178/178, `api` typecheck zielony, jednostkowe 4/4, e2e 35/35.
+
+`apps/web` — klient API:
+
+- `src/app/api/client.ts` — `apiRequest<T>()`: bazowy URL, `credentials: 'include'`, świeży
+  `Idempotency-Key` przy każdym nie-GET, rozpakowanie `data`, a przy błędzie `ApiError`
+  (`statusCode` + komunikat z serwera).
+- `src/app/api/games.ts` — `createGame`, `getGame`, `startGame`, `submitRoll`,
+  `scoreCategory` (ta ostatnia **jeszcze niepodpięta w UI**).
+- Komponenty i `useGame` biorą typy z `@dice-app/contracts`; `types/gameTypes.ts` trzyma
+  już tylko `LocalRoll` (szkic kości na froncie). Usunięte `apiTypes.ts`,
+  `createOfflineApi.ts`, `rollApi.ts`, `startApi.ts`. Przy okazji zniknął błąd typów
+  w `offlineGameForm.tsx` (`CreateGameResponse` nie zgadzał się z tym, co zwraca API).
+- Web typecheck zielony.
+
+Stan uwag z przeglądu po tych zmianach:
+
+- **Rozwiązane:** 5 (kontrakty w Zod), 9 (`500` bez ciasteczka), 10 (CORS bez
+  `FRONTEND_URL`), 14 (e2e na innej konfiguracji niż produkcja), 16 (kolizja `turnOrder`).
+- **Częściowo:** 2 — limit 8 graczy jest, ale `join` nadal nie wymaga hosta (pozycja
+  w `DO-USTALENIA.md`). 3 — `GET /games` zwraca już tylko `GameView`, ale nadal wszystkie
+  gry, bez filtra i stronicowania (cel endpointu otwarty w `DO-USTALENIA.md`).
+- **Bez zmian:** 1, 4, 6, 7, 8 (powtórka `create` zwraca grę, ale bez sekretu — host bez
+  ciasteczka nadal nie odzyska dostępu), 11, 12, 13, 15, 17.
+
+Dług, który zostaje z tej sesji:
+
+- Rzutowania kolumn `Json` (`as DiceRoll`, `as ScoreCard`) są w dwóch miejscach
+  (`game.view.ts` i `score()`), bez walidacji — uwaga 13 w nowym miejscu.
+- Trzy starsze pliki e2e nie korzystają ze wspólnego helpera `createGame` — każda zmiana
+  kształtu odpowiedzi to znowu edycja w wielu miejscach.
+- `offlineGameForm.tsx` ma na sztywno `maxLength={50}` zamiast `PLAYER_NAME_MAX_LENGTH`
+  (import wartości z `contracts` wciągnąłby Zod do paczki przeglądarki).
+- Lint: Prettier zgłasza w `apps/api` setki błędów formatowania (końce linii CRLF, wcięcia
+  w testach) — sprzed tej sesji, nieruszane.
+- `.env.example` nadal nie wymienia `NEXT_PUBLIC_API_URL` (jest w
+  `apps/web/.env.local.example`).
+- Kryterium „restart serwera w połowie niczego nie psuje" nadal nieprzećwiczone.
