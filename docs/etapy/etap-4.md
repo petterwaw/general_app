@@ -135,9 +135,10 @@ rozmawia ze starym kodem (tak było z `POST /leave` → „Cannot POST”).
 
 Dług / do zrobienia:
 
-- **Kolory graczy nie trafiają do CSS** — Tailwind v4 wypisuje tylko te zmienne z `@theme`,
-  których używa jakaś klasa, a `playerColor()` podaje `--color-player-*` przez `style`.
-  `LogItem` narysuje przezroczystą kropkę. Poprawka w `globals.css` (np. `@theme static`).
+- ~~Kolory graczy nie trafiają do CSS~~ — naprawione tego samego dnia: Tailwind v4 nie wypisywał
+  `--color-player-*` (używane tylko przez `style`). Tokeny usunięte; jedno źródło to
+  `PLAYER_COLORS` (oklch) w `playerColors.ts`, z którego awatar bierze odcień, a `LogItem`
+  pełny kolor. Odcienie awatarów przesunęły się o kilka stopni (dopasowane do dawnych hexów).
 - Błędy wyjścia na `/games` (`leaveError`) i błąd `useHostedGame` nie są wyświetlane — czekają
   na wspólny komponent komunikatów (np. toast). `createGame` przy błędzie tylko loguje.
 - Czy przed wyjściem z gry ma być potwierdzenie — nieustalone.

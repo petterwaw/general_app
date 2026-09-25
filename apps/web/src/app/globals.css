@@ -47,15 +47,7 @@
   --color-danger: #d64a6b;
   --color-danger-soft: #fbe1e8;
 
-  /* players, one per seat (MAX_PLAYERS = 8) */
-  --color-player-1: #5b45e8;
-  --color-player-2: #ef6fc2;
-  --color-player-3: #a98af0;
-  --color-player-4: #f2bd3f;
-  --color-player-5: #3fbf9c;
-  --color-player-6: #4aa8ec;
-  --color-player-7: #ff8a70;
-  --color-player-8: #9a4db3;
+  /* player colours live in components/players/playerColors.ts: the avatars need the hue as a number */
 
   --radius-card: 28px;
   --radius-panel: 20px;
