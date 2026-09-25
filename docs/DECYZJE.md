@@ -61,8 +61,9 @@ wyrzucić.
 - **Nikt dołączony przez QR nie może edytować niczego.** Wpisywanie wyników pozostaje wyłącznie
   po stronie urządzenia hosta.
 - **`POST /games/:id/join` zostaje** (ustalone 2026-09-24). Posłuży do dodawania graczy
-  w lobby przed kliknięciem „start" oraz w trybie online. To, kto może go wołać w trybie
-  lokalnym, jest otwarte — patrz `DO-USTALENIA.md`.
+  w lobby przed kliknięciem „start" oraz w trybie online.
+- **W trybie lokalnym `join` może wołać tylko host** (ustalone 2026-09-25) — wymagane
+  ciasteczko hosta (`verifyHost`), tak jak przy pozostałych akcjach hosta.
 
 ---
 
@@ -112,6 +113,11 @@ zapis daje 0, decyduje reducer, nie klient.
 - **Przekazanie hosta innemu urządzeniu przed wyjściem — POZA MVP.** Ale rola ma być polem na
   uczestniku już teraz, żeby dodanie tego później było zmianą jednej wartości, a nie przepisaniem
   logiki uprawnień.
+- **Host prowadzi jedną grę naraz** (ustalone 2026-09-25). Żeby założyć nową, musi najpierw
+  opuścić poprzednią. Jeśli host z niedokończoną grą wejdzie w tworzenie nowej gry offline,
+  jest przekierowywany do tej niedokończonej. Dokładna forma (przekierowanie vs komunikat na
+  `/games` „masz niedokończoną grę — najpierw z niej wyjdź") — do dopracowania przy UI.
+  Skoro gra jest jedna, jedno ciasteczko `host_secret` na urządzenie wystarcza.
 
 ---
 

@@ -16,14 +16,9 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 ## Blokujące domknięcie etapu 3 (wyszło z przeglądu 2026-09-24)
 
-- [ ] **Kto może wołać `POST /games/:id/join` w trybie lokalnym?** Endpoint zostaje
-      (`DECYZJE.md` §3), ale dziś pozwala każdemu, kto zna `id` gry, dopisać się jako
-      pełnoprawny gracz — a w trybie lokalnym graczy dodaje host. Czy wymagać ciasteczka
-      hosta (`verifyHost`)?
 - [ ] **Jak długo ma żyć ciasteczko hosta?** `DECYZJE.md` §5 mówi, że host wraca do gry po
       zamknięciu przeglądarki — to wymaga konkretnego `maxAge`, a dziś ciasteczko jest sesyjne.
-- [ ] **Czy host może prowadzić kilka gier z jednego urządzenia?** Jeśli tak, ciasteczko musi
-      być per gra (dziś jedna nazwa `host_secret` nadpisuje poprzedni sekret).
+      Naturalnie wiąże się z czasem wygasania gry (etap 6, też nieustalony).
 
 ## Blokujące etap 5 (konta)
 

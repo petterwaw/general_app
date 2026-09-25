@@ -5,7 +5,7 @@ Obowiązkowo: `revision`, log zdarzeń, klucz idempotencji, `status` gry, `ostat
 
 **Gotowe gdy:** partię da się rozegrać z Postmana, a restart serwera w połowie niczego nie psuje.
 
-**Postęp: W TRAKCIE (stan na 2026-09-24).** Wszystkie endpointy z opisu etapu istnieją
+**Postęp: W TRAKCIE (stan na 2026-09-25 — wpis na końcu pliku).** Wszystkie endpointy z opisu etapu istnieją
 i działają: `POST /games` (tworzy grę z listą graczy, zakłada `Identity` hosta i odsyła
 sekret w cookie), `POST /games/:id/join`, `POST /games/:id/start`, `POST /games/:id/roll`
 (wpisanie kości fizycznych), `POST /games/:id/score`, `GET /games/:id`, `GET /games`.
@@ -338,4 +338,71 @@ Dług, który zostaje z tej sesji:
   w testach) — sprzed tej sesji, nieruszane.
 - `.env.example` nadal nie wymienia `NEXT_PUBLIC_API_URL` (jest w
   `apps/web/.env.local.example`).
+- Kryterium „restart serwera w połowie niczego nie psuje" nadal nieprzećwiczone.
+
+## Wynik końcowy i log gry — 2026-09-25
+
+PR #5 (`api/event-log-and-totals`, scalony do `main`). Decyzje: `DECYZJE.md` §13.
+
+`packages/game-core`:
+
+- Nowy `src/totals.ts`: `upperSectionSum`, `upperBonus`, `totalScore` oraz stałe
+  `UPPER_BONUS_THRESHOLD = 63`, `UPPER_BONUS_VALUE = 35`. Puste kategorie liczą się jako 0,
+  więc funkcje działają też w trakcie gry (front może z nich brać postęp bonusu „53/63").
+  `UPPER_CATEGORIES` w `validation.ts` jest teraz eksportowane (poza `index.ts`).
+- `src/totals.test.ts` (14 testów, wyprowadzone z `ZASADY-GRY.md`): dokładnie 63, 62, zero
+  w górnej sekcji, punkty dolnej sekcji nie liczą się do progu, bonus przed zapełnieniem karty.
+
+Baza i API:
+
+- Migracja `20260925115151_add_participant_final_score`: `Participant.finalScore Int?`
+  i `Participant.upperBonus Int?`. Zapisywane w `score()` w tej samej transakcji, w której gra
+  przechodzi w `COMPLETED` — zapis partii takiej, jaka była (zmiana zasad nie przeliczy
+  historii); z tych pól ma czytać etap 8.
+- `ParticipantView` dostał `finalScore` / `upperBonus` (`number | null`); `toGameView`
+  wypełnia je tylko przy `COMPLETED`, w trakcie gry idą `null`.
+- `payload` zdarzenia `saveCategory` ma teraz `points` — przeliczone przez reducer, nie od
+  klienta.
+- Nowy `GET /games/:id/events?after=<revision>` (`gameEventsQuerySchema` w `contracts`,
+  mapowanie w nowym `src/game/game-event.view.ts` — `PUBLIC_EVENT_TYPES`,
+  `toGameEventView`). Wychodzą tylko `gameStarted`, `diceConfirmed` (5 kości)
+  i `categorySaved` (kategoria + punkty); `playerJoined` zostaje w bazie. `after` ma od razu
+  posłużyć do dosyłania zmian po ponownym połączeniu (§10). Stare zdarzenia bez punktów
+  wracają z `points: null`. Dostęp jak w `GET /games/:id` — kto zna `id`, ten czyta.
+
+Testy:
+
+- Nowy `test/game-results.e2e-spec.ts` (8 testów): wynik z bonusem (196) i bez (143), wynik
+  ukryty w trakcie gry, zdarzenia i ich kolejność, `after`, brak `playerJoined`, `400` przy
+  złym `after`, `404` dla nieznanej gry. Odpowiedzi czytane przez typy z kontraktu
+  (`ApiResponse<GameView>`, `GameEventView[]`) — bez `any`.
+- `game-contract.e2e-spec.ts`: lista pól uczestnika uzupełniona o dwa nowe.
+- Wyniki: `game-core` typecheck + testy zielone, `api` typecheck, jednostkowe 4/4, e2e 43/43;
+  `contracts` i `web` typecheck zielone na nowym kontrakcie.
+
+Przy pisaniu testu wyszła luka w `ZASADY-GRY.md`: silnik liczy karetę (i generała) jako „dwie
+pary". Właściciel potwierdził, że tak ma być — reguła dopisana do zasad, kod bez zmian.
+
+Stan uwag z przeglądu po tych zmianach:
+
+- **Rozwiązane:** 4 (suma i bonus liczone na serwerze, wynik końcowy zapisany).
+- **Częściowo:** 6 — `saveCategory` ma punkty, a kości są w osobnym `diceConfirmation`, więc
+  partię da się odtworzyć; nadal brak indeksu `@@index([gameId, revisionAfter])`, a nowy
+  endpoint filtruje dokładnie po tych kolumnach.
+
+Decyzje właściciela z 2026-09-25 (w `DECYZJE.md` §3 i §5, jeszcze **niezaimplementowane**):
+
+- `join` w trybie lokalnym woła tylko host — trzeba dodać `verifyHost` (domyka uwagę 2).
+- Host prowadzi jedną grę naraz; przy próbie założenia nowej gry offline — przekierowanie do
+  niedokończonej. Jedno ciasteczko `host_secret` na urządzenie zostaje (część uwagi 7).
+- Nadal otwarte: `maxAge` ciasteczka hosta (wiąże się z czasem wygasania gry, etap 6).
+
+Dług, który zostaje z tej sesji:
+
+- Brak indeksu `[gameId, revisionAfter]` na `EventLog` (patrz uwaga 6).
+- `toGameEventView` ufa kształtowi `payload` (`as StoredPayload` i `!`) — kolejne rzutowanie
+  kolumny `Json` bez walidacji, jak w uwadze 13.
+- Starsze pliki e2e nadal używają `any` z `response.body`; nowy plik pokazuje wzorzec
+  (`gameFrom` / `eventsFrom`).
+- Endpointu „opuść grę" nie ma — „Leave game" w UI zostaje na razie bez działania.
 - Kryterium „restart serwera w połowie niczego nie psuje" nadal nieprzećwiczone.

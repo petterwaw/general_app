@@ -18,8 +18,8 @@ to uwagę. Rzeczy z listy „Świadomie POZA MVP" niżej nie proponuj.
 | [0](etapy/etap-0.md) | Specyfikacja zasad | ZROBIONE (`ZASADY-GRY.md`: WYPEŁNIONE) |
 | [1](etapy/etap-1.md) | Fundament | KRYTERIUM SPEŁNIONE — `pnpm dev` w korzeniu odpala `web` i `api` naraz (`concurrently`), front woła API; nadal brak notatki postępu w `etap-1.md` |
 | [2](etapy/etap-2.md) | Silnik gry (`game-core`) | KRYTERIUM SPEŁNIONE |
-| [3](etapy/etap-3.md) | API i baza | **W TRAKCIE** ← tu jesteśmy (endpointy działają; po przeglądzie z 2026-09-24 doszły kontrakty Zod w `packages/contracts`, `runAction` i e2e na konfiguracji produkcyjnej — część uwag nadal otwarta, restart serwera nieprzećwiczony) |
-| [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | **rozpoczęte równolegle z etapem 3** — `apps/web` ma tworzenie gry, lobby, wpisywanie kości i tabelę wyników; klient API typowany z `contracts` (`api/client.ts`, `api/games.ts`); zapis kategorii z UI jeszcze nie woła API |
+| [3](etapy/etap-3.md) | API i baza | **W TRAKCIE** ← tu jesteśmy (endpointy działają; 2026-09-25 doszły wynik końcowy w bazie i `GET /games/:id/events`; do zrobienia: `join` tylko dla hosta, jedna gra na hosta, `maxAge` ciasteczka nieustalone, restart serwera nieprzećwiczony) |
+| [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | **W TRAKCIE, równolegle z etapem 3** — komponenty UI w nowym designie gotowe (PR #4); ekran gry jeszcze nie złożony z nich ani podpięty pod API (zapis kategorii z UI nadal nie woła API) |
 | [5](etapy/etap-5.md) | Konta i goście | nierozpoczęte |
 | [6](etapy/etap-6.md) | QR i realtime | nierozpoczęte |
 | [7](etapy/etap-7.md) | Kości wirtualne | nierozpoczęte |
