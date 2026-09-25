@@ -115,17 +115,19 @@ zapis daje 0, decyduje reducer, nie klient.
   uczestniku już teraz, żeby dodanie tego później było zmianą jednej wartości, a nie przepisaniem
   logiki uprawnień.
 - **Host prowadzi jedną grę naraz** (ustalone 2026-09-25). Żeby założyć nową, musi najpierw
-  opuścić poprzednią. Jeśli host z niedokończoną grą wejdzie w tworzenie nowej gry offline,
-  jest przekierowywany do tej niedokończonej. Dokładna forma (przekierowanie vs komunikat na
-  `/games` „masz niedokończoną grę — najpierw z niej wyjdź") — do dopracowania przy UI.
-  Skoro gra jest jedna, jedno ciasteczko `host_secret` na urządzenie wystarcza.
+  opuścić poprzednią. Skoro gra jest jedna, jedno ciasteczko `host_secret` na urządzenie wystarcza.
   Pilnuje tego baza: częściowy indeks unikalny na `Game.hostIdentityId` dla gier w `LOBBY` /
   `IN_PROGRESS`. **Do czasu kont „host” = urządzenie** (ciasteczko) — z innego urządzenia
   serwer nie wie, że to ta sama osoba; „jedna gra na osobę” daje dopiero indeks na `userId`
-  z §6. UI (etap 4): nieaktywny przycisk „New game”, pod nim trwająca gra z opcją
-  wznowienia albo wyjścia.
+  z §6. **UI na `/games`** (zmienione 2026-09-25): gdy host ma grę w `LOBBY` / `IN_PROGRESS`,
+  zamiast przycisków „Create game” / „Join game” widzi jedną kartę z graczami tej gry,
+  przyciskiem „Back to the game” i cichym napisem „Leave game” obok. Dopóki nie wiadomo, czy
+  gra jest (trwa `GET /games/hosted`), ekran jest pusty — żeby nie mignął „Create game”.
 - **Host opuszcza grę → gra dostaje status `ABANDONED`** (ustalone 2026-09-25). Zwalnia to
-  slot „jednej gry”; gra porzucona nie liczy się do statystyk (§8).
+  slot „jednej gry”; gra porzucona nie liczy się do statystyk (§8). Po wyjściu z ekranu gry
+  host trafia na `/games`; osoby oglądające (etap 6) mają dostać zaktualizowany, zablokowany
+  ekran z informacją, że gra się skończyła (ustalone 2026-09-25). **Czy przed wyjściem jest
+  potwierdzenie — nie ustalono.**
 - **Gracz opuszcza grę → wypada tylko on, gra trwa dalej** (ustalone 2026-09-25, do
   zaimplementowania razem z kontami — dziś poza hostem nikt nie ma urządzenia). Jego zapisane
   punkty zostają, wolne kategorie dostają 0, jego kolumna w tabeli jest przyciemniona, a jego

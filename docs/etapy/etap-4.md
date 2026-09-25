@@ -10,7 +10,9 @@ w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 
 **Postęp: W TRAKCIE (stan na 2026-09-25).** Ekran gry w trakcie partii jest złożony
 z komponentów i podpięty pod API w zakresie zatwierdzenia kości i zapisu kategorii (gałąź
-`ui/game-screen`). Brakuje logu gry, wyjścia z gry, ekranu końca i przestylowania lobby.
+`ui/game-screen`). Doszły (gałąź `ui/wire-api`): wyjście z gry, ekran `/games` w nowym
+designie i karta niedokończonej gry hosta. Brakuje logu gry, ekranu końca i przestylowania
+lobby.
 
 ## Komponenty UI — 2026-09-25
 
@@ -87,11 +89,57 @@ Dług / do zrobienia w tym etapie:
   was already made”), a `DECYZJE.md` §4 i `DESIGN.md` zakładają, że do zapisu kategorii kości
   są szkicem. Na razie UI blokuje kości po zatwierdzeniu. Wymaga zmiany w API.
 - Podpięcie API (właściciel, w trybie nauki): Game log (`GET /games/:id/events`, `TODO`
-  w `playersPanel.tsx`), „Leave game” (`POST /games/:id/leave`, `TODO` w `gameScreen.tsx`),
-  ekran końca gry z `finalScore` (`gameView.tsx` przy `COMPLETED` pokazuje sam napis).
-  Przekierowanie hosta do niedokończonej gry (`DECYZJE.md` §5).
-- Przestylowanie tworzenia gry i lobby.
+  w `playersPanel.tsx`), ekran końca gry z `finalScore` (`gameView.tsx` przy `COMPLETED`
+  pokazuje sam napis). „Leave game” i niedokończona gra hosta — zrobione, wpis niżej.
+- Przestylowanie lobby (tworzenie gry — zrobione, wpis niżej).
 - Ptaszek przy zaznaczonym polu w ostatniej kolumnie wystaje poza komórkę.
 - Kolory spoza tokenów: `text-[#cfc6ea]` w `TurnPill`, `bg-white/55` / `bg-white/60`.
 - Kontrast `ink-faint` (~2,3:1) poniżej WCAG AA — wynika z palety, do decyzji właściciela.
 - `metadata` w `layout.tsx` nadal „Create Next App”.
+
+## Wywołania API, wyjście z gry i ekran `/games` — 2026-09-25
+
+Gałąź `ui/wire-api`. Wywołania API w `api/games.ts` i podpięcie „Leave game” oraz
+niedokończonej gry napisał właściciel w trybie nauki; wygląd `/games` — Claude.
+
+- `api/games.ts` — nowe `leaveGame`, `joinGame`, `getHostedGame` (`GameView | null`),
+  `getGameEvents(gameId, after?)` (`?after=` doklejane tylko przy podanej wartości, także 0),
+  `removeParticipant` (`DELETE`). `client.ts` przyjmuje `DELETE`; klucz idempotencji dostaje
+  każda metoda poza `GET`. Na froncie użyte na razie tylko `leaveGame` i `getHostedGame`.
+- `gameScreen.tsx` — „Leave game” woła `leaveGame` przez `run()`; przekierowanie na `/games`
+  jest w akcji przekazanej do `run`, więc wykonuje się tylko po sukcesie. `run()` blokuje
+  równoległe żądania refem (`pendingRef`) zamiast stanu, bo `pending` ze `useState` zmienia się
+  dopiero przy następnym renderze i szybkie podwójne kliknięcie przeszłoby dwa razy. Przycisk
+  jest nieaktywny w trakcie żądania.
+- `hooks/useHostedGame.ts` — `GET /games/hosted` przy wejściu; „brak gry” (`null`) od „jeszcze
+  nie wiem” odróżnia `loading`.
+- `/games` (`games/page.tsx`) — ekran startowy z „Create game” i „Join game”; „Create game”
+  pokazuje przełącznik trybu z formularzem (wstecz: ‹). „Join game” i opcja „Online” są
+  wygaszone z dymkiem „Coming soon” (`ui/comingSoon.tsx`, Tooltip z Base UI) — dołączanie
+  kodem to etap 6, online jest POZA MVP. Formularz offline: licznik `n/8`, „+ Add player” jako
+  sam napis (nieaktywny przy `MAX_PLAYERS`), X przy każdym graczu poza pierwszym.
+- `gameCreate/activeGameCard.tsx` — gdy host ma trwającą grę, zamiast Create / Join jest jedna
+  karta: gracze, „Back to the game”, cichy napis „Leave game” (`DECYZJE.md` §5). Po wyjściu
+  `setGame(null)` przywraca ekran tworzenia. Dopóki trwa sprawdzanie, ekran jest pusty.
+- `globals.css` — tymczasowa animacja `animate-rise` (wejście z dołu, 220 ms) dla nowych
+  wierszy i podmienianych kart; przełącznik trybu ma przesuwaną pigułkę. Bez animacji przy
+  `prefers-reduced-motion`.
+
+Sprawdzone w przeglądarce: wyjście z gry (po przebudowie kontenera API — patrz niżej), ekran
+startowy, dymek „Coming soon”, karta niedokończonej gry i wyjście z niej. Telefonu nie
+sprawdzano.
+
+**Pułapka środowiska:** port 3000 zajmuje kontener `general_app-api-1` z `docker-compose.yml`.
+Po zmianach w API trzeba go przebudować (`docker compose up -d --build api`), inaczej front
+rozmawia ze starym kodem (tak było z `POST /leave` → „Cannot POST”).
+
+Dług / do zrobienia:
+
+- **Kolory graczy nie trafiają do CSS** — Tailwind v4 wypisuje tylko te zmienne z `@theme`,
+  których używa jakaś klasa, a `playerColor()` podaje `--color-player-*` przez `style`.
+  `LogItem` narysuje przezroczystą kropkę. Poprawka w `globals.css` (np. `@theme static`).
+- Błędy wyjścia na `/games` (`leaveError`) i błąd `useHostedGame` nie są wyświetlane — czekają
+  na wspólny komponent komunikatów (np. toast). `createGame` przy błędzie tylko loguje.
+- Czy przed wyjściem z gry ma być potwierdzenie — nieustalone.
+- Usuwany gracz znika bez animacji; wysokość karty skacze.
+- Formularz online nie ma logiki (i jest dziś nieosiągalny).
