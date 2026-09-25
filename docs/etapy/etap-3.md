@@ -8,7 +8,9 @@ Obowiązkowo: `revision`, log zdarzeń, klucz idempotencji, `status` gry, `ostat
 > Sprawdzenie „restart serwera w połowie partii niczego nie psuje” przeniesione do etapu 4
 > (decyzja właściciela 2026-09-25) — do przećwiczenia na działającym UI.
 
-**Postęp: W TRAKCIE (stan na 2026-09-25 — wpis na końcu pliku).** Wszystkie endpointy z opisu etapu istnieją
+**Postęp: KRYTERIUM SPEŁNIONE (stan na 2026-09-25 — wpis na końcu pliku).** Otwarte zostaje
+`maxAge` ciasteczka hosta — czeka na decyzję (`DO-USTALENIA.md`), razem z czasem wygasania
+gry z etapu 6. Wszystkie endpointy z opisu etapu istnieją
 i działają: `POST /games` (tworzy grę z listą graczy, zakłada `Identity` hosta i odsyła
 sekret w cookie), `POST /games/:id/join`, `POST /games/:id/start`, `POST /games/:id/roll`
 (wpisanie kości fizycznych), `POST /games/:id/score`, `GET /games/:id`, `GET /games`.
@@ -20,9 +22,9 @@ reducerowi surowe kości i kategorię.
 Testy e2e (`apps/api/test/`, osobna baza z `DATABASE_URL_TEST`): pełna partia przez HTTP,
 walidacje (brak rzutu, podwójny rzut, obcy sekret hosta, powtórzony klucz idempotencji).
 
-**Kryterium "gotowe gdy" nadal niespełnione w drugiej części:** "restart serwera w połowie
-niczego nie psuje" nie zostało przećwiczone jako scenariusz. Cały stan siedzi w bazie,
-więc powinno działać, ale to hipoteza, nie sprawdzony fakt.
+~~**Kryterium "gotowe gdy" nadal niespełnione w drugiej części:** "restart serwera w połowie
+niczego nie psuje" nie zostało przećwiczone jako scenariusz.~~ Od 2026-09-25 ta część
+kryterium należy do etapu 4 (patrz uwaga pod „Gotowe gdy”).
 
 Do przeglądu z 2026-09-24 — lista uwag jest na końcu tego pliku, a pod nią sekcja
 „Poprawki po przeglądzie" z tego samego dnia (kontrakt API w `packages/contracts`,
@@ -409,3 +411,58 @@ Dług, który zostaje z tej sesji:
   (`gameFrom` / `eventsFrom`).
 - Endpointu „opuść grę" nie ma — „Leave game" w UI zostaje na razie bez działania.
 - Kryterium „restart serwera w połowie niczego nie psuje" nadal nieprzećwiczone.
+
+## Host: jedna gra, wyjście, wyrzucanie — 2026-09-25
+
+PR #6 (`api/host-leave-kick`). Decyzje: `DECYZJE.md` §2, §3, §5 (wpisy z 2026-09-25).
+
+Baza:
+
+- Migracja `20260925124233_add_game_host_identity`: `Game.hostIdentityId` (relacja
+  `HostedGames` do `Identity`), uzupełnione dla istniejących gier z uczestnika `HOST`, oraz
+  ręcznie dopisany SQL-em częściowy indeks unikalny `Game_hostIdentityId_active_key`
+  `WHERE status IN ('LOBBY', 'IN_PROGRESS')`. Ograniczenie jest w bazie, nie tylko
+  w serwisie — dwa równoczesne `POST /games` z jednego urządzenia nie przejdą oba.
+  Zakończona albo porzucona gra zwalnia slot.
+- Do czasu kont „host” = urządzenie (ciasteczko). Z innego urządzenia serwer nie wie, że to
+  ta sama osoba — „jedna gra na osobę” da dopiero indeks na `userId` (§6, etap 5).
+
+API (`game.service.ts`, `game.controller.ts`):
+
+- `POST /games/:id/join` wymaga ciasteczka hosta (`hostOnly: true` w `runAction`) — domyka
+  uwagę 2. Dołączanie przez kod dojdzie osobną ścieżką.
+- `POST /games` czyta ciasteczko: urządzenie, które już jest hostem, zostaje przy swojej
+  `Identity` (bez nowego sekretu i bez nowego ciasteczka); jeśli ma aktywną grę — `409`.
+  Ponowienie z tym samym `Idempotency-Key` sprawdzane jest najpierw (`findCreatedGame`), więc
+  zwraca pierwszą grę, a nie `409`. Wyścig na indeksie (`P2002`) rozstrzygany tak samo.
+- Nowy `GET /games/hosted` — aktywna gra tego urządzenia albo `null` (pod kartę „trwająca
+  gra” w UI). Zadeklarowany przed `GET /games/:id`.
+- Nowy `POST /games/:id/leave` — host wychodzi, gra przechodzi w `ABANDONED` (zdarzenie
+  `hostLeft`), czyszczone są `currentPlayerId` i `currentDice`. Tylko z `LOBBY` /
+  `IN_PROGRESS`, inaczej `400`. Wyjście gracza (punkty zostają, wolne kategorie 0, tury
+  pomijane) — dopiero z kontami, bo dziś poza hostem nikt nie ma urządzenia.
+- Nowy `DELETE /games/:id/participants/:participantId` — host wyrzuca gracza tylko w `LOBBY`,
+  nie siebie; `turnOrder` pozostałych przenumerowany na 1..n; zdarzenie `playerRemoved`.
+
+Testy:
+
+- Nowy `test/game-host.e2e-spec.ts` (14 testów): `409` przy drugiej grze, ponowienie
+  tworzenia, dwa urządzenia naraz, nowa gra po wyjściu (bez nowego ciasteczka, stare
+  ciasteczko jest hostem nowej gry), `GET /games/hosted`, wyjście hosta, akcje na porzuconej
+  grze, wyrzucanie (przenumerowanie, po starcie, host, nieznany gracz, bez ciasteczka).
+- `game-contract.e2e-spec.ts`: sprawdzanie `403` bez ciasteczka objęło `join` i `leave`.
+- Wyniki: `api` typecheck zielony, jednostkowe 4/4, e2e 60/60.
+
+Stan uwag z przeglądu po tych zmianach:
+
+- **Rozwiązane:** 2 (`join` tylko dla hosta, limit graczy był już wcześniej).
+- **Częściowo:** 7 — druga gra nie nadpisuje już sekretu pierwszej (urządzenie zachowuje
+  `Identity`, a druga aktywna gra dostaje `409`); nadal brak `maxAge`, `secure` na sztywno.
+
+Dług, który zostaje z tej sesji:
+
+- Host zapisany w dwóch miejscach: `Game.hostIdentityId` i `identityId` uczestnika `HOST`;
+  `verifyHost` czyta to drugie. Dwa źródła prawdy do ujednolicenia.
+- `hostLeft` i `playerRemoved` nie wychodzą w publicznym logu gry (§13 wystawia trzy typy).
+- Ciasteczko nadal sesyjne — po zamknięciu przeglądarki host traci tożsamość, a jego gra
+  wisi w `LOBBY` / `IN_PROGRESS` do czasu wygasania (etap 6).
