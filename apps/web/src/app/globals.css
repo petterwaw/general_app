@@ -63,6 +63,16 @@
 
   /* no drop shadows anywhere; a die keeps only its solid bottom edge (thickness, not a shadow) */
   --shadow-die: 0 6px 0 var(--color-die-shade);
+
+  /* placeholder motion until a proper pass: new rows and swapped panels fade in from slightly below */
+  --animate-rise: rise 220ms ease-out;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
 }
 
 @theme inline {
