@@ -15,7 +15,6 @@ export default function PlayersPanel({ participants }: PlayersPanelProps) {
         {participants.map((participant, seat) => (
           <PlayerRow
             key={participant.id}
-            participantId={participant.id}
             name={participant.name}
             seat={seat}
             isHost={participant.role === 'HOST'}

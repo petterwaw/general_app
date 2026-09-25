@@ -206,7 +206,7 @@ export default function ScoreCard({
                 ].join(' ')}
               >
                 <span className="flex flex-col items-center gap-0.5">
-                  <Avatar participantId={participant.id} seat={seat} size={34} />
+                  <Avatar seed={participant.name} seat={seat} size={34} />
                   <span className="max-w-full truncate">{participant.name}</span>
                 </span>
               </th>

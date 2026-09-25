@@ -23,7 +23,7 @@ export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCar
       <ul aria-label="Players" className="flex flex-wrap gap-x-4 gap-y-2">
         {game.participants.map((participant, seat) => (
           <li key={participant.id} className="flex items-center gap-2 font-semibold">
-            <Avatar participantId={participant.id} seat={seat} size={28} />
+            <Avatar seed={participant.name} seat={seat} size={28} />
             {participant.name}
           </li>
         ))}

@@ -12,7 +12,7 @@ export default function GameView({ gameId }: { gameId: string }) {
   if (!game) return <div>Game not found</div>;
 
   if (game.status === 'LOBBY') {
-    return <GameLobby gameId={game.id} onGameStarted={setGame} />;
+    return <GameLobby game={game} onGameChange={setGame} />;
   }
 
   if (game.status === 'COMPLETED') {

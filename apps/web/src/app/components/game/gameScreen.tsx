@@ -200,7 +200,6 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             trayFooter={
               current && (
                 <TurnPill
-                  participantId={current.id}
                   name={current.name}
                   seat={seat}
                   round={round}

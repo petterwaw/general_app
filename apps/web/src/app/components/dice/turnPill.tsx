@@ -1,7 +1,6 @@
 import Avatar from '../players/avatar';
 
 type TurnPillProps = {
-  participantId: string;
   name: string;
   seat: number;
   round: number;
@@ -9,11 +8,11 @@ type TurnPillProps = {
 };
 
 // "Kuba's turn · round 7 of 15" on the tray's bottom edge.
-export default function TurnPill({ participantId, name, seat, round, totalRounds }: TurnPillProps) {
+export default function TurnPill({ name, seat, round, totalRounds }: TurnPillProps) {
   return (
     <div className="flex items-center gap-3 rounded-full bg-ink py-2.5 pr-[22px] pl-3 font-bold whitespace-nowrap text-white">
       {/* the blobatar drawing has built-in padding, so the box is larger than it looks */}
-      <Avatar participantId={participantId} seat={seat} size={42} className="-my-2.5 -mr-0.75 -ml-1.25" />
+      <Avatar seed={name} seat={seat} size={42} className="-my-2.5 -mr-0.75 -ml-1.25" />
       <span>{name}&apos;s turn</span>
       <span className="font-semibold text-[#cfc6ea]">
         · round {round} of {totalRounds}
