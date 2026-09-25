@@ -3,10 +3,8 @@
 import Link from 'next/link';
 import type { GameView } from '@dice-app/contracts';
 
-import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
-import { LeaveIcon } from '../ui/icons';
 import Avatar from '../players/avatar';
 
 type ActiveGameCardProps = {
@@ -15,20 +13,12 @@ type ActiveGameCardProps = {
   pending?: boolean;
 };
 
-// The game the host still runs. A host runs one game at a time (DECYZJE.md §5), so creating
-// a new one waits until this one is resumed and finished, or left.
+// Shown instead of Create / Join while the host still runs a game: a host runs one game at a
+// time (DECYZJE.md §5), so a new one waits until this one is finished or left.
 export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCardProps) {
   return (
     <Card className="grid gap-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold">Unfinished game</h2>
-          <p className="mt-1 text-sm font-semibold text-ink-muted">
-            Resume it, or leave it to start a new one.
-          </p>
-        </div>
-        <Badge className="shrink-0">{game.status === 'LOBBY' ? 'Lobby' : 'In progress'}</Badge>
-      </div>
+      <p className="text-lg font-bold">Hey, you still have a game going. What do you want to do?</p>
 
       <ul aria-label="Players" className="flex flex-wrap gap-x-4 gap-y-2">
         {game.participants.map((participant, seat) => (
@@ -39,18 +29,22 @@ export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCar
         ))}
       </ul>
 
-      <div className="flex flex-wrap gap-3">
-        <Button
-          render={<Link href={`/games/${game.id}`} />}
-          nativeButton={false}
-          className="flex-1"
+      <div className="flex items-center gap-3">
+        <Button render={<Link href={`/games/${game.id}`} />} nativeButton={false} className="flex-1">
+          Back to the game
+        </Button>
+        {/* a quiet text action, so leaving does not compete with going back */}
+        <button
+          type="button"
+          onClick={onLeave}
+          disabled={pending}
+          className={[
+            'flex-1 cursor-pointer rounded-full px-2 py-3 font-bold text-ink-muted transition-colors duration-150',
+            'hover:text-danger disabled:cursor-not-allowed disabled:text-ink-faint',
+          ].join(' ')}
         >
-          Resume game
-        </Button>
-        <Button variant="secondary" onClick={onLeave} disabled={pending} className="flex-1">
-          <LeaveIcon />
           Leave game
-        </Button>
+        </button>
       </div>
     </Card>
   );
