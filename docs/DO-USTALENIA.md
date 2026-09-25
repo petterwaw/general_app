@@ -24,8 +24,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       zamknięciu przeglądarki — to wymaga konkretnego `maxAge`, a dziś ciasteczko jest sesyjne.
 - [ ] **Czy host może prowadzić kilka gier z jednego urządzenia?** Jeśli tak, ciasteczko musi
       być per gra (dziś jedna nazwa `host_secret` nadpisuje poprzedni sekret).
-- [ ] **Gdzie liczy się suma punktów i bonus?** Dziś tylko na froncie. Serwer nie zna wyniku
-      końcowego partii, więc etap 8 nie ma z czego zbudować statystyk.
 
 ## Blokujące etap 5 (konta)
 
@@ -57,8 +55,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 ## Niezablokowane, ale otwarte
 
-- [ ] **Czy ukryć do końca gry także postęp bonusu (np. „53/63”)?** Suma jest ukryta
-      (`DESIGN.md`), ale z postępu bonusu i pojedynczych wyników da się zgadywać, kto prowadzi.
 - [ ] **Tryb ciemny** — interfejs ma dziś jeden, jasny motyw (`DESIGN.md`). Czy potrzebny
       jest ciemny?
 - [ ] **Do czego ma służyć `GET /games`?** Endpoint zostaje, ale dziś zwraca wszystkie gry

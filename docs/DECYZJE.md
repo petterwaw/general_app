@@ -241,3 +241,33 @@ między instancjami). Nie dodawaj go wcześniej.
 - Układ ekranu gry dopasowuje się do miejsca (trzy kolumny / dwie / jedna pod drugą; szerokość
   tacy zależy tylko od okna, 440–600 px), a Players + Game log chowają się do wysuwanej
   szuflady — szczegóły w `DESIGN.md`.
+
+---
+
+## 13. Wynik końcowy i log gry (ustalone 2026-09-25)
+
+**Sumę i bonus liczy serwer.** Bonus sekcji górnej (próg 63 → +35) i suma punktów to funkcje
+`game-core` (`upperBonus`, `totalScore`). Front może ich używać do wyświetlania, ale o wyniku
+rozstrzyga serwer.
+
+**Wynik końcowy jest zapisywany w bazie** (`Participant.finalScore`, `Participant.upperBonus`)
+w chwili zakończenia gry, w tej samej transakcji co ostatni zapis kategorii. Do tego momentu
+oba pola są puste. To zapis partii takiej, jaka była rozegrana — gdyby zasady punktowania się
+kiedyś zmieniły, stare wyniki się nie przeliczają. Z tych pól korzysta etap 8 (statystyki).
+Pola „zwycięzca" nie ma — remis (dwie osoby wygrywają) wynika z porównania zapisanych wyników.
+
+**Wynik końcowy wychodzi do klienta dopiero po zakończeniu gry** — `toGameView` wypełnia
+`finalScore`/`upperBonus` tylko przy statusie `COMPLETED`. Postęp bonusu (np. „53/63") jest
+za to widoczny w trakcie gry.
+
+**Punkty zapisanej kategorii trafiają do logu zdarzeń** — przeliczone przez reducer, nigdy
+przyjęte od klienta.
+
+**Log gry wystawiony dla klienta** (`GET /games/:id/events?after=<revision>`) zawiera tylko:
+
+- start gry,
+- kości wpisane w turze (wszystkie 5),
+- zapisaną kategorię z punktami.
+
+Pozostałe zdarzenia (np. dołączenie gracza) zostają w bazie, ale nie wychodzą na zewnątrz.
+Parametr `after` służy też do dosyłania brakujących zdarzeń po ponownym połączeniu (§10).

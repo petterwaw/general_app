@@ -1,11 +1,13 @@
-import { Controller, Req, Get, Post, Body, Param, Headers, Res } from '@nestjs/common';
+import { Controller, Req, Get, Post, Body, Param, Headers, Res, Query } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import {
   createGameSchema,
+  gameEventsQuerySchema,
   joinGameSchema,
   rollSchema,
   scoreSchema,
   type CreateGameInput,
+  type GameEventsQuery,
   type JoinGameInput,
   type RollInput,
   type ScoreInput,
@@ -44,6 +46,14 @@ export class GameController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.gameService.findOne(id);
+  }
+
+  @Get(':id/events')
+  events(
+    @Param('id') id: string,
+    @Query(new ZodValidationPipe(gameEventsQuerySchema)) query: GameEventsQuery,
+  ) {
+    return this.gameService.events(id, query);
   }
 
   @Post(':id/join')

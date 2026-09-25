@@ -21,7 +21,7 @@ wartości. Ten plik opisuje, **jak** ich używać.
 | Cienie | **brak cieni pod elementami** (karty, przyciski, taca, pasek tury). Kości mają tylko pełną dolną krawędź (`shadow-die`) — to ich grubość, nie cień |
 | Awatary | **blobatar** (`blobatar` + `@blobatar/react`, generowane w przeglądarce, bez zapytań sieciowych), seed = **ID uczestnika**, odcień zablokowany na kolor gracza. Bez tła i obwódki — sam stworek. Ten sam awatar w tabeli, panelu Players i pasku tury |
 | Kości | płaskie kości 2D w CSS, **bez animacji rzutu**. Taca: drewniany rant + fioletowe sukno, w czystym CSS |
-| Suma punktów | **ukryta do końca gry** — w trakcie przy graczu widać „???” z kłódką, suma odsłania się po ostatniej rundzie. Tabela nie ma wiersza Total; suma jest tylko w panelu Players |
+| Suma punktów | **ukryta do końca gry** — w trakcie przy graczu widać „???” z kłódką, suma odsłania się po ostatniej rundzie. Tabela nie ma wiersza Total; suma jest tylko w panelu Players. **Postęp bonusu** (np. „53/63”) w wierszu Bonus jest widoczny w trakcie gry (ustalone 2026-09-25) |
 | Nazwy kategorii (EN) | Ones, Twos, Threes, Fours, Fives, Sixes, One Pair, Two Pairs, Three of a Kind, Four of a Kind, Small Straight, Large Straight, Full House, Chance, **General**. Nigdy „Yahtzee” (znak towarowy) |
 
 ---

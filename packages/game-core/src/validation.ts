@@ -11,7 +11,7 @@ const CATEGORY_SECTION: Record<Category, Section> = {
 }
 
 const ALL_CATEGORIES = Object.keys(CATEGORY_SECTION) as Category[]
-const UPPER_CATEGORIES = ALL_CATEGORIES.filter((category) => CATEGORY_SECTION[category] === 'upper')
+export const UPPER_CATEGORIES = ALL_CATEGORIES.filter((category) => CATEGORY_SECTION[category] === 'upper')
 const LOWER_CATEGORIES = ALL_CATEGORIES.filter((category) => CATEGORY_SECTION[category] === 'lower')
 const CHANCE: Category = 'chance'
 
