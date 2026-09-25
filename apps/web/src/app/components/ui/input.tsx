@@ -2,21 +2,17 @@ import { Input as BaseInput } from "@base-ui/react/input";
 
 type InputProps = React.ComponentProps<typeof BaseInput>;
 
-export function Input({
-  className = "",
-  ...props
-}: InputProps) {
+export function Input({ className = "", ...props }: InputProps) {
   return (
     <BaseInput
       {...props}
       className={[
-        "h-10 w-full rounded-lg border border-neutral-300 bg-white px-3",
-        "text-sm text-neutral-900",
-        "outline-none",
+        "h-12 w-full rounded-tile border border-hairline bg-white/70 px-4",
+        "text-base font-semibold text-ink placeholder:font-normal placeholder:text-ink-faint",
         "transition-colors duration-150",
-        "placeholder:text-neutral-400",
-        "focus:border-neutral-500",
-        "focus:ring-2 focus:ring-neutral-200",
+        // the field draws its own focus ring, so the global outline is dropped here
+        "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft",
+        "disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-ink-faint",
         className,
       ].join(" ")}
     />
