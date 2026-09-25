@@ -165,12 +165,13 @@
      minmax(0, 1fr): a wide scorecard scrolls inside its card instead of widening the page */
   .game { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
   .game .center-col { order: -1; }
-  /* side by side only while the tray keeps its minimum width (see pickLayout) */
-  /* the tray column never goes under 500px; the scorecard takes what is left */
-  .game.two { grid-template-columns: minmax(0, 1fr) minmax(500px, 1fr); }
-  .game.three { grid-template-columns: minmax(0, 1.2fr) minmax(500px, 1fr) minmax(300px, 360px); }
-  /* stacked on a wide window: keep the tray and scorecard at a readable width */
-  .game:not(.two):not(.three) { width: 100%; max-width: 720px; justify-self: center; }
+  /* --tray-w depends on the window width only (see pickLayout), never on the player count:
+     the scorecard takes what is left beside the tray, or drops below it when it does not fit */
+  .game.two { grid-template-columns: minmax(0, 1fr) var(--tray-w); }
+  .game.three { grid-template-columns: minmax(0, 1fr) var(--tray-w) 340px; }
+  .game:not(.two):not(.three) .center-col { width: 100%; max-width: var(--tray-w); justify-self: center; }
+  /* stacked on a wide window: the scorecard stays at a readable width */
+  .game:not(.two):not(.three) .scorecard { width: 100%; max-width: 720px; justify-self: center; }
   .game.two .center-col, .game.three .center-col { order: 0; }
   @media (min-width: 1200px) {
     /* the whole game fits the viewport: columns stretch, the centre is vertically centred */
@@ -238,8 +239,16 @@
   /* scorecard */
   .scorecard { padding: 12px 12px; }
   .scorecard h3 { padding-inline: 8px; margin-bottom: 10px; }
-  .sc-scroll { overflow-x: auto; }
-  table.sc { border-collapse: separate; border-spacing: 0 2px; width: 100%; min-width: 440px; font-size: .92rem; line-height: 1.25; }
+  /* touch: no scrollbar, the half-visible player column says the table scrolls.
+     mouse: a thin felt-coloured bar under the table, since a wheel only scrolls vertically */
+  .sc-scroll { overflow-x: auto; scrollbar-width: none; }
+  @media (pointer: fine) {
+    .sc-scroll { scrollbar-width: thin; scrollbar-color: var(--felt) rgb(109 92 159 / .18); }
+  }
+  /* column widths come from sizeColumns(): at least 3.5 players in view whenever the table scrolls */
+  table.sc { border-collapse: separate; border-spacing: 0 2px; width: 100%; font-size: .92rem; line-height: 1.25; }
+  .sc thead tr:first-child th:first-child { width: var(--label-w); }
+  .sc thead tr:first-child th + th { width: var(--col-w); }
   .sc th, .sc td { padding: 3px 8px; text-align: center; }
   .sc th:first-child, .sc td:first-child { text-align: left; }
   .sc thead th { font-weight: 700; font-size: .88rem; vertical-align: bottom; }
@@ -261,6 +270,25 @@
     color: var(--primary); font-weight: 800; border-radius: 8px;
     box-shadow: inset 0 0 0 2px var(--primary); background: #fff; cursor: pointer;
   }
+  .sc button.hint { border: 0; font: inherit; font-weight: 800; padding: 2px 10px; }
+  /* two-step save: first tap selects the category, the tick next to it saves it */
+  .sc .pick { display: inline-flex; align-items: center; gap: 4px; }
+  .sc .pick .hint { display: inline-block; padding: 2px 8px; }
+  .sc .hint.selected { background: var(--primary); color: var(--primary-ink); box-shadow: none; }
+  .sc .tick {
+    width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer; flex: none;
+    background: var(--good); color: #fff; display: grid; place-items: center;
+  }
+
+  /* category names stay put; only the player columns scroll sideways.
+     Sticky cells need opaque fills: these match the translucent card and cells over the backdrop */
+  .sc { --sc-card: #f7eaf3; --sc-cell: #fbf6fa; }
+  .sc th:first-child, .sc td:first-child { position: sticky; left: 0; z-index: 1; }
+  .sc thead th:first-child { background: var(--sc-card); }
+  .sc tbody td:first-child { background: var(--sc-cell); box-shadow: inset -1px 0 0 var(--hairline); }
+  .sc .sum-row td:first-child { background: var(--surface-sunken); }
+  .sc .section-row td:first-child { position: static; background: transparent; box-shadow: none; }
+  .sc .section-row span { position: sticky; left: 8px; }
   .sc .locked { color: var(--ink-faint); background: repeating-linear-gradient(135deg, rgba(255,255,255,.5) 0 6px, rgba(230,216,234,.6) 6px 12px); }
   .sc .bonus-progress { font-size: .8rem; color: var(--ink-muted); font-weight: 600; }
 
@@ -424,12 +452,12 @@
   <section class="spec">
     <div class="spec-head">
       <h2>Layout</h2>
-      <p class="muted">The dice tray never gets narrower than 500px. Columns are added only while it keeps that width and the scorecard needs no sideways scroll; otherwise the scorecard drops below the dice, on any device. Players and the game log get a column last, and slide in from the right under “Players” when there is no room. More players make the scorecard wider, so eight players drop to fewer columns sooner.</p>
+      <p class="muted">The dice tray never gets narrower than 440px. Columns are added only while it keeps that width and the scorecard needs no sideways scroll; otherwise the scorecard drops below the dice, on any device. Players and the game log get a column last, and slide in from the right under “Players” when there is no room. More players make the scorecard wider, so eight players drop to fewer columns sooner.</p>
     </div>
     <ul class="layout-rules">
       <li><b>Three columns</b><span>Scorecard · dice · Players &amp; log, all in view</span></li>
       <li><b>Two columns</b><span>Scorecard · dice; Players &amp; log in the drawer</span></li>
-      <li><b>Stacked (tray would drop under 500px)</b><span>Dice on top, scorecard below; Players &amp; log in the drawer</span></li>
+      <li><b>Stacked (tray would drop under 440px)</b><span>Dice on top, scorecard below; Players &amp; log in the drawer</span></li>
     </ul>
     <div class="row">
       <span class="muted" style="font-size:.9rem">Sample game:</span>
@@ -501,7 +529,8 @@
         <div class="states">
           <div class="state"><div class="cell">18</div><small>Scored</small></div>
           <div class="state"><div class="cell" style="color:var(--ink-faint)">–</div><small>Open category</small></div>
-          <div class="state"><div class="cell" style="color:var(--primary);background:#fff;box-shadow:inset 0 0 0 2px var(--primary)">15</div><small>Suggested score for the current player, clickable</small></div>
+          <div class="state"><div class="cell" style="color:var(--primary);background:#fff;box-shadow:inset 0 0 0 2px var(--primary)">15</div><small>Suggested score for the current player, shown once the dice are confirmed</small></div>
+          <div class="state"><div class="cell" style="gap:4px;display:flex;justify-content:center"><span style="background:var(--primary);color:#fff;border-radius:8px;padding:2px 10px;font-weight:800">15</span><span style="width:26px;height:26px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div><small>Selected — tap the tick to save. Tap elsewhere or Esc to cancel</small></div>
           <div class="state"><div class="cell" style="color:var(--danger)">0</div><small>Scratched for zero</small></div>
           <div class="state"><div class="cell" style="color:var(--ink-faint);background:repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 6px,rgba(230,216,234,.6) 6px 12px)">–</div><small>Lower section locked (fewer than 3 upper boxes filled)</small></div>
           <div class="state"><div class="cell" style="background:var(--primary-soft)">24</div><small>Current player's column</small></div>
@@ -535,6 +564,8 @@
   // Tapping a filled slot makes it active again, so any die can be corrected before confirming.
   const dice = [null, null, null, null, null];
   let active = 0;
+  // dice confirmed for this turn: suggestions appear in the current player's free boxes
+  let turnDice = null, selectedCat = null;
   const slots = document.getElementById("slots");
   const picker = document.getElementById("picker");
   const confirmBtn = document.getElementById("confirm");
@@ -548,7 +579,7 @@
     confirmBtn.disabled = dice.includes(null);
   }
   slots.addEventListener("click", e => {
-    const b = e.target.closest(".die-btn"); if (b) { active = +b.dataset.i; renderDice(); }
+    const b = e.target.closest(".die-btn"); if (b) { active = +b.dataset.i; renderDice(); diceEdited(); }
   });
   picker.innerHTML = [1, 2, 3, 4, 5, 6].map(v => `<button type="button" data-v="${v}" aria-label="Set ${v}">${dieHTML(v)}</button>`).join("");
   picker.addEventListener("click", e => {
@@ -557,7 +588,19 @@
     // like a one-time-code field: always jump to the next slot; past the last one entry is done
     active = active < 4 ? active + 1 : -1;
     renderDice();
+    diceEdited();
   });
+  confirmBtn.addEventListener("click", () => {
+    if (dice.includes(null)) return;
+    turnDice = [...dice]; selectedCat = null;
+    renderBoard();
+  });
+  // editing the dice again withdraws the suggestions until they are confirmed once more
+  function diceEdited() {
+    if (!turnDice) return;
+    turnDice = null; selectedCat = null;
+    renderBoard();
+  }
   renderDice();
 
   document.getElementById("dice-row").innerHTML = [1, 2, 3, 4, 5].map(v => dieHTML(v)).join("") + dieHTML(6, "held");
@@ -578,7 +621,7 @@
     ["Twos", 2, [8, 6, null, 6, 6, null, 6, null]],
     ["Threes", 3, [9, 12, 9, null, 9, 9, null, 12]],
     ["Fours", 4, [null, 16, 12, null, 12, null, null, 12]],
-    ["Fives", 5, [15, 20, "h15", null, null, 15, 15, null]],
+    ["Fives", 5, [15, 20, null, null, null, 15, 15, null]],
     ["Sixes", 6, [18, 24, null, 18, 18, 18, null, null]],
   ];
   const lower = [
@@ -592,26 +635,54 @@
     ["Chance", [22, 26, 19, null, 20, null, 23, null]],
     ["General", [null, 50, null, "L", null, null, null, null]],
   ];
-  const upperSum = [53, 78, 24, 24, 45, 45, 21, 27], bonus = [0, 35, 0, 0, 0, 0, 0, 0];
   let players = ALL_PLAYERS.slice(0, 4);
+  const ACTIVE = ALL_PLAYERS.findIndex(p => p.active);
   const ac = i => players[i].active ? " active" : "";
-  function cell(v, i) {
-    if (v === null) return `<td class="empty${ac(i)}">–</td>`;
+  const upperSum = i => upper.reduce((sum, [, , vals]) => sum + (typeof vals[i] === "number" ? vals[i] : 0), 0);
+
+  // prototype-only scoring for the suggestion shown in the box (docs/ZASADY-GRY.md);
+  // in the app the suggestion is display only and the server always recomputes the score
+  function suggest(cat, d) {
+    const count = v => d.filter(x => x === v).length;
+    const sum = d.reduce((a, b) => a + b, 0);
+    const faces = [6, 5, 4, 3, 2, 1];
+    const pairs = faces.filter(v => count(v) >= 2);
+    const run = n => [1, 2, 3].some(start => Array.from({ length: n }, (_, k) => start + k).every(v => count(v) > 0));
+    const face = { Ones: 1, Twos: 2, Threes: 3, Fours: 4, Fives: 5, Sixes: 6 }[cat];
+    if (face) return count(face) >= 3 ? count(face) * face : 0;
+    switch (cat) {
+      case "One Pair": return pairs.length ? pairs[0] * 2 : 0;
+      case "Two Pairs": return pairs.length >= 2 ? (pairs[0] + pairs[1]) * 2 : 0;
+      case "Three of a Kind": return faces.some(v => count(v) >= 3) ? sum : 0;
+      case "Four of a Kind": return faces.some(v => count(v) >= 4) ? sum : 0;
+      case "Small Straight": return run(4) ? 25 : 0;
+      case "Large Straight": return run(5) ? 40 : 0;
+      case "Full House": return faces.some(v => count(v) === 5) || (faces.some(v => count(v) === 3) && faces.some(v => count(v) === 2)) ? 25 : 0;
+      case "Chance": return sum;
+      case "General": return faces.some(v => count(v) === 5) ? 50 : 0;
+    }
+  }
+  function cell(v, i, cat) {
     if (v === "L") return `<td class="locked" title="Lower section locked">–</td>`;
-    if (typeof v === "string" && v[0] === "h") return `<td class="${ac(i).trim()}"><span class="hint" style="display:inline-block;padding:2px 10px">${v.slice(1)}</span></td>`;
+    if (v === null && turnDice && players[i].active) {
+      const pts = suggest(cat, turnDice);
+      if (cat === selectedCat) return `<td class="active"><span class="pick"><span class="hint selected">${pts}</span><button type="button" class="tick" data-save="${cat}" aria-label="Save ${pts} in ${cat}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></span></td>`;
+      return `<td class="active"><button type="button" class="hint" data-cat="${cat}" aria-label="${cat}: ${pts} points">${pts}</button></td>`;
+    }
+    if (v === null) return `<td class="empty${ac(i)}">–</td>`;
     if (v === 0) return `<td class="zero${ac(i)}">0</td>`;
     return `<td class="${ac(i).trim()}">${v}</td>`;
   }
   const avatarHTML = p => `<span class="avatar" data-name="${p.name}" data-hue="${p.hue}" style="background:${p.color};--pc:${p.color}">${p.name[0]}</span>`;
   function renderBoard() {
-    const n = players.length, cols = vals => vals.slice(0, n).map(cell).join("");
+    const n = players.length, cols = (vals, cat) => vals.slice(0, n).map((v, i) => cell(v, i, cat)).join("");
     const head = `<thead><tr><th></th>${players.map(p => `<th class="${p.active ? "active" : ""}" style="border-radius:10px 10px 0 0"><span class="sc-head">${avatarHTML(p)}<span>${p.name}</span></span></th>`).join("")}</tr></thead>`;
     const rows = [];
-    rows.push(`<tr class="section-row"><td colspan="${n + 1}">Upper section</td></tr>`);
-    upper.forEach(([name, v, vals]) => rows.push(`<tr><td><span class="cat">${dieHTML(v, "mini")}${name}</span></td>${cols(vals)}</tr>`));
-    rows.push(`<tr class="sum-row"><td>Bonus <span class="bonus-progress">(63+)</span></td>${bonus.slice(0, n).map((b, i) => `<td class="${ac(i).trim()}">${b ? "+" + b : `<span class="bonus-progress">${upperSum[i]}/63</span>`}</td>`).join("")}</tr>`);
-    rows.push(`<tr class="section-row"><td colspan="${n + 1}">Lower section</td></tr>`);
-    lower.forEach(([name, vals]) => rows.push(`<tr><td><span class="cat">${name}</span></td>${cols(vals)}</tr>`));
+    rows.push(`<tr class="section-row"><td colspan="${n + 1}"><span>Upper section</span></td></tr>`);
+    upper.forEach(([name, v, vals]) => rows.push(`<tr><td><span class="cat">${dieHTML(v, "mini")}${name}</span></td>${cols(vals, name)}</tr>`));
+    rows.push(`<tr class="sum-row"><td>Bonus <span class="bonus-progress">(63+)</span></td>${players.map((_, i) => { const u = upperSum(i); return `<td class="${ac(i).trim()}">${u >= 63 ? "+35" : `<span class="bonus-progress">${u}/63</span>`}</td>`; }).join("")}</tr>`);
+    rows.push(`<tr class="section-row"><td colspan="${n + 1}"><span>Lower section</span></td></tr>`);
+    lower.forEach(([name, vals]) => rows.push(`<tr><td><span class="cat">${name}</span></td>${cols(vals, name)}</tr>`));
     document.getElementById("scorecard").innerHTML = head + `<tbody>${rows.join("")}</tbody>`;
 
     document.getElementById("players").innerHTML = players.map(p => `
@@ -621,8 +692,66 @@
       <span class="score sealed" title="Totals are revealed when the game ends" aria-label="Score hidden until the game ends"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>???</span>
     </div>`).join("");
     window.paintAvatars?.();
+    sizeColumns();
+  }
+
+  // player columns: share the width when everyone fits (60px each at least); otherwise size them so
+  // 3.5 or more players are in view, the half column telling people the table scrolls sideways
+  const MIN_COL = 60;
+  let labelW = 0;
+  // natural width of the category-name column (longest name), the same in every layout
+  function measureLabel() {
+    const table = document.getElementById("scorecard");
+    ["--label-w", "--col-w"].forEach(v => table.style.removeProperty(v));
+    table.style.tableLayout = "auto";
+    table.style.width = "auto";
+    return Math.ceil(table.querySelector("tbody tr:not(.section-row) td").getBoundingClientRect().width);
+  }
+  function sizeColumns() {
+    const table = document.getElementById("scorecard");
+    const box = document.querySelector(".sc-scroll");
+    const n = players.length;
+    labelW = measureLabel();
+    const avail = box.clientWidth - labelW;
+    let k = Math.max(3, Math.floor(avail / MIN_COL - 0.5));
+    const scrolls = avail < n * MIN_COL && k < n;
+    const colW = scrolls ? avail / (k + 0.5) : avail / n;
+    table.style.setProperty("--label-w", labelW + "px");
+    table.style.setProperty("--col-w", colW + "px");
+    table.style.tableLayout = "fixed";
+    table.style.width = labelW + n * colW + "px";
+    table.classList.toggle("scrolls", scrolls);
+    if (!scrolls) box.scrollLeft = 0;
+    return scrolls;
   }
   renderBoard();
+
+  const logList = document.querySelector(".log");
+  function saveCategory(cat) {
+    const pts = suggest(cat, turnDice);
+    const row = [...upper, ...lower.map(([name, vals]) => [name, null, vals])].find(([name]) => name === cat);
+    row[2][ACTIVE] = pts;
+    const who = ALL_PLAYERS[ACTIVE];
+    const time = new Date().toTimeString().slice(0, 5);
+    logList.insertAdjacentHTML("afterbegin", `<div class="log-item"><span class="dot" style="background:${who.color}"></span><span>${pts ? `${who.name} scored ${cat}, ${pts} pts` : `${who.name} scratched ${cat} for 0`}</span><time>${time}</time></div>`);
+    // next turn starts with empty dice
+    turnDice = null; selectedCat = null;
+    dice.fill(null); active = 0;
+    renderDice();
+    renderBoard();
+  }
+  document.getElementById("scorecard").addEventListener("click", e => {
+    const save = e.target.closest("[data-save]");
+    if (save) { saveCategory(save.dataset.save); return; }
+    const pick = e.target.closest("[data-cat]");
+    // keyboard users (click without a pointer, detail 0) land on the tick straight away
+    if (pick) { selectedCat = pick.dataset.cat; renderBoard(); if (e.detail === 0) document.querySelector("#scorecard .tick")?.focus(); }
+  });
+  // a tap anywhere else, or Esc, drops the selection without saving
+  document.addEventListener("click", e => {
+    if (selectedCat && !e.target.closest("[data-cat], [data-save]")) { selectedCat = null; renderBoard(); }
+  });
+  addEventListener("keydown", e => { if (e.key === "Escape" && selectedCat) { selectedCat = null; renderBoard(); } });
 
   // layout: the richest arrangement that still fits; Players + log fall back to a drawer from the right
   const game = document.querySelector(".game");
@@ -633,7 +762,9 @@
   const centerCol = document.querySelector(".center-col");
   const scoreScroll = document.querySelector(".sc-scroll");
   // a mode fits when the tray keeps its minimum width and the scorecard needs no sideways scroll
-  const MIN_TRAY = 500;
+  // tray: 42% of the game width, kept between 440 and 600px (never wider than the screen)
+  const MIN_TRAY = 440, MAX_TRAY = 600, TRAY_SHARE = 0.42;
+  const SIDE_W = 340, GAP = 20, CARD_PAD = 26; // side panel column, grid gap, scorecard padding + border
   const MODES = ["three", "two"];
   // switching modes must not play the drawer's slide animation, or the panel flashes across the screen
   function applyMode(mode) {
@@ -643,16 +774,14 @@
     side.style.transition = "";
   }
   function pickLayout() {
-    const current = MODES.find(m => game.classList.contains(m)) ?? "stack";
-    let pick = "stack";
-    for (const mode of MODES) {
-      applyMode(mode);
-      const fits = centerCol.clientWidth >= MIN_TRAY && game.scrollWidth <= game.clientWidth + 1
-        && scoreScroll.scrollWidth <= scoreScroll.clientWidth + 1;
-      if (fits) { pick = mode; break; }
-    }
-    applyMode(current);
-    return pick;
+    const w = game.clientWidth;
+    const tray = Math.min(w, Math.max(MIN_TRAY, Math.min(MAX_TRAY, w * TRAY_SHARE)));
+    game.style.setProperty("--tray-w", tray + "px");
+    // the scorecard fits beside the tray when every player column gets MIN_COL
+    const need = measureLabel() + players.length * MIN_COL + CARD_PAD;
+    if (w - tray - SIDE_W - 2 * GAP >= need) return "three";
+    if (w - tray - GAP >= need) return "two";
+    return "stack";
   }
   function setDrawer(open) {
     side.classList.toggle("open", open);
@@ -665,11 +794,12 @@
   let mode = null;
   function layout() {
     const next = pickLayout();
-    if (next === mode) return;
+    if (next === mode) { sizeColumns(); return; }
     mode = next;
     applyMode(mode);
     openBtn.hidden = mode === "three";
     setDrawer(false);
+    sizeColumns();
   }
   openBtn.addEventListener("click", () => setDrawer(true));
   closeBtn.addEventListener("click", () => setDrawer(false));

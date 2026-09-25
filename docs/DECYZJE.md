@@ -82,8 +82,9 @@ cofnąć**. Nie implementuj zdarzeń kompensacyjnych ani cofania całych tur.
 **W trybie online nie ma czego cofać** — gracz nigdy nie wpisuje wartości kości, dostaje je
 z serwera. Edytowalne jest wyłącznie to, które kości odkłada przed kolejnym rzutem.
 
-Krok potwierdzenia przed zapisem kategorii to decyzja frontendowa, podejmowana przy budowie UI.
-Silnik gry dostaje gotową akcję „zapisz kategorię X" i nie musi o tym nic wiedzieć.
+Krok potwierdzenia przed zapisem kategorii to decyzja frontendowa — ustalona 2026-09-25: dwa
+kliknięcia (zaznaczenie pola, potem ptaszek), szczegóły w `DESIGN.md`. Silnik gry dostaje gotową
+akcję „zapisz kategorię X" i nie musi o tym nic wiedzieć.
 
 **Śledzenie kolejnych rzutów różni się między kośćmi fizycznymi a wirtualnymi.** Przy kościach
 wirtualnych serwer sam rzuca i musi pilnować liczby rzutów (max. 3) oraz tego, które kości
@@ -237,5 +238,6 @@ między instancjami). Nie dodawaj go wcześniej.
 - Kości i tło (zmienione 2026-09-25): **statyczne tło w jednym kolorze, kości 2D w CSS, bez
   animacji rzutu**. Scena three.js z paralaksą została odrzucona. Kości pokazują wyłącznie wynik
   znany z serwera — patrz zasada architektoniczna w `CLAUDE.md`.
-- Układ ekranu gry dopasowuje się do miejsca (trzy kolumny / dwie / jedna pod drugą, taca min.
-  500 px), a Players + Game log chowają się do wysuwanej szuflady — szczegóły w `DESIGN.md`.
+- Układ ekranu gry dopasowuje się do miejsca (trzy kolumny / dwie / jedna pod drugą; szerokość
+  tacy zależy tylko od okna, 440–600 px), a Players + Game log chowają się do wysuwanej
+  szuflady — szczegóły w `DESIGN.md`.

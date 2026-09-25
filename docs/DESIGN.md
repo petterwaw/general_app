@@ -51,30 +51,46 @@ wartości. Ten plik opisuje, **jak** ich używać.
   po piątym wpisywanie się kończy, a kości wyboru się wygaszają. Klik w wypełnione pole robi je
   znowu aktywnym (poprawka). Przycisk „Confirm” aktywny dopiero, gdy wszystkie 5 pól jest
   wypełnionych. Bez nagłówków i napisów pomocniczych.
+- **Wybór kategorii — dwa kliknięcia** (ustalone 2026-09-25). Dopiero po „Confirm” w wolnych
+  polach aktywnego gracza pojawiają się podpowiedzi punktów (obwódka `primary`). Pierwszy klik
+  w pole zaznacza kategorię (wypełnienie `primary`) i pokazuje obok okrągły **ptaszek**
+  w kolorze `good`; dopiero klik w ptaszek zapisuje. Klik gdziekolwiek indziej albo Esc anuluje
+  zaznaczenie. Poprawienie kości po „Confirm” chowa podpowiedzi do ponownego potwierdzenia.
+  Podpowiedź jest tylko podpowiedzią — punkty zawsze przelicza serwer (`DECYZJE.md` §4).
 - **Rozmiar kości liczony od szerokości kolumny z tacą** (container query, `cqi`), nie od okna —
   inaczej taca wychodzi poza swoją kolumnę.
 - **Pasek tury** („Kuba's turn · round 7 of 15”) na dolnej krawędzi tacy, z awatarem gracza.
 - **Komórki tabeli:** wpisany wynik / wolna (`–`) / podpowiedź dla aktywnego gracza (obwódka
-  `primary`) / zero (`danger`) / sekcja dolna zablokowana (kreskowanie) / kolumna aktywnego
-  gracza (`primary-soft`).
+  `primary`) / zaznaczona do zapisu (wypełnienie `primary` + ptaszek) / zero (`danger`) / sekcja
+  dolna zablokowana (kreskowanie) / kolumna aktywnego gracza (`primary-soft`).
+- **Przewijanie tabeli w bok:** kolumna z nazwami kategorii (i nagłówki sekcji) stoi w miejscu,
+  przewijają się tylko kolumny graczy. Kolumna gracza ma min. 60 px; gdy wszyscy się mieszczą,
+  dzielą szerokość po równo. Gdy nie — szerokość jest dobrana tak, żeby widać było **co
+  najmniej 3,5 gracza**: wystająca połówka pokazuje, że da się przewinąć.
+- **Pasek przewijania:** na ekranach dotykowych brak paska. Przy myszce (`pointer: fine`) cienki
+  systemowy pasek pod tabelą w kolorach sukna (`scrollbar-color`), bo kółko myszy przewija
+  tylko w pionie.
 - **Architektura:** kości zawsze pokazują wartość już znaną (wpisaną przez hosta albo
   wylosowaną przez serwer). Bez `Math.random()` po stronie klienta.
 
 ## Układ ekranu gry
 
-Trzy tryby, wybierane **pomiarem**, nie stałymi progami szerokości — bo szerokość tabeli
-zależy od liczby graczy (1–8):
+**Szerokość tacy zależy wyłącznie od szerokości okna**, nigdy od liczby graczy: 42% szerokości
+obszaru gry, w granicach **440–600 px** (na telefonie nie szerzej niż ekran). Taca maleje razem
+z oknem do 440 px. Liczba graczy decyduje tylko o tym, gdzie jest tabela — trzy tryby:
 
 | Tryb | Co widać |
 |---|---|
 | Trzy kolumny | tabela · taca z kośćmi · karta Players + Game log |
 | Dwie kolumny | tabela · taca z kośćmi; Players + Game log w szufladzie |
-| Jedna pod drugą | taca z kośćmi na górze, tabela pod spodem; Players + Game log w szufladzie. Na szerokim oknie całość ma maks. 720 px szerokości |
+| Jedna pod drugą | taca z kośćmi na górze (ta sama szerokość co w innych trybach), tabela pod spodem (maks. 720 px); Players + Game log w szufladzie |
 
-- Wybierany jest najbogatszy tryb, w którym **kolumna z tacą ma co najmniej 500 px** i **tabela
-  nie musi się przewijać w bok**. Tak samo na każdym urządzeniu — tablet czy zwężone okno
-  przechodzą do jednej kolumny, gdy taca by się nie zmieściła. W prototypie przy 4 graczach:
-  ok. 1000 px → jedna kolumna, 1200 px → dwie, od ok. 1440 px → trzy.
+- Wybierany jest najbogatszy tryb, w którym **tabela mieści się obok tacy** (każdy gracz min.
+  60 px, plus kolumna nazw kategorii). Panel Players ma stałe 340 px. Tak samo na każdym
+  urządzeniu — tablet czy zwężone okno przechodzą do jednej kolumny, gdy tabela się nie mieści.
+- W prototypie (okno → taca, tryb dla 4 / 8 graczy): 375 px → 328, jedna / jedna;
+  916 px → 440, dwie / jedna; 1200 px → 474, dwie / dwie; 1440 px → 575, trzy / dwie;
+  od 1600 px → 600, trzy / dwie (od 1920 px trzy).
 - Kolumna siatki ma `minmax(0, …)`, żeby szeroka tabela przewijała się w swojej karcie, a nie
   rozpychała stronę.
 - W trybach kolumnowych od 1200 px gra mieści się w wysokości ekranu (kolumny rozciągnięte,
