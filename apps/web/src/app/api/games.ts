@@ -5,6 +5,8 @@ import type {
   GameView,
   RollInput,
   ScoreInput,
+  JoinGameInput,
+  GameEventView
 } from '@dice-app/contracts';
 import { apiRequest } from './client';
 
@@ -29,4 +31,25 @@ export function submitRoll(gameId: string, playerId: string, dice: DiceRoll) {
 export function scoreCategory(gameId: string, playerId: string, category: Category) {
   const body: ScoreInput = { playerId, category };
   return apiRequest<GameView>(`/games/${gameId}/score`, { method: 'POST', body });
+}
+
+export function leaveGame(gameId: string) {
+  return apiRequest<GameView>(`/games/${gameId}/leave`, { method: 'POST' });
+}
+
+export function joinGame(gameId: string, name: string) {
+  const body: JoinGameInput = { name };
+  return apiRequest<GameView>(`/games/${gameId}/join`, { method: 'POST', body });
+}
+
+export function getHostedGame() {
+  return apiRequest<GameView | null>(`/games/hosted`);
+}
+
+export function getGameEvents(gameId: string, after?: number) {
+  return apiRequest<GameEventView[]>(`/games/${gameId}/events${after !== undefined ? '?after=' + after: ''}`);
+}
+
+export function removeParticipant(gameId: string, participantId: string) {
+  return apiRequest<GameView>(`/games/${gameId}/participants/${participantId}`, { method: 'DELETE' });
 }
