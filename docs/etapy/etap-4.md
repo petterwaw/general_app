@@ -8,8 +8,9 @@ w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 
 > **Tu następuje przerwa.** Właściciel gra kilka partii i zgłasza poprawki, zanim ruszamy dalej.
 
-**Postęp: W TRAKCIE (stan na 2026-09-25).** Są komponenty prezentacyjne do ekranu gry
-w nowym designie; ekran nie jest jeszcze z nich złożony ani podpięty pod API.
+**Postęp: W TRAKCIE (stan na 2026-09-25).** Ekran gry w trakcie partii jest złożony
+z komponentów i podpięty pod API w zakresie zatwierdzenia kości i zapisu kategorii (gałąź
+`ui/game-screen`). Brakuje logu gry, wyjścia z gry, ekranu końca i przestylowania lobby.
 
 ## Komponenty UI — 2026-09-25
 
@@ -47,16 +48,50 @@ szuflada (Esc, powrót fokusu) sprawdzona ręcznie przez właściciela.
 
 `/dev/ui` — tymczasowa strona z komponentami na danych przykładowych.
 
+Dług przeniesiony niżej, do wpisu „Ekran gry”.
+
+## Ekran gry — 2026-09-25
+
+Gałąź `ui/game-screen`. Ekran `IN_PROGRESS` złożony z komponentów z PR #4; stary
+`gameScoreBoard/`, `offlineGames/` i `/dev/ui` usunięte.
+
+- `scorecard/scoreCard.tsx` — tabela: przyklejona kolumna nazw, szerokości kolumn liczone
+  w JS (co najmniej 3,5 gracza w widoku, gdy tabela się przewija), wiersz Bonus z postępem,
+  Chance osobno na dole, zaznaczenie anulowane Esc / klikiem obok. Podpowiedzi punktów tylko
+  u aktywnego gracza i dopiero po zatwierdzeniu kości; zablokowana dolna sekcja przyjmuje
+  wymuszone zero. Liczone funkcjami z `game-core` (nowe eksporty: `dispatchPoints`,
+  `isCategoryFree`, `isLowerSectionUnlocked`, `isLowerSectionCategory`, `isForcedZero`) —
+  serwer i tak przelicza.
+- `dice/diceEntry.tsx` — wpisywanie kości + „Confirm” (`POST /roll`). Szkic kości resetuje się
+  przy każdej nowej `revision`.
+- `game/gameScreen.tsx` — trzy tryby układu (logika przeniesiona z prototypu), zapis kategorii
+  (`POST /score`), błąd z API pod przyciskiem. Numer rundy w pasku tury liczony na froncie
+  z wypełnionych kategorii — tylko do wyświetlania.
+- `players/playersPanel.tsx`, `game/gameFrame.tsx` (ramka strony, poza folderem `[gameId]` —
+  patrz niżej).
+- Wygląd zmieniony względem prototypu (bez górnego paska, tabela przy lewej krawędzi, panel
+  graczy bez karty, oczy awatarów za kursorem, tekst na różowym w kolorze `ink`) — opis
+  w `DESIGN.md`.
+
+Sprawdzone w przeglądarce: pełna tura hosta (kości → Confirm → wybór kategorii → ptaszek →
+tura przechodzi dalej), błąd 403 bez ciasteczka hosta, tryby układu przy 375 / 916 / 1200 /
+1440 px zgodne z `DESIGN.md`, brak przewijania w pionie w trybach kolumnowych.
+
+**Pułapka dev serwera:** Next nie przebudowuje CSS Tailwinda po zmianach w plikach w folderach
+z nawiasami (`app/games/[gameId]/`) — klasy dopisane tam pojawiają się dopiero po restarcie
+`pnpm dev`. Dlatego klasy ramki strony są w `components/game/gameFrame.tsx`.
+
 Dług / do zrobienia w tym etapie:
 
-- Złożenie ekranu: tabela wyników (nieruchoma kolumna nazw, szerokości kolumn, wiersz bonusu
-  z postępem „53/63", Esc / klik obok anuluje wybór, miejsce na ptaszek przy ostatniej
-  kolumnie), układ trzy / dwie / jedna kolumna, szuflada.
-- Podpięcie API: zatwierdzenie kości, zapis kategorii (dziś `console.log`), Game log
-  (`GET /games/:id/events`), wynik na koniec (`finalScore`).
-- „Leave game" i kod gry w górnym pasku zostają na razie bez działania (brak endpointu;
-  krótki kod to etap 6). Przekierowanie hosta do niedokończonej gry (`DECYZJE.md` §5).
-- Przestylowanie tworzenia gry i lobby; usunięcie `/dev/ui` i starego `gameScoreBoard/`.
-- Kolory spoza tokenów: `text-[#cfc6ea]` w `TurnPill`, `bg-white/55` / `bg-white/70`.
+- **Poprawienie kości po „Confirm”** — serwer odrzuca drugi `roll` w tej samej turze („Roll
+  was already made”), a `DECYZJE.md` §4 i `DESIGN.md` zakładają, że do zapisu kategorii kości
+  są szkicem. Na razie UI blokuje kości po zatwierdzeniu. Wymaga zmiany w API.
+- Podpięcie API (właściciel, w trybie nauki): Game log (`GET /games/:id/events`, `TODO`
+  w `playersPanel.tsx`), „Leave game” (`POST /games/:id/leave`, `TODO` w `gameScreen.tsx`),
+  ekran końca gry z `finalScore` (`gameView.tsx` przy `COMPLETED` pokazuje sam napis).
+  Przekierowanie hosta do niedokończonej gry (`DECYZJE.md` §5).
+- Przestylowanie tworzenia gry i lobby.
+- Ptaszek przy zaznaczonym polu w ostatniej kolumnie wystaje poza komórkę.
+- Kolory spoza tokenów: `text-[#cfc6ea]` w `TurnPill`, `bg-white/55` / `bg-white/60`.
 - Kontrast `ink-faint` (~2,3:1) poniżej WCAG AA — wynika z palety, do decyzji właściciela.
-- `metadata` w `layout.tsx` nadal „Create Next App".
+- `metadata` w `layout.tsx` nadal „Create Next App”.
