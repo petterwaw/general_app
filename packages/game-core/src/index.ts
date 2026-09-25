@@ -12,6 +12,16 @@ export {
   reducer,
 } from './reducer.js';
 
+// Exposed so the UI can show score suggestions; the server still recomputes every score.
+export { dispatchPoints } from './scoring.js';
+
+export {
+  isCategoryFree,
+  isLowerSectionUnlocked,
+  isLowerSectionCategory,
+  isForcedZero,
+} from './validation.js';
+
 export {
   UPPER_BONUS_THRESHOLD,
   UPPER_BONUS_VALUE,

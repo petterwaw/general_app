@@ -16,6 +16,8 @@
   /* cards */
   --color-surface: rgb(252 244 250 / 0.84);
   --color-surface-solid: #fbf3f9;
+  /* opaque twin of `surface` as it looks over `backdrop`: sticky cells that must blend into a card */
+  --color-surface-flat: #f7eaf3;
   --color-surface-sunken: #f1e5f2;
   --color-surface-line: rgb(255 255 255 / 0.75);
   --color-hairline: #e6d8ea;

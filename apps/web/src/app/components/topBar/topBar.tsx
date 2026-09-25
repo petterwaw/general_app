@@ -4,8 +4,9 @@ import { IconButton } from '../ui/iconButton';
 import { CopyIcon, LeaveIcon } from '../ui/icons';
 
 type TopBarProps = {
-  gameCode: string;
-  onCopyCode: () => void;
+  // short join code comes with stage 6; until then the field is hidden
+  gameCode?: string;
+  onCopyCode?: () => void;
   onLeave: () => void;
 };
 
@@ -19,17 +20,19 @@ export default function TopBar({ gameCode, onCopyCode, onLeave }: TopBarProps) {
       </div>
 
       <div className="flex items-stretch gap-2 min-[561px]:gap-2.5">
-        <div className="flex items-center gap-2 rounded-full [--icon-btn-size:30px] min-[561px]:[--icon-btn-size:36px] border border-surface-line bg-surface py-1 pr-1.25 pl-3 min-[561px]:gap-2.5 min-[561px]:py-1.5 min-[561px]:pr-2 min-[561px]:pl-[18px]">
-          <div>
-            <small className="block text-[.66rem] leading-[1.1] text-ink-muted min-[561px]:text-[.72rem]">
-              Game code
-            </small>
-            <strong className="text-base tracking-[.08em] min-[561px]:text-[1.15rem]">{gameCode}</strong>
+        {gameCode && (
+          <div className="flex items-center gap-2 rounded-full [--icon-btn-size:30px] min-[561px]:[--icon-btn-size:36px] border border-surface-line bg-surface py-1 pr-1.25 pl-3 min-[561px]:gap-2.5 min-[561px]:py-1.5 min-[561px]:pr-2 min-[561px]:pl-[18px]">
+            <div>
+              <small className="block text-[.66rem] leading-[1.1] text-ink-muted min-[561px]:text-[.72rem]">
+                Game code
+              </small>
+              <strong className="text-base tracking-[.08em] min-[561px]:text-[1.15rem]">{gameCode}</strong>
+            </div>
+            <IconButton aria-label="Copy game code" onClick={onCopyCode}>
+              <CopyIcon />
+            </IconButton>
           </div>
-          <IconButton aria-label="Copy game code" onClick={onCopyCode}>
-            <CopyIcon />
-          </IconButton>
-        </div>
+        )}
 
         <Button
           variant="secondary"
