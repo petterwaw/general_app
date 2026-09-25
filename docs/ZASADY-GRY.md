@@ -72,6 +72,11 @@ sekcja dolna jest odblokowana).
 Jeśli w rzucie pasuje więcej niż jedna wartość do danej kategorii (np. dwie różne pary przy
 kategorii „Para", albo kareta/general przy kategorii „Trójka") — liczy się zawsze **najwyższa**
 pasująca wartość.
+
+**Dwie pary z tej samej wartości** (ustalone 2026-09-25). Kareta i generał liczą się jako dwie
+pary — cztery kości tej samej wartości to dwie pary, np. 1‑1‑1‑1‑1 daje 4 pkt, 5‑5‑5‑5‑2 daje
+20 pkt. Z trójki liczą się tylko dwie kości, np. 2‑2‑2‑4‑4 daje 12 pkt (2+2+4+4). O wyborze
+kategorii decyduje gracz — ta reguła mówi tylko, ile punktów daje wybrana kategoria.
 | Mały strit |  (4 wartosci pod rzad nie wazne jakie) | 25 |
 | Duży strit | 5 wartosci pod rzad nie wazne jakie | 40 |
 | Full | trójka + para (dwie różne wartości) **albo** generał (5 jednakowych) | 25 |
