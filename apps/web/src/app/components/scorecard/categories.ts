@@ -18,6 +18,8 @@ export const LOWER_ROWS: { category: Category; label: string }[] = [
   { category: 'smallStraight', label: 'Small Straight' },
   { category: 'largeStraight', label: 'Large Straight' },
   { category: 'full', label: 'Full House' },
-  { category: 'chance', label: 'Chance' },
   { category: 'general', label: 'General' },
 ];
+
+// Chance is never locked, so it sits apart at the very bottom, after a small unlabelled gap.
+export const CHANCE_ROW: { category: Category; label: string } = { category: 'chance', label: 'Chance' };

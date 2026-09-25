@@ -3,8 +3,9 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { CATEGORIES, type Category, type DiceRoll, type GameView } from '@dice-app/contracts';
 
-import TopBar from '../topBar/topBar';
+import { Button } from '../ui/button';
 import { Card } from '../ui/card';
+import { LeaveIcon } from '../ui/icons';
 import { Drawer } from '../ui/drawer';
 import { DrawerHandle } from '../ui/drawerHandle';
 import DiceEntry from '../dice/diceEntry';
@@ -29,6 +30,11 @@ const SIDE_W = 340;
 const GAP = 20;
 // scorecard card padding + border
 const CARD_PAD = 26;
+// player column width the scorecard settles at when there is room: with few players the card
+// hugs the table and sits left instead of stretching across the screen
+const COMFY_PLAYER_COL = 88;
+// with only a few players the hugging card still keeps this width, so it does not look cramped
+const MIN_SCORECARD_W = 600;
 
 function pickLayout(width: number, labelWidth: number, players: number) {
   const tray = Math.min(width, Math.max(MIN_TRAY, Math.min(MAX_TRAY, width * TRAY_SHARE)));
@@ -36,12 +42,19 @@ function pickLayout(width: number, labelWidth: number, players: number) {
   const need = labelWidth + players * MIN_PLAYER_COL + CARD_PAD;
   const layout: Layout =
     width - tray - SIDE_W - 2 * GAP >= need ? 'three' : width - tray - GAP >= need ? 'two' : 'stack';
-  return { tray, layout };
+
+  // natural card width, but never so wide that the tray loses its column
+  const natural = Math.max(MIN_SCORECARD_W, labelWidth + players * COMFY_PLAYER_COL + CARD_PAD);
+  const room = width - tray - GAP - (layout === 'three' ? SIDE_W + GAP : 0);
+  const scorecard = Math.min(natural, layout === 'stack' ? width : room);
+
+  return { tray, layout, scorecard };
 }
 
+// scorecard left, dice in the middle of what is left, players right
 const gridByLayout: Record<Layout, string> = {
-  three: 'grid-cols-[minmax(0,1fr)_var(--tray-w)_340px]',
-  two: 'grid-cols-[minmax(0,1fr)_var(--tray-w)]',
+  three: 'grid-cols-[var(--scorecard-w)_minmax(0,1fr)_340px]',
+  two: 'grid-cols-[var(--scorecard-w)_minmax(0,1fr)]',
   stack: 'grid-cols-[minmax(0,1fr)]',
 };
 
@@ -64,7 +77,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }, []);
 
   const { participants, currentPlayerId } = game;
-  const { tray, layout } = pickLayout(gridWidth, labelWidth, participants.length);
+  const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
   // the panel has its own column now; the drawer must not pop back open when the window narrows
   if (layout === 'three' && drawerOpen) setDrawerOpen(false);
@@ -98,15 +111,20 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     run(() => scoreCategory(game.id, currentPlayerId, category));
   }
 
+  // TODO: leave the game (POST /games/:id/leave from PR #6)
+  const leaveButton = (
+    <Button variant="secondary" size="top" onClick={() => {}} aria-label="Leave game">
+      <LeaveIcon />
+      <span className="max-[560px]:hidden">Leave game</span>
+    </Button>
+  );
+
   return (
     <>
-      {/* TODO: leave the game (DELETE endpoint from PR #6) */}
-      <TopBar onLeave={() => {}} />
-
       <section
         ref={gridRef}
         aria-label="Game"
-        style={{ '--tray-w': `${tray}px` } as React.CSSProperties}
+        style={{ '--tray-w': `${tray}px`, '--scorecard-w': `${scorecard}px` } as React.CSSProperties}
         className={[
           'grid gap-5',
           gridByLayout[layout],
@@ -120,7 +138,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           className={[
             columns
               ? 'flex min-h-0 flex-col [&>div]:min-h-0 [&>div]:flex-1 [&>div]:overflow-auto'
-              : 'order-1 w-full max-w-[720px] justify-self-center',
+              : 'order-1 w-full max-w-[min(720px,var(--scorecard-w))] justify-self-center',
           ].join(' ')}
         >
           <ScoreCard
@@ -137,18 +155,20 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
         {/* dice are sized from this column's width (cqi), not the window's */}
         <div
           className={[
-            '@container grid min-w-0 gap-5',
-            columns ? 'self-center' : 'w-full max-w-(--tray-w) justify-self-center',
+            '@container grid w-full max-w-(--tray-w) min-w-0 gap-5 justify-self-center',
+            columns ? 'self-center' : '',
           ].join(' ')}
         >
           {layout !== 'three' && (
-            <DrawerHandle
-              label="Players"
-              aria-label="Show players and game log"
-              aria-expanded={drawerOpen}
-              onClick={() => setDrawerOpen(true)}
-              className="justify-self-end"
-            />
+            <div className="flex items-center justify-between gap-3">
+              {leaveButton}
+              <DrawerHandle
+                label="Players"
+                aria-label="Show players and game log"
+                aria-expanded={drawerOpen}
+                onClick={() => setDrawerOpen(true)}
+              />
+            </div>
           )}
 
           {/* a new revision means a new draft: confirmed dice or the next player's turn */}
@@ -178,9 +198,12 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
         </div>
 
         {layout === 'three' && (
-          <Card className="min-h-0 overflow-auto" aria-label="Players and game log">
-            <PlayersPanel participants={participants} currentPlayerId={currentPlayerId} />
-          </Card>
+          <div className="flex min-h-0 flex-col gap-4" aria-label="Players and game log">
+            <div className="flex justify-end">{leaveButton}</div>
+            <div className="min-h-0 overflow-auto">
+              <PlayersPanel participants={participants} />
+            </div>
+          </div>
         )}
       </section>
 
@@ -192,7 +215,10 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           label="Players and game log"
           closeLabel="Close players and game log"
         >
-          <PlayersPanel participants={participants} currentPlayerId={currentPlayerId} />
+          {/* room for the close button, which used to sit beside the heading */}
+          <div className="pt-12">
+            <PlayersPanel participants={participants} />
+          </div>
         </Drawer>
       )}
     </>

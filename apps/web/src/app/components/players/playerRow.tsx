@@ -6,7 +6,6 @@ type PlayerRowProps = {
   participantId: string;
   name: string;
   seat: number;
-  isActive: boolean;
   isHost?: boolean;
   isGuest?: boolean;
   // null = total still sealed (hidden until the game ends)
@@ -17,18 +16,13 @@ export default function PlayerRow({
   participantId,
   name,
   seat,
-  isActive,
   isHost = false,
   isGuest = false,
   total,
 }: PlayerRowProps) {
   return (
-    <div
-      className={[
-        'flex items-center gap-3 rounded-panel py-2.5 pr-3.5 pl-2.5',
-        isActive ? 'bg-white inset-ring-2 inset-ring-primary-soft' : 'bg-white/60',
-      ].join(' ')}
-    >
+    // no highlight for the current player: the scorecard column and the turn pill already show it
+    <div className="flex items-center gap-3 rounded-panel bg-white/60 py-2.5 pr-3.5 pl-2.5">
       <Avatar participantId={participantId} seat={seat} size={48} />
 
       <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-bold">

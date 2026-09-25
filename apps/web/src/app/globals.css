@@ -29,7 +29,8 @@
   --color-primary-soft: #e7e2fd;
   --color-secondary: #ee8edf;
   --color-secondary-hover: #e577d4;
-  --color-secondary-ink: #4b2fc9;
+  /* text on pink: the app's ink reads best there (~6.6:1; violet was ~3.8:1, white ~2.2:1) */
+  --color-secondary-ink: var(--color-ink);
 
   /* dice tray: wooden rim, violet felt */
   --color-tray-rim: #d9a877;

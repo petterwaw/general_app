@@ -15,7 +15,7 @@ import {
 import Avatar from '../players/avatar';
 import Die from '../dice/die';
 import ScoreCell, { type ScoreCellState } from './scoreCell';
-import { LOWER_ROWS, UPPER_ROWS } from './categories';
+import { CHANCE_ROW, LOWER_ROWS, UPPER_ROWS } from './categories';
 
 type ScoreCardProps = {
   participants: ParticipantView[];
@@ -163,6 +163,19 @@ export default function ScoreCard({
     });
   }
 
+  function lowerRow(category: Category, label: string) {
+    return (
+      <tr key={category} className={rowBase}>
+        <td className={`${labelCell} bg-surface-solid`}>
+          <span data-row-label className="inline-flex whitespace-nowrap">
+            {label}
+          </span>
+        </td>
+        {cells(category, label)}
+      </tr>
+    );
+  }
+
   return (
     <div
       ref={scrollRef}
@@ -246,16 +259,13 @@ export default function ScoreCard({
           </tr>
 
           <SectionRow label="Lower section" span={count + 1} />
-          {LOWER_ROWS.map(({ category, label }) => (
-            <tr key={category} className={rowBase}>
-              <td className={`${labelCell} bg-surface-solid`}>
-                <span data-row-label className="inline-flex whitespace-nowrap">
-                  {label}
-                </span>
-              </td>
-              {cells(category, label)}
-            </tr>
-          ))}
+          {LOWER_ROWS.map(({ category, label }) => lowerRow(category, label))}
+
+          {/* Chance is never locked: set apart at the bottom by a small gap, no heading */}
+          <tr aria-hidden="true">
+            <td colSpan={count + 1} className="h-2 p-0" />
+          </tr>
+          {lowerRow(CHANCE_ROW.category, CHANCE_ROW.label)}
         </tbody>
       </table>
     </div>
