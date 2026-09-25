@@ -1,0 +1,857 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Pastelowe sukno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+
+    /* base */
+    --ink: #2b2545;
+    --ink-muted: #6e6688;
+    --ink-faint: #a49cbb;
+    --backdrop: #dcb8cf;
+    --surface: rgba(252, 244, 250, 0.84);
+    --surface-solid: #fbf3f9;
+    --surface-sunken: #f1e5f2;
+    --surface-line: rgba(255, 255, 255, 0.75);
+    --hairline: #e6d8ea;
+
+    /* accents */
+    --primary: #5b45e8;
+    --primary-hover: #4a34d6;
+    --primary-ink: #ffffff;
+    --primary-soft: #e7e2fd;
+    --secondary: #ee8edf;
+    --secondary-hover: #e577d4;
+    --secondary-ink: #4b2fc9;
+
+    /* felt tray: the one bold object */
+    --tray-rim: #d9a877;
+    --tray-rim-shade: #b9844f;
+    --felt: #6d5c9f;
+    --felt-deep: #574889;
+    --die: #fff7f5;
+    --die-shade: #ecd9dc;
+    --pip: #2b2545;
+
+    /* semantic */
+    --good: #2f9e7a;
+    --good-soft: #dcf3ea;
+    --danger: #d64a6b;
+    --danger-soft: #fbe1e8;
+
+    /* players (max 8) */
+    --p1: #5b45e8;
+    --p2: #ef6fc2;
+    --p3: #a98af0;
+    --p4: #f2bd3f;
+    --p5: #3fbf9c;
+    --p6: #4aa8ec;
+    --p7: #ff8a70;
+    --p8: #9a4db3;
+
+    --radius-xl: 28px;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-pill: 999px;
+    --shadow-die: 0 6px 0 var(--die-shade);
+
+    --font: "Nunito", "Segoe UI", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--backdrop);
+    min-height: 100%;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .wrap { position: relative; z-index: 1; margin: 0 auto;
+    /* the game spans the full window; spec sections stay readable */ padding-inline: 16px; padding-block: 16px 64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .wrap > .spec { margin-top: 28px; }
+  @media (min-width: 720px) { .wrap { padding-inline: 28px; } }
+
+  h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h2 { font-size: 1.75rem; font-weight: 800; }
+  h3 { font-size: 1.25rem; font-weight: 700; }
+  p { margin: 0; }
+  .muted { color: var(--ink-muted); }
+  .num { font-variant-numeric: tabular-nums; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--surface-line);
+    border-radius: var(--radius-xl);
+    backdrop-filter: blur(18px) saturate(1.2);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    padding: 22px;
+  }
+
+  /* top bar */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.35rem; }
+  .brand .die { --s: 40px; transform: rotate(-10deg); box-shadow: 0 4px 0 var(--die-shade); }
+  .topbar-actions { display: flex; align-items: stretch; gap: 10px; }
+  .code-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--surface-line);
+    border-radius: var(--radius-pill); padding: 6px 8px 6px 18px;
+  }
+  .code-chip small { display: block; font-size: .72rem; color: var(--ink-muted); line-height: 1.1; }
+  .code-chip strong { font-size: 1.15rem; letter-spacing: .08em; }
+  @media (max-width: 560px) {
+    .brand-name, .leave-label { display: none; }
+    .brand .die { --s: 34px; }
+    .topbar-actions { gap: 8px; }
+    .code-chip { gap: 8px; padding: 4px 5px 4px 12px; }
+    .code-chip small { font-size: .66rem; }
+    .code-chip strong { font-size: 1rem; }
+    .code-chip .icon-btn { width: 30px; height: 30px; }
+    .btn-top.leave { padding-inline: 13px; }
+  }
+
+  /* buttons */
+  .btn {
+    border: 0; cursor: pointer; border-radius: var(--radius-pill);
+    padding: 12px 22px; font-weight: 700; font-size: 1rem;
+    transition: background-color .15s, transform .1s, box-shadow .15s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:active { transform: translateY(1px) scale(.99); }
+  .btn-primary { background: var(--primary); color: var(--primary-ink); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: var(--secondary); color: var(--secondary-ink); }
+  .btn-secondary:hover { background: var(--secondary-hover); }
+  .btn-ghost { background: transparent; color: var(--primary); box-shadow: inset 0 0 0 2px var(--primary-soft); }
+  .btn-ghost:hover { background: var(--primary-soft); }
+  .btn-danger { background: var(--danger-soft); color: var(--danger); }
+  .btn[disabled] { background: var(--surface-sunken); color: var(--ink-faint); box-shadow: none; cursor: not-allowed; }
+  .btn-lg { padding: 16px 28px; font-size: 1.15rem; width: 100%; }
+  .btn-top { padding-inline: 26px; font-size: 1.05rem; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--primary-soft); color: var(--primary); display: grid; place-items: center;
+  }
+
+  /* dice */
+  .die {
+    --s: 64px;
+    width: var(--s); height: var(--s);
+    background: linear-gradient(160deg, #fff, var(--die));
+    border-radius: calc(var(--s) * .24);
+    display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+    padding: calc(var(--s) * .16);
+    box-shadow: var(--shadow-die);
+    flex: none;
+  }
+  .die i { width: 62%; aspect-ratio: 1; border-radius: 50%; background: var(--pip); place-self: center; visibility: hidden; box-shadow: inset 0 2px 2px rgba(0,0,0,.35); }
+  .die i.on { visibility: visible; }
+  .die.mini { --s: 16px; box-shadow: none; background: transparent; padding: 1px; }
+  .die.mini i { width: 70%; box-shadow: none; }
+  .die.held { outline: 3px solid var(--secondary); outline-offset: 4px; }
+  .die.empty.held { box-shadow: inset 0 0 0 2px var(--secondary); background: rgba(238,142,223,.16); }
+
+  /* game screen */
+  .wrap > .spec, .wrap > .topbar { width: 100%; max-width: 1240px; justify-self: center; }
+  .wrap > .topbar { max-width: none; }
+  /* stacked (default): dice on top, scorecard below.
+     minmax(0, 1fr): a wide scorecard scrolls inside its card instead of widening the page */
+  .game { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+  .game .center-col { order: -1; }
+  /* --tray-w depends on the window width only (see pickLayout), never on the player count:
+     the scorecard takes what is left beside the tray, or drops below it when it does not fit */
+  .game.two { grid-template-columns: minmax(0, 1fr) var(--tray-w); }
+  .game.three { grid-template-columns: minmax(0, 1fr) var(--tray-w) 340px; }
+  .game:not(.two):not(.three) .center-col { width: 100%; max-width: var(--tray-w); justify-self: center; }
+  /* stacked on a wide window: the scorecard stays at a readable width */
+  .game:not(.two):not(.three) .scorecard { width: 100%; max-width: 720px; justify-self: center; }
+  .game.two .center-col, .game.three .center-col { order: 0; }
+  @media (min-width: 1200px) {
+    /* the whole game fits the viewport: columns stretch, the centre is vertically centred */
+    .game.two, .game.three { height: calc(100dvh - 124px); min-height: 620px; align-items: stretch; }
+    .game.two .scorecard, .game.three .scorecard { display: flex; flex-direction: column; min-height: 0; }
+    .game.two .sc-scroll, .game.three .sc-scroll { flex: 1; min-height: 0; overflow: auto; }
+    .game.two table.sc, .game.three table.sc { height: 100%; }
+    .game.two .center-col, .game.three .center-col { align-self: center; }
+    .game .side { min-height: 0; }
+  }
+  /* dice are sized from this column's width (cqi), not the window's, so they never spill over */
+  .center-col { display: grid; gap: 20px; min-width: 0; container-type: inline-size; }
+
+  .tray {
+    background: linear-gradient(170deg, var(--tray-rim), var(--tray-rim-shade));
+    border-radius: 40px; padding: 18px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.6);
+    position: relative;
+  }
+  .felt {
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255,255,255,.10), transparent 55%),
+      repeating-radial-gradient(circle at 50% 50%, rgba(0,0,0,.04) 0 1px, transparent 1px 3px),
+      var(--felt);
+    box-shadow: inset 0 10px 24px rgba(20, 10, 50, .5);
+    position: relative; min-height: clamp(200px, 60cqi, 300px); display: grid;
+  }
+  /* five slots filled one after another, like a one-time-code input */
+  .slots { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 36px 8px 56px; }
+  /* 100cqi minus tray padding (36), slot padding (16) and gaps (40); 6px spare for the active outline */
+  .slots .die { --s: clamp(36px, calc((100cqi - 92px) / 5 - 6px), 72px); }
+  .die.empty {
+    background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35);
+    /* drop the 3x3 pip grid so the dash sits in the middle */
+    display: grid; grid-template: none; place-items: center; padding: 0;
+    color: rgba(255,255,255,.55); font-weight: 800; font-size: calc(var(--s) * .4);
+  }
+
+  .turn-pill {
+    position: absolute; left: 50%; bottom: -18px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; border-radius: var(--radius-pill);
+    padding: 10px 22px 10px 12px; display: flex; align-items: center; gap: 12px;
+    white-space: nowrap; font-weight: 700;
+  }
+  /* the blobatar drawing has built-in padding, so the box is larger than it looks */
+  .turn-pill .avatar { width: 42px; height: 42px; font-size: .9rem; margin: -10px -3px -10px -5px; }
+
+  .entry { padding-top: 34px; display: grid; gap: 16px; }
+  .die-btn { border: 0; background: none; padding: 0; cursor: pointer; border-radius: 16px; }
+  /* value picker: bare dice, no button chrome */
+  .picker { display: flex; justify-content: space-between; gap: 8px; }
+  .picker button {
+    border: 0; background: none; padding: 0; cursor: pointer; border-radius: 18px;
+    display: grid; place-items: center;
+  }
+  .picker .die { --s: clamp(36px, calc((100cqi - 40px) / 6), 64px); }
+  .picker button:disabled { cursor: not-allowed; opacity: .4; }
+  @media (prefers-reduced-motion: no-preference) {
+    .picker .die { transition: transform .15s ease; }
+    .picker button:enabled:hover .die { transform: translateY(-4px) rotate(-6deg); }
+    .picker button:enabled:active .die { transform: translateY(2px); }
+  }
+
+  /* scorecard */
+  .scorecard { padding: 12px 12px; }
+  .scorecard h3 { padding-inline: 8px; margin-bottom: 10px; }
+  /* touch: no scrollbar, the half-visible player column says the table scrolls.
+     mouse: a thin felt-coloured bar under the table, since a wheel only scrolls vertically */
+  .sc-scroll { overflow-x: auto; scrollbar-width: none; }
+  @media (pointer: fine) {
+    .sc-scroll { scrollbar-width: thin; scrollbar-color: var(--felt) rgb(109 92 159 / .18); }
+  }
+  /* column widths come from sizeColumns(): at least 3.5 players in view whenever the table scrolls */
+  table.sc { border-collapse: separate; border-spacing: 0 2px; width: 100%; font-size: .92rem; line-height: 1.25; }
+  .sc thead tr:first-child th:first-child { width: var(--label-w); }
+  .sc thead tr:first-child th + th { width: var(--col-w); }
+  .sc th, .sc td { padding: 3px 8px; text-align: center; }
+  .sc th:first-child, .sc td:first-child { text-align: left; }
+  .sc thead th { font-weight: 700; font-size: .88rem; vertical-align: bottom; }
+  /* avatar stacked above the nickname, centred in the column */
+  .sc-head { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .sc thead .avatar { width: 34px; height: 34px; font-size: .8rem; }
+  .sc tbody td { background: rgba(255,255,255,.55); font-variant-numeric: tabular-nums; }
+  .sc tbody td:first-child { border-radius: 10px 0 0 10px; }
+  .sc tbody td:last-child { border-radius: 0 10px 10px 0; }
+  .sc .cat { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .sc .section-row td { background: transparent; font-weight: 700; font-size: .82rem; color: var(--ink-muted); padding-top: 6px; }
+  .sc .sum-row td { background: var(--surface-sunken); font-weight: 800; }
+  .sc .total-row td { background: var(--ink); color: #fff; font-weight: 800; font-size: 1.05rem; }
+  .sc td.active, .sc th.active { background: var(--primary-soft); }
+  .sc .total-row td.active { background: var(--primary); }
+  .sc .empty { color: var(--ink-faint); }
+  .sc .zero { color: var(--danger); font-weight: 700; }
+  .sc .hint {
+    color: var(--primary); font-weight: 800; border-radius: 8px;
+    box-shadow: inset 0 0 0 2px var(--primary); background: #fff; cursor: pointer;
+  }
+  .sc button.hint { border: 0; font: inherit; font-weight: 800; padding: 2px 10px; }
+  /* two-step save: first tap selects the category, the tick next to it saves it */
+  .sc .pick { display: inline-flex; align-items: center; gap: 4px; }
+  .sc .pick .hint { display: inline-block; padding: 2px 8px; }
+  .sc .hint.selected { background: var(--primary); color: var(--primary-ink); box-shadow: none; }
+  .sc .tick {
+    width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer; flex: none;
+    background: var(--good); color: #fff; display: grid; place-items: center;
+  }
+
+  /* category names stay put; only the player columns scroll sideways.
+     Sticky cells need opaque fills: these match the translucent card and cells over the backdrop */
+  .sc { --sc-card: #f7eaf3; --sc-cell: #fbf6fa; }
+  .sc th:first-child, .sc td:first-child { position: sticky; left: 0; z-index: 1; }
+  .sc thead th:first-child { background: var(--sc-card); }
+  .sc tbody td:first-child { background: var(--sc-cell); box-shadow: inset -1px 0 0 var(--hairline); }
+  .sc .sum-row td:first-child { background: var(--surface-sunken); }
+  .sc .section-row td:first-child { position: static; background: transparent; box-shadow: none; }
+  .sc .section-row span { position: sticky; left: 8px; }
+  .sc .locked { color: var(--ink-faint); background: repeating-linear-gradient(135deg, rgba(255,255,255,.5) 0 6px, rgba(230,216,234,.6) 6px 12px); }
+  .sc .bonus-progress { font-size: .8rem; color: var(--ink-muted); font-weight: 600; }
+
+  /* players */
+  .players { display: grid; gap: 8px; margin-top: 12px; }
+  .player {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px;
+    background: rgba(255,255,255,.6); border-radius: var(--radius-lg);
+  }
+  .player.active { background: #fff; box-shadow: inset 0 0 0 2px var(--primary-soft); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; flex: none; box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); overflow: hidden; }
+  /* once blobatar renders, the player colour becomes a pale plate behind the creature */
+  .avatar.blob { background: none !important; box-shadow: none; border-radius: 0; overflow: visible; }
+  .avatar.blob svg { width: 100%; height: 100%; display: block; }
+  .player .avatar { width: 48px; height: 48px; }
+  .player .name { font-weight: 700; flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: .75rem; font-weight: 700; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--primary-soft); color: var(--primary); }
+  .badge.guest { background: var(--surface-sunken); color: var(--ink-muted); }
+  .player .score { font-weight: 800; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+  /* totals stay sealed until the game ends, to keep the suspense */
+  .player .score.sealed {
+    display: inline-flex; align-items: center; gap: 5px; font-size: .95rem; letter-spacing: .12em;
+    color: var(--ink-faint); background: var(--surface-sunken); border-radius: var(--radius-pill); padding: 4px 10px 4px 9px;
+  }
+  .log { display: grid; gap: 12px; margin-top: 12px; }
+  .log-item { display: grid; grid-template-columns: 12px 1fr auto; gap: 10px; align-items: baseline; font-size: .92rem; }
+  .log-item .dot { width: 12px; height: 12px; border-radius: 50%; transform: translateY(1px); }
+  .log-item time { color: var(--ink-faint); font-size: .8rem; }
+  .side { display: flex; flex-direction: column; gap: 22px; position: relative; }
+  .side-close { display: none; position: absolute; top: 16px; right: 16px; }
+
+  /* without room for a third column, Players + Game log live in a drawer from the right */
+  .game:not(.three) .side {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 20;
+    width: min(380px, 88vw); border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+    background: var(--surface-solid); backdrop-filter: none; -webkit-backdrop-filter: none;
+    overflow: auto; transform: translateX(105%); visibility: hidden;
+  }
+  .game:not(.three) .side.open { transform: none; visibility: visible; }
+  .game:not(.three) .side-close { display: grid; }
+  @media (prefers-reduced-motion: no-preference) {
+    .game:not(.three) .side { transition: transform .25s ease, visibility 0s linear .25s; }
+    .game:not(.three) .side.open { transition: transform .25s ease; }
+  }
+  .scrim { position: fixed; inset: 0; z-index: 15; background: rgba(43, 37, 69, .35); }
+  .panel-open {
+    justify-self: end; border: 0; background: none; cursor: pointer; padding: 4px 2px;
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ink-muted); font-weight: 700; font-size: .95rem;
+  }
+  .panel-open:hover { color: var(--primary); }
+  /* soft round handle with a chevron: says "pulls out from the right" without looking like a main button */
+  .panel-arrow { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+  .panel-open:hover .panel-arrow { background: var(--primary); color: var(--primary-ink); }
+  .panel-open[hidden] { display: none; }
+  .side-log { flex: 1; min-height: 0; display: flex; flex-direction: column; border-top: 1px solid var(--hairline); padding-top: 18px; }
+  .side-log .log { flex: 1; min-height: 0; overflow: auto; align-content: start; }
+  .placeholder-note { font-size: .82rem; color: var(--ink-muted); margin-top: 12px; }
+
+  /* spec sections */
+  .spec { display: grid; gap: 18px; }
+  .spec-head { display: grid; gap: 6px; max-width: 64ch; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .swatch { border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-solid); }
+  .swatch .chip { height: 76px; }
+  .swatch .meta { padding: 10px 14px 12px; display: grid; gap: 2px; }
+  .swatch .meta b { font-size: .95rem; }
+  .swatch .meta code { font-size: .8rem; color: var(--ink-muted); font-family: inherit; font-variant-numeric: tabular-nums; }
+  .swatch .meta span { font-size: .8rem; color: var(--ink-muted); }
+  .player-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .pswatch { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: var(--radius-pill); padding: 6px 14px 6px 6px; }
+  .pswatch code { font-family: inherit; font-size: .8rem; color: var(--ink-muted); }
+
+  .type-grid { display: grid; gap: 20px; }
+  @media (min-width: 860px) { .type-grid { grid-template-columns: 1.3fr 1fr; } }
+  .scale { display: grid; gap: 14px; }
+  .scale-row { display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: baseline; }
+  .scale-row .lbl { font-size: .8rem; color: var(--ink-muted); }
+  .font-switch { display: inline-flex; background: var(--surface-sunken); border-radius: var(--radius-pill); padding: 4px; gap: 4px; }
+  .font-switch button { border: 0; background: transparent; padding: 8px 16px; border-radius: var(--radius-pill); cursor: pointer; font-weight: 700; color: var(--ink-muted); }
+  .font-switch button[aria-pressed="true"] { background: #fff; color: var(--primary); }
+  .layout-rules { display: grid; gap: 10px; padding: 0; margin: 0; }
+  .layout-rules li { list-style: none; background: var(--surface); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+  .layout-rules b { min-width: 240px; }
+  .numbers-demo { font-size: 3.2rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+  .comp-grid { display: grid; gap: 20px; }
+  @media (min-width: 860px) { .comp-grid { grid-template-columns: 1fr 1fr; } }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .states { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .state { display: grid; gap: 6px; }
+  .state .cell { height: 40px; border-radius: 10px; display: grid; place-items: center; font-weight: 700; background: rgba(255,255,255,.7); font-variant-numeric: tabular-nums; }
+  .state small { color: var(--ink-muted); font-size: .8rem; line-height: 1.35; }
+
+  .principles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .principles li { list-style: none; background: var(--surface); border-radius: var(--radius-lg); padding: 16px 18px; display: grid; gap: 4px; }
+  .principles ul { padding: 0; margin: 0; display: contents; }
+  .principles b { font-size: 1rem; }
+  .principles span { color: var(--ink-muted); font-size: .92rem; }
+</style>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand"><span class="die" data-v="5"></span> <span class="brand-name">dice-app</span></div>
+    <div class="topbar-actions">
+      <div class="code-chip">
+        <div><small>Game code</small><strong>Y7K3</strong></div>
+        <button class="icon-btn" id="copy-code" aria-label="Copy game code">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="3"/><path d="M5 15V6a3 3 0 0 1 3-3h9"/></svg>
+        </button>
+      </div>
+      <button class="btn btn-secondary btn-top leave" aria-label="Leave game">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M10 12h10"/><path d="M16.5 8.5 20 12l-3.5 3.5"/></svg>
+        <span class="leave-label">Leave game</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- composed screen -->
+  <section class="game" aria-label="Sample game screen">
+    <div class="card scorecard">
+      <div class="sc-scroll"><table class="sc" id="scorecard"></table></div>
+    </div>
+
+    <div class="center-col">
+      <button class="panel-open" id="panel-open" aria-controls="side" aria-expanded="false" aria-label="Show players and game log" hidden>
+        Players
+        <span class="panel-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></svg></span>
+      </button>
+      <div class="tray">
+        <div class="felt"><div class="slots" id="slots" aria-label="Dice for this turn"></div></div>
+        <div class="turn-pill"><span class="avatar" data-name="Kuba" data-hue="295" style="background:var(--p3)">K</span> Kuba's turn <span class="muted" style="color:#cfc6ea;font-weight:600">· round 7 of 15</span></div>
+      </div>
+      <div class="entry">
+        <div class="picker" id="picker" aria-label="Choose die value"></div>
+        <button class="btn btn-primary btn-lg" id="confirm" disabled>Confirm</button>
+      </div>
+    </div>
+
+    <div class="card side" id="side" aria-label="Players and game log">
+      <button class="icon-btn side-close" id="panel-close" aria-label="Close players and game log">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div>
+        <h3>Players</h3>
+        <div class="players" id="players"></div>
+      </div>
+      <div class="side-log">
+        <h3>Game log</h3>
+        <div class="log">
+          <div class="log-item"><span class="dot" style="background:var(--p2)"></span><span>Ala scored General, 50 pts</span><time>20:14</time></div>
+          <div class="log-item"><span class="dot" style="background:var(--p1)"></span><span>Piotr scored Full House, 25 pts</span><time>20:12</time></div>
+          <div class="log-item"><span class="dot" style="background:var(--p4)"></span><span>Ola scratched Ones for 0</span><time>20:10</time></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <!-- layout -->
+  <section class="spec">
+    <div class="spec-head">
+      <h2>Layout</h2>
+      <p class="muted">The dice tray never gets narrower than 440px. Columns are added only while it keeps that width and the scorecard needs no sideways scroll; otherwise the scorecard drops below the dice, on any device. Players and the game log get a column last, and slide in from the right under “Players” when there is no room. More players make the scorecard wider, so eight players drop to fewer columns sooner.</p>
+    </div>
+    <ul class="layout-rules">
+      <li><b>Three columns</b><span>Scorecard · dice · Players &amp; log, all in view</span></li>
+      <li><b>Two columns</b><span>Scorecard · dice; Players &amp; log in the drawer</span></li>
+      <li><b>Stacked (tray would drop under 440px)</b><span>Dice on top, scorecard below; Players &amp; log in the drawer</span></li>
+    </ul>
+    <div class="row">
+      <span class="muted" style="font-size:.9rem">Sample game:</span>
+      <div class="font-switch" id="count-switch" role="group" aria-label="Number of players in the sample game">
+        <button type="button" data-n="4" aria-pressed="true">4 players</button>
+        <button type="button" data-n="8" aria-pressed="false">8 players</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- palette -->
+  <section class="spec">
+    <div class="spec-head">
+      <h2>Colour</h2>
+      <p class="muted">Pastel lavender and pink backdrop, translucent cards, one strong violet for actions. The felt tray is the only dark, saturated object on screen.</p>
+    </div>
+    <div class="swatches" id="swatches"></div>
+    <h3>Player colours</h3>
+    <div class="player-swatches" id="pswatches"></div>
+  </section>
+
+  <!-- type -->
+  <section class="spec">
+    <div class="spec-head">
+      <h2>Type</h2>
+      <p class="muted">Nunito for everything: rounded, friendly, legible at a glance. Figures are always tabular so score columns stay aligned.</p>
+    </div>
+    <div class="type-grid">
+      <div class="card scale">
+        <div class="scale-row"><span class="lbl">Title · 32/800</span><span style="font-size:2rem;font-weight:800;line-height:1.15">New game at the table</span></div>
+        <div class="scale-row"><span class="lbl">Section · 20/700</span><span style="font-size:1.25rem;font-weight:700">Scorecard</span></div>
+        <div class="scale-row"><span class="lbl">Body · 16/400</span><span>The host enters scores for everyone. Other players follow the game on their phones.</span></div>
+        <div class="scale-row"><span class="lbl">Label · 14/600</span><span style="font-size:.875rem;font-weight:600" class="muted">Upper section · bonus at 63 pts</span></div>
+        <div class="scale-row"><span class="lbl">Small · 12/600</span><span style="font-size:.75rem;font-weight:600" class="muted">20:14 · Game code</span></div>
+      </div>
+      <div class="card scale">
+        <span class="lbl muted" style="font-size:.8rem">Numbers · 52/800, tabular</span>
+        <div class="numbers-demo">254<br>155<br>&nbsp;51</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- components -->
+  <section class="spec">
+    <div class="spec-head">
+      <h2>Components</h2>
+      <p class="muted">Pill buttons, generously rounded cards, dice with real depth instead of flat squares.</p>
+    </div>
+    <div class="comp-grid">
+      <div class="card" style="display:grid;gap:14px">
+        <h3>Buttons</h3>
+        <div class="row">
+          <button class="btn btn-primary">Start game</button>
+          <button class="btn btn-secondary">Leave game</button>
+          <button class="btn btn-ghost">Add player</button>
+        </div>
+        <div class="row">
+          <button class="btn btn-danger">Remove from game</button>
+          <button class="btn btn-primary" disabled>Save score</button>
+        </div>
+      </div>
+      <div class="card" style="display:grid;gap:14px">
+        <h3>Dice</h3>
+        <div class="row" id="dice-row" style="gap:18px"></div>
+        <p class="muted" style="font-size:.9rem">Last die: held (pink outline) — also marks the active slot while entering dice.</p>
+      </div>
+      <div class="card" style="display:grid;gap:14px;grid-column:1/-1">
+        <h3>Scorecard cell states</h3>
+        <div class="states">
+          <div class="state"><div class="cell">18</div><small>Scored</small></div>
+          <div class="state"><div class="cell" style="color:var(--ink-faint)">–</div><small>Open category</small></div>
+          <div class="state"><div class="cell" style="color:var(--primary);background:#fff;box-shadow:inset 0 0 0 2px var(--primary)">15</div><small>Suggested score for the current player, shown once the dice are confirmed</small></div>
+          <div class="state"><div class="cell" style="gap:4px;display:flex;justify-content:center"><span style="background:var(--primary);color:#fff;border-radius:8px;padding:2px 10px;font-weight:800">15</span><span style="width:26px;height:26px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div><small>Selected — tap the tick to save. Tap elsewhere or Esc to cancel</small></div>
+          <div class="state"><div class="cell" style="color:var(--danger)">0</div><small>Scratched for zero</small></div>
+          <div class="state"><div class="cell" style="color:var(--ink-faint);background:repeating-linear-gradient(135deg,rgba(255,255,255,.5) 0 6px,rgba(230,216,234,.6) 6px 12px)">–</div><small>Lower section locked (fewer than 3 upper boxes filled)</small></div>
+          <div class="state"><div class="cell" style="background:var(--primary-soft)">24</div><small>Current player's column</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="spec">
+    <div class="spec-head"><h2>Style principles</h2></div>
+    <div class="principles">
+      <ul>
+        <li><b>The felt is the hero</b><span>The dice tray is the only dark, saturated object. Everything around it stays light and calm.</span></li>
+        <li><b>Readable across the table</b><span>Several people read the scores at once. Figures are large, heavy and tabular.</span></li>
+        <li><b>One action colour</b><span>Violet means “do something”. Pink is for secondary actions, never the main one.</span></li>
+        <li><b>A player keeps their colour</b><span>Scorecard dot, avatar, log entry. Eight colours for the eight-player limit.</span></li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  function dieHTML(v, cls = "") {
+    const on = PIPS[v] || [];
+    return `<span class="die ${cls}" aria-label="Die ${v}">${Array.from({ length: 9 }, (_, i) => `<i class="${on.includes(i) ? "on" : ""}"></i>`).join("")}</span>`;
+  }
+  document.querySelectorAll(".die[data-v]").forEach(el => { el.outerHTML = dieHTML(+el.dataset.v); });
+
+  // dice entry: tap a value below and it fills the active slot, then focus jumps to the next slot.
+  // Tapping a filled slot makes it active again, so any die can be corrected before confirming.
+  const dice = [null, null, null, null, null];
+  let active = 0;
+  // dice confirmed for this turn: suggestions appear in the current player's free boxes
+  let turnDice = null, selectedCat = null;
+  const slots = document.getElementById("slots");
+  const picker = document.getElementById("picker");
+  const confirmBtn = document.getElementById("confirm");
+  const slotHTML = (v, i) => v
+    ? dieHTML(v, i === active ? "held" : "")
+    : `<span class="die empty${i === active ? " held" : ""}" aria-hidden="true">–</span>`;
+  function renderDice() {
+    slots.innerHTML = dice.map((v, i) =>
+      `<button type="button" class="die-btn" data-i="${i}" aria-pressed="${i === active}" aria-label="Die ${i + 1}: ${v ?? "empty"}">${slotHTML(v, i)}</button>`).join("");
+    picker.querySelectorAll("button").forEach(b => { b.disabled = active === -1; });
+    confirmBtn.disabled = dice.includes(null);
+  }
+  slots.addEventListener("click", e => {
+    const b = e.target.closest(".die-btn"); if (b) { active = +b.dataset.i; renderDice(); diceEdited(); }
+  });
+  picker.innerHTML = [1, 2, 3, 4, 5, 6].map(v => `<button type="button" data-v="${v}" aria-label="Set ${v}">${dieHTML(v)}</button>`).join("");
+  picker.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || active === -1) return;
+    dice[active] = +b.dataset.v;
+    // like a one-time-code field: always jump to the next slot; past the last one entry is done
+    active = active < 4 ? active + 1 : -1;
+    renderDice();
+    diceEdited();
+  });
+  confirmBtn.addEventListener("click", () => {
+    if (dice.includes(null)) return;
+    turnDice = [...dice]; selectedCat = null;
+    renderBoard();
+  });
+  // editing the dice again withdraws the suggestions until they are confirmed once more
+  function diceEdited() {
+    if (!turnDice) return;
+    turnDice = null; selectedCat = null;
+    renderBoard();
+  }
+  renderDice();
+
+  document.getElementById("dice-row").innerHTML = [1, 2, 3, 4, 5].map(v => dieHTML(v)).join("") + dieHTML(6, "held");
+
+  // scorecard (sample data for up to 8 players; the switch under Layout shows 4 or 8)
+  const ALL_PLAYERS = [
+    { name: "Piotr", color: "var(--p1)", hue: 280, host: true },
+    { name: "Ala", color: "var(--p2)", hue: 345 },
+    { name: "Kuba", color: "var(--p3)", hue: 295, active: true, guest: true },
+    { name: "Ola", color: "var(--p4)", hue: 80 },
+    { name: "Marek", color: "var(--p5)", hue: 170 },
+    { name: "Zosia", color: "var(--p6)", hue: 245 },
+    { name: "Tomek", color: "var(--p7)", hue: 35, guest: true },
+    { name: "Ewa", color: "var(--p8)", hue: 315 },
+  ];
+  const upper = [
+    ["Ones", 1, [3, 0, 3, null, null, 3, 0, 3]],
+    ["Twos", 2, [8, 6, null, 6, 6, null, 6, null]],
+    ["Threes", 3, [9, 12, 9, null, 9, 9, null, 12]],
+    ["Fours", 4, [null, 16, 12, null, 12, null, null, 12]],
+    ["Fives", 5, [15, 20, null, null, null, 15, 15, null]],
+    ["Sixes", 6, [18, 24, null, 18, 18, 18, null, null]],
+  ];
+  const lower = [
+    ["One Pair", [12, 10, 8, "L", 10, 12, null, 8]],
+    ["Two Pairs", [18, null, null, "L", null, 14, null, null]],
+    ["Three of a Kind", [null, 15, null, "L", 12, null, null, null]],
+    ["Four of a Kind", [null, 0, null, "L", null, null, null, 0]],
+    ["Small Straight", [25, null, null, "L", 25, null, null, null]],
+    ["Large Straight", [null, 40, null, "L", null, null, 40, null]],
+    ["Full House", [25, null, null, "L", null, 25, null, null]],
+    ["Chance", [22, 26, 19, null, 20, null, 23, null]],
+    ["General", [null, 50, null, "L", null, null, null, null]],
+  ];
+  let players = ALL_PLAYERS.slice(0, 4);
+  const ACTIVE = ALL_PLAYERS.findIndex(p => p.active);
+  const ac = i => players[i].active ? " active" : "";
+  const upperSum = i => upper.reduce((sum, [, , vals]) => sum + (typeof vals[i] === "number" ? vals[i] : 0), 0);
+
+  // prototype-only scoring for the suggestion shown in the box (docs/ZASADY-GRY.md);
+  // in the app the suggestion is display only and the server always recomputes the score
+  function suggest(cat, d) {
+    const count = v => d.filter(x => x === v).length;
+    const sum = d.reduce((a, b) => a + b, 0);
+    const faces = [6, 5, 4, 3, 2, 1];
+    const pairs = faces.filter(v => count(v) >= 2);
+    const run = n => [1, 2, 3].some(start => Array.from({ length: n }, (_, k) => start + k).every(v => count(v) > 0));
+    const face = { Ones: 1, Twos: 2, Threes: 3, Fours: 4, Fives: 5, Sixes: 6 }[cat];
+    if (face) return count(face) >= 3 ? count(face) * face : 0;
+    switch (cat) {
+      case "One Pair": return pairs.length ? pairs[0] * 2 : 0;
+      case "Two Pairs": return pairs.length >= 2 ? (pairs[0] + pairs[1]) * 2 : 0;
+      case "Three of a Kind": return faces.some(v => count(v) >= 3) ? sum : 0;
+      case "Four of a Kind": return faces.some(v => count(v) >= 4) ? sum : 0;
+      case "Small Straight": return run(4) ? 25 : 0;
+      case "Large Straight": return run(5) ? 40 : 0;
+      case "Full House": return faces.some(v => count(v) === 5) || (faces.some(v => count(v) === 3) && faces.some(v => count(v) === 2)) ? 25 : 0;
+      case "Chance": return sum;
+      case "General": return faces.some(v => count(v) === 5) ? 50 : 0;
+    }
+  }
+  function cell(v, i, cat) {
+    if (v === "L") return `<td class="locked" title="Lower section locked">–</td>`;
+    if (v === null && turnDice && players[i].active) {
+      const pts = suggest(cat, turnDice);
+      if (cat === selectedCat) return `<td class="active"><span class="pick"><span class="hint selected">${pts}</span><button type="button" class="tick" data-save="${cat}" aria-label="Save ${pts} in ${cat}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></span></td>`;
+      return `<td class="active"><button type="button" class="hint" data-cat="${cat}" aria-label="${cat}: ${pts} points">${pts}</button></td>`;
+    }
+    if (v === null) return `<td class="empty${ac(i)}">–</td>`;
+    if (v === 0) return `<td class="zero${ac(i)}">0</td>`;
+    return `<td class="${ac(i).trim()}">${v}</td>`;
+  }
+  const avatarHTML = p => `<span class="avatar" data-name="${p.name}" data-hue="${p.hue}" style="background:${p.color};--pc:${p.color}">${p.name[0]}</span>`;
+  function renderBoard() {
+    const n = players.length, cols = (vals, cat) => vals.slice(0, n).map((v, i) => cell(v, i, cat)).join("");
+    const head = `<thead><tr><th></th>${players.map(p => `<th class="${p.active ? "active" : ""}" style="border-radius:10px 10px 0 0"><span class="sc-head">${avatarHTML(p)}<span>${p.name}</span></span></th>`).join("")}</tr></thead>`;
+    const rows = [];
+    rows.push(`<tr class="section-row"><td colspan="${n + 1}"><span>Upper section</span></td></tr>`);
+    upper.forEach(([name, v, vals]) => rows.push(`<tr><td><span class="cat">${dieHTML(v, "mini")}${name}</span></td>${cols(vals, name)}</tr>`));
+    rows.push(`<tr class="sum-row"><td>Bonus <span class="bonus-progress">(63+)</span></td>${players.map((_, i) => { const u = upperSum(i); return `<td class="${ac(i).trim()}">${u >= 63 ? "+35" : `<span class="bonus-progress">${u}/63</span>`}</td>`; }).join("")}</tr>`);
+    rows.push(`<tr class="section-row"><td colspan="${n + 1}"><span>Lower section</span></td></tr>`);
+    lower.forEach(([name, vals]) => rows.push(`<tr><td><span class="cat">${name}</span></td>${cols(vals, name)}</tr>`));
+    document.getElementById("scorecard").innerHTML = head + `<tbody>${rows.join("")}</tbody>`;
+
+    document.getElementById("players").innerHTML = players.map(p => `
+    <div class="player${p.active ? " active" : ""}">
+      ${avatarHTML(p)}
+      <span class="name">${p.name}${p.host ? '<span class="badge">Host</span>' : ""}${p.guest ? '<span class="badge guest">Guest</span>' : ""}</span>
+      <span class="score sealed" title="Totals are revealed when the game ends" aria-label="Score hidden until the game ends"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>???</span>
+    </div>`).join("");
+    window.paintAvatars?.();
+    sizeColumns();
+  }
+
+  // player columns: share the width when everyone fits (60px each at least); otherwise size them so
+  // 3.5 or more players are in view, the half column telling people the table scrolls sideways
+  const MIN_COL = 60;
+  let labelW = 0;
+  // natural width of the category-name column (longest name), the same in every layout
+  function measureLabel() {
+    const table = document.getElementById("scorecard");
+    ["--label-w", "--col-w"].forEach(v => table.style.removeProperty(v));
+    table.style.tableLayout = "auto";
+    table.style.width = "auto";
+    return Math.ceil(table.querySelector("tbody tr:not(.section-row) td").getBoundingClientRect().width);
+  }
+  function sizeColumns() {
+    const table = document.getElementById("scorecard");
+    const box = document.querySelector(".sc-scroll");
+    const n = players.length;
+    labelW = measureLabel();
+    const avail = box.clientWidth - labelW;
+    let k = Math.max(3, Math.floor(avail / MIN_COL - 0.5));
+    const scrolls = avail < n * MIN_COL && k < n;
+    const colW = scrolls ? avail / (k + 0.5) : avail / n;
+    table.style.setProperty("--label-w", labelW + "px");
+    table.style.setProperty("--col-w", colW + "px");
+    table.style.tableLayout = "fixed";
+    table.style.width = labelW + n * colW + "px";
+    table.classList.toggle("scrolls", scrolls);
+    if (!scrolls) box.scrollLeft = 0;
+    return scrolls;
+  }
+  renderBoard();
+
+  const logList = document.querySelector(".log");
+  function saveCategory(cat) {
+    const pts = suggest(cat, turnDice);
+    const row = [...upper, ...lower.map(([name, vals]) => [name, null, vals])].find(([name]) => name === cat);
+    row[2][ACTIVE] = pts;
+    const who = ALL_PLAYERS[ACTIVE];
+    const time = new Date().toTimeString().slice(0, 5);
+    logList.insertAdjacentHTML("afterbegin", `<div class="log-item"><span class="dot" style="background:${who.color}"></span><span>${pts ? `${who.name} scored ${cat}, ${pts} pts` : `${who.name} scratched ${cat} for 0`}</span><time>${time}</time></div>`);
+    // next turn starts with empty dice
+    turnDice = null; selectedCat = null;
+    dice.fill(null); active = 0;
+    renderDice();
+    renderBoard();
+  }
+  document.getElementById("scorecard").addEventListener("click", e => {
+    const save = e.target.closest("[data-save]");
+    if (save) { saveCategory(save.dataset.save); return; }
+    const pick = e.target.closest("[data-cat]");
+    // keyboard users (click without a pointer, detail 0) land on the tick straight away
+    if (pick) { selectedCat = pick.dataset.cat; renderBoard(); if (e.detail === 0) document.querySelector("#scorecard .tick")?.focus(); }
+  });
+  // a tap anywhere else, or Esc, drops the selection without saving
+  document.addEventListener("click", e => {
+    if (selectedCat && !e.target.closest("[data-cat], [data-save]")) { selectedCat = null; renderBoard(); }
+  });
+  addEventListener("keydown", e => { if (e.key === "Escape" && selectedCat) { selectedCat = null; renderBoard(); } });
+
+  // layout: the richest arrangement that still fits; Players + log fall back to a drawer from the right
+  const game = document.querySelector(".game");
+  const side = document.getElementById("side");
+  const scrim = document.getElementById("scrim");
+  const openBtn = document.getElementById("panel-open");
+  const closeBtn = document.getElementById("panel-close");
+  const centerCol = document.querySelector(".center-col");
+  const scoreScroll = document.querySelector(".sc-scroll");
+  // a mode fits when the tray keeps its minimum width and the scorecard needs no sideways scroll
+  // tray: 42% of the game width, kept between 440 and 600px (never wider than the screen)
+  const MIN_TRAY = 440, MAX_TRAY = 600, TRAY_SHARE = 0.42;
+  const SIDE_W = 340, GAP = 20, CARD_PAD = 26; // side panel column, grid gap, scorecard padding + border
+  const MODES = ["three", "two"];
+  // switching modes must not play the drawer's slide animation, or the panel flashes across the screen
+  function applyMode(mode) {
+    side.style.transition = "none";
+    MODES.forEach(m => game.classList.toggle(m, m === mode));
+    side.offsetWidth; // flush styles while transitions are off
+    side.style.transition = "";
+  }
+  function pickLayout() {
+    const w = game.clientWidth;
+    const tray = Math.min(w, Math.max(MIN_TRAY, Math.min(MAX_TRAY, w * TRAY_SHARE)));
+    game.style.setProperty("--tray-w", tray + "px");
+    // the scorecard fits beside the tray when every player column gets MIN_COL
+    const need = measureLabel() + players.length * MIN_COL + CARD_PAD;
+    if (w - tray - SIDE_W - 2 * GAP >= need) return "three";
+    if (w - tray - GAP >= need) return "two";
+    return "stack";
+  }
+  function setDrawer(open) {
+    side.classList.toggle("open", open);
+    side.inert = !open && !game.classList.contains("three");
+    scrim.hidden = !open;
+    openBtn.setAttribute("aria-expanded", String(open));
+    if (open) closeBtn.focus();
+    else if (side.contains(document.activeElement)) openBtn.focus();
+  }
+  let mode = null;
+  function layout() {
+    const next = pickLayout();
+    if (next === mode) { sizeColumns(); return; }
+    mode = next;
+    applyMode(mode);
+    openBtn.hidden = mode === "three";
+    setDrawer(false);
+    sizeColumns();
+  }
+  openBtn.addEventListener("click", () => setDrawer(true));
+  closeBtn.addEventListener("click", () => setDrawer(false));
+  scrim.addEventListener("click", () => setDrawer(false));
+  addEventListener("keydown", e => { if (e.key === "Escape" && side.classList.contains("open")) setDrawer(false); });
+  addEventListener("resize", layout);
+  layout();
+
+  document.getElementById("count-switch").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    players = ALL_PLAYERS.slice(0, +b.dataset.n);
+    document.querySelectorAll("#count-switch button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    renderBoard();
+    layout();
+  });
+
+  // palette
+  const sw = [
+    ["Ink", "--ink", "Text, turn pill"],
+    ["Action violet", "--primary", "Primary buttons, selection, suggestions"],
+    ["Violet mist", "--primary-soft", "Current player column, icon backgrounds"],
+    ["Pink", "--secondary", "Secondary actions, selected die"],
+    ["Card", "--surface-solid", "Card fill (84% opacity on screen)"],
+    ["Rose", "--backdrop", "Page backdrop, flat and static"],
+    ["Felt", "--felt", "Dice tray"],
+    ["Wood", "--tray-rim", "Tray rim"],
+    ["Red", "--danger", "Zero scores, removal"],
+    ["Green", "--good", "Confirmations, bonus earned"],
+  ];
+  const css = getComputedStyle(document.documentElement);
+  document.getElementById("swatches").innerHTML = sw.map(([n, v, r]) =>
+    `<div class="swatch"><div class="chip" style="background:var(${v})"></div><div class="meta"><b>${n}</b><code>${v} ${css.getPropertyValue(v).trim()}</code><span>${r}</span></div></div>`).join("");
+  // oklch hue per player colour, used to tint that player's blobatar
+  const PLAYER_HUES = [280, 345, 295, 80, 170, 245, 35, 315];
+  const SAMPLE_NAMES = ["Piotr", "Ala", "Kuba", "Ola", "Marek", "Zosia", "Tomek", "Ewa"];
+  document.getElementById("pswatches").innerHTML = PLAYER_HUES.map((h, k) =>
+    `<div class="pswatch"><span class="avatar" data-name="${SAMPLE_NAMES[k]}" data-hue="${h}" style="background:var(--p${k + 1});--pc:var(--p${k + 1});width:44px;height:44px">${k + 1}</span><code>${css.getPropertyValue("--p" + (k + 1)).trim()}</code></div>`).join("");
+
+
+  document.getElementById("copy-code").addEventListener("click", () => {
+    navigator.clipboard?.writeText("Y7K3").catch(() => {});
+  });
+</script>
+<script type="module">
+  // blobatar renders in the browser from the name; initials stay as the fallback if it fails to load
+  import { blobatar } from "https://cdn.jsdelivr.net/npm/blobatar@2.7.0/+esm";
+  window.paintAvatars = () => document.querySelectorAll(".avatar[data-name]:not(.blob)").forEach(el => {
+    el.innerHTML = blobatar(el.dataset.name, { hue: +el.dataset.hue, background: false });
+    el.classList.add("blob");
+    el.setAttribute("aria-label", el.dataset.name);
+  });
+  window.paintAvatars();
+</script>
+
+</body></html>
