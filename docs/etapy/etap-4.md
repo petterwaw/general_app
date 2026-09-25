@@ -3,7 +3,8 @@
 Nowa gra, dodawanie graczy-gości, tabela wyników, wpisywanie kości fizycznych, koniec gry,
 podsumowanie. Adres `/game/[id]`, więc odświeżenie działa z automatu.
 
-**Gotowe gdy:** da się realnie rozegrać partię przy stole z żywymi ludźmi.
+**Gotowe gdy:** da się realnie rozegrać partię przy stole z żywymi ludźmi, a restart serwera
+w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 
 > **Tu następuje przerwa.** Właściciel gra kilka partii i zgłasza poprawki, zanim ruszamy dalej.
 

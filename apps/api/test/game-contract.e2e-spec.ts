@@ -85,6 +85,8 @@ describe('Games API contract', () => {
             start: () => undefined,
             roll: (playerId) => ({ playerId, dice: [1, 2, 3, 4, 5] }),
             score: (playerId) => ({ playerId, category: 'one' }),
+            join: () => ({ name: 'Jan' }),
+            leave: () => undefined,
         };
 
         it.each(Object.keys(hostActionBodies))('rejects %s without the host cookie with 403', async (action) => {
@@ -131,9 +133,9 @@ describe('Games API contract', () => {
         });
 
         it('rejects a join when the game already has 8 players', async () => {
-            const { game } = await createGame(names(8), 'contract-full-lobby');
+            const { agent, game } = await createGame(names(8), 'contract-full-lobby');
 
-            const response = await request(app.getHttpServer())
+            const response = await agent
                 .post(`/games/${game.id}/join`)
                 .set('Idempotency-Key', 'contract-join-full-lobby')
                 .send({ name: 'Ninth' });

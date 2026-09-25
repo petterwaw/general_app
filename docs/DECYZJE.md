@@ -35,7 +35,7 @@ Dla trybu online obowiązuje osobno ustalone 2–5.
 
 | Rola | Uprawnienia |
 |---|---|
-| `HOST` | Jedyny, kto wykonuje akcje w trybie lokalnym. Wpisuje wyniki wszystkich graczy. Może wyrzucić gracza z gry. |
+| `HOST` | Jedyny, kto wykonuje akcje w trybie lokalnym. Wpisuje wyniki wszystkich graczy. Może wyrzucić gracza — **tylko w lobby, przed startem** (ustalone 2026-09-25). |
 | `GRACZ` | Dołączył przez QR, zalogował się kontem. **Tylko podgląd** — nie może nic edytować. Jego statystyki się zapisują. |
 | `OBSERWATOR` | Dołączył przez QR, nie ma konta lub nie chce grać. Tylko podgląd. |
 
@@ -63,7 +63,8 @@ wyrzucić.
 - **`POST /games/:id/join` zostaje** (ustalone 2026-09-24). Posłuży do dodawania graczy
   w lobby przed kliknięciem „start" oraz w trybie online.
 - **W trybie lokalnym `join` może wołać tylko host** (ustalone 2026-09-25) — wymagane
-  ciasteczko hosta (`verifyHost`), tak jak przy pozostałych akcjach hosta.
+  ciasteczko hosta (`verifyHost`), tak jak przy pozostałych akcjach hosta. Dołączanie przez kod
+  (QR / krótki kod) dojdzie później osobną ścieżką.
 
 ---
 
@@ -118,6 +119,17 @@ zapis daje 0, decyduje reducer, nie klient.
   jest przekierowywany do tej niedokończonej. Dokładna forma (przekierowanie vs komunikat na
   `/games` „masz niedokończoną grę — najpierw z niej wyjdź") — do dopracowania przy UI.
   Skoro gra jest jedna, jedno ciasteczko `host_secret` na urządzenie wystarcza.
+  Pilnuje tego baza: częściowy indeks unikalny na `Game.hostIdentityId` dla gier w `LOBBY` /
+  `IN_PROGRESS`. **Do czasu kont „host” = urządzenie** (ciasteczko) — z innego urządzenia
+  serwer nie wie, że to ta sama osoba; „jedna gra na osobę” daje dopiero indeks na `userId`
+  z §6. UI (etap 4): nieaktywny przycisk „New game”, pod nim trwająca gra z opcją
+  wznowienia albo wyjścia.
+- **Host opuszcza grę → gra dostaje status `ABANDONED`** (ustalone 2026-09-25). Zwalnia to
+  slot „jednej gry”; gra porzucona nie liczy się do statystyk (§8).
+- **Gracz opuszcza grę → wypada tylko on, gra trwa dalej** (ustalone 2026-09-25, do
+  zaimplementowania razem z kontami — dziś poza hostem nikt nie ma urządzenia). Jego zapisane
+  punkty zostają, wolne kategorie dostają 0, jego kolumna w tabeli jest przyciemniona, a jego
+  tury są pomijane.
 
 ---
 

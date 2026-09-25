@@ -33,8 +33,9 @@ describe('Games API', () => {
         expect(response.body.data.participants).toHaveLength(1);
     });
 
-    it('should allow a player to join a game', async () => {
-        const createResponse = await request(app.getHttpServer())
+    it('should allow the host to add a player to the lobby', async () => {
+        const agent = request.agent(app.getHttpServer());
+        const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-join23')
             .send({ players: ['Piotr'] });
@@ -43,7 +44,7 @@ describe('Games API', () => {
 
         const gameId = createResponse.body.data.id;
 
-        const joinResponse = await request(app.getHttpServer())
+        const joinResponse = await agent
             .post(`/games/${gameId}/join`)
             .set('Idempotency-Key', 'test-join-player')
             .send({ name: 'Jan' });
