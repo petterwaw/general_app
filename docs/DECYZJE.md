@@ -234,5 +234,8 @@ między instancjami). Nie dodawaj go wcześniej.
 - Krój pisma: **Nunito**. Paleta, tokeny i zasady stylu: `DESIGN.md` (wartości w
   `apps/web/src/app/globals.css`).
 - Awatary: **blobatar**, generowane w przeglądarce z **ID uczestnika**.
-- Kości i tło: scena **three.js**. Animacja wyłącznie odtwarza wynik znany z serwera — patrz
-  zasada architektoniczna w `CLAUDE.md`.
+- Kości i tło (zmienione 2026-09-25): **statyczne tło w jednym kolorze, kości 2D w CSS, bez
+  animacji rzutu**. Scena three.js z paralaksą została odrzucona. Kości pokazują wyłącznie wynik
+  znany z serwera — patrz zasada architektoniczna w `CLAUDE.md`.
+- Układ ekranu gry dopasowuje się do miejsca (trzy kolumny / dwie / jedna pod drugą, taca min.
+  500 px), a Players + Game log chowają się do wysuwanej szuflady — szczegóły w `DESIGN.md`.

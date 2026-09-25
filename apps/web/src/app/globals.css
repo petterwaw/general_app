@@ -10,10 +10,8 @@
   --color-ink-muted: #6e6688;
   --color-ink-faint: #a49cbb;
 
-  /* page backdrop (fallback until the 3D stage lands) */
+  /* page backdrop: one flat, static colour */
   --color-backdrop: #dcb8cf;
-  --color-backdrop-top: #efd9ef;
-  --color-backdrop-bottom: #a996dc;
 
   /* cards */
   --color-surface: rgb(252 244 250 / 0.84);
@@ -27,8 +25,8 @@
   --color-primary-hover: #4a34d6;
   --color-primary-ink: #ffffff;
   --color-primary-soft: #e7e2fd;
-  --color-secondary: #f6b1ee;
-  --color-secondary-hover: #f09ce6;
+  --color-secondary: #ee8edf;
+  --color-secondary-hover: #e577d4;
   --color-secondary-ink: #4b2fc9;
 
   /* dice tray: wooden rim, violet felt */
@@ -60,9 +58,8 @@
   --radius-panel: 20px;
   --radius-tile: 14px;
 
-  --shadow-card: 0 18px 40px -18px rgb(76 52 140 / 0.35), 0 2px 6px rgb(76 52 140 / 0.08);
-  --shadow-press: 0 8px 18px -6px rgb(91 69 232 / 0.55);
-  --shadow-die: 0 6px 0 var(--color-die-shade), 0 14px 20px -6px rgb(30 18 70 / 0.55);
+  /* no drop shadows anywhere; a die keeps only its solid bottom edge (thickness, not a shadow) */
+  --shadow-die: 0 6px 0 var(--color-die-shade);
 }
 
 @theme inline {
