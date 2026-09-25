@@ -25,6 +25,10 @@ model Participant {
   id          String          @id @default(cuid())
   name        String
   scoreCard   Json
+  // Written once, when the game is COMPLETED; null until then. A record of the game as played,
+  // not recomputed if the scoring rules ever change.
+  finalScore  Int?
+  upperBonus  Int?
   turnOrder   Int
   role        ParticipantRole @default(PLAYER)
   userId      String?

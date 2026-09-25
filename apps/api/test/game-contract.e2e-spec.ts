@@ -44,7 +44,7 @@ describe('Games API contract', () => {
 
             for (const participant of game.participants) {
                 expect(Object.keys(participant).sort()).toEqual(
-                    ['id', 'name', 'role', 'scoreCard', 'turnOrder'],
+                    ['finalScore', 'id', 'name', 'role', 'scoreCard', 'turnOrder', 'upperBonus'],
                 );
             }
         });

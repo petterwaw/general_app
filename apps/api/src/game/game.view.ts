@@ -25,6 +25,9 @@ export function toGameView(game: GameWithParticipants): GameView {
       role: participant.role,
       turnOrder: participant.turnOrder,
       scoreCard: participant.scoreCard as ScoreCard,
+      // the total stays hidden until the last round is scored
+      finalScore: game.status === 'COMPLETED' ? participant.finalScore : null,
+      upperBonus: game.status === 'COMPLETED' ? participant.upperBonus : null,
     })),
   };
 }

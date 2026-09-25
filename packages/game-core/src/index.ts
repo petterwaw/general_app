@@ -11,3 +11,11 @@ export {
   isGameOver,
   reducer,
 } from './reducer.js';
+
+export {
+  UPPER_BONUS_THRESHOLD,
+  UPPER_BONUS_VALUE,
+  upperSectionSum,
+  upperBonus,
+  totalScore,
+} from './totals.js';

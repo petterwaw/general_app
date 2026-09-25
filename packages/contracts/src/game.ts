@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CATEGORIES } from '@dice-app/game-core';
-import type { DiceRoll, ScoreCard } from '@dice-app/game-core';
+import type { Category, DiceRoll, ScoreCard } from '@dice-app/game-core';
 
 export const MAX_PLAYERS = 8;
 export const PLAYER_NAME_MAX_LENGTH = 50;
@@ -50,6 +50,13 @@ export type JoinGameInput = z.infer<typeof joinGameSchema>;
 export type RollInput = z.infer<typeof rollSchema>;
 export type ScoreInput = z.infer<typeof scoreSchema>;
 
+// GET /games/:id/events?after=<revision> — only events newer than the revision the client already has.
+export const gameEventsQuerySchema = z.strictObject({
+  after: z.coerce.number().int().min(0).optional(),
+});
+
+export type GameEventsQuery = z.infer<typeof gameEventsQuerySchema>;
+
 export type GameStatus = 'LOBBY' | 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED' | 'EXPIRED';
 export type ParticipantRole = 'HOST' | 'PLAYER' | 'OBSERVER';
 
@@ -60,6 +67,9 @@ export type ParticipantView = {
   role: ParticipantRole;
   turnOrder: number;
   scoreCard: ScoreCard;
+  // Set only once the game is COMPLETED; null before that, so the total stays hidden during play.
+  finalScore: number | null;
+  upperBonus: number | null;
 };
 
 // Public shape of a game returned by every game endpoint.
@@ -71,3 +81,21 @@ export type GameView = {
   currentDice: DiceRoll | null;
   participants: ParticipantView[];
 };
+
+// Public shape of a game-log entry. Only the events worth showing are exposed:
+// the game start, the five dice entered for a turn, and the category a player scored.
+type GameEventBase = {
+  revision: number;
+  createdAt: string;
+};
+
+export type GameEventView =
+  | (GameEventBase & { type: 'gameStarted' })
+  | (GameEventBase & { type: 'diceConfirmed'; playerId: string; dice: DiceRoll })
+  | (GameEventBase & {
+      type: 'categorySaved';
+      playerId: string;
+      category: Category;
+      // points as computed by the server; null for events logged before points were recorded
+      points: number | null;
+    });

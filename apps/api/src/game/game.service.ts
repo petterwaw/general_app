@@ -5,11 +5,13 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { createEmptyScoreCard, reducer, isGameOver } from '@dice-app/game-core';
+import { createEmptyScoreCard, reducer, isGameOver, totalScore, upperBonus } from '@dice-app/game-core';
 import type { DiceRoll, ScoreCard } from '@dice-app/game-core';
 import {
   MAX_PLAYERS,
   type CreateGameInput,
+  type GameEventView,
+  type GameEventsQuery,
   type GameView,
   type JoinGameInput,
   type RollInput,
@@ -19,6 +21,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
 import { randomBytes, createHash } from 'crypto';
 import { gameInclude, toGameView, type GameWithParticipants } from './game.view';
+import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
 
 type GameAction = {
   actionType: string;
@@ -78,6 +81,25 @@ export class GameService {
 
   async findOne(id: string): Promise<GameView> {
     return toGameView(await loadGame(this.prisma, id));
+  }
+
+  async events(id: string, query: GameEventsQuery): Promise<GameEventView[]> {
+    const game = await this.prisma.game.findUnique({ where: { id }, select: { id: true } });
+
+    if (!game) {
+      throw new NotFoundException('Game not found');
+    }
+
+    const events = await this.prisma.eventLog.findMany({
+      where: {
+        gameId: id,
+        actionType: { in: [...PUBLIC_EVENT_TYPES] },
+        revisionAfter: { gt: query.after ?? 0 },
+      },
+      orderBy: { revisionAfter: 'asc' },
+    });
+
+    return events.map(toGameEventView);
   }
 
   join(id: string, input: JoinGameInput, idempotencyKey: string | undefined) {
@@ -183,19 +205,28 @@ export class GameService {
       );
 
       const gameOver = isGameOver(newState);
+      // points as the reducer computed them — never taken from the client
+      const points = newState.players.find((player) => player.id === input.playerId)!.card[input.category];
 
       await Promise.all(
         newState.players.map((player) =>
           tx.participant.update({
             where: { id: player.id },
-            data: { scoreCard: player.card },
+            data: {
+              scoreCard: player.card,
+              // the final result is recorded once, in the same transaction that ends the game
+              ...(gameOver && {
+                finalScore: totalScore(player.card),
+                upperBonus: upperBonus(player.card),
+              }),
+            },
           }),
         ),
       );
 
       return {
         actionType: 'saveCategory',
-        payload: { playerId: input.playerId, category: input.category },
+        payload: { playerId: input.playerId, category: input.category, points },
         update: {
           currentDice: Prisma.DbNull,
           status: gameOver ? 'COMPLETED' : 'IN_PROGRESS',
