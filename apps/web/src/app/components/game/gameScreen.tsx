@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation'
 import { CATEGORIES, type Category, type DiceRoll, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
@@ -12,7 +13,7 @@ import DiceEntry from '../dice/diceEntry';
 import TurnPill from '../dice/turnPill';
 import PlayersPanel from '../players/playersPanel';
 import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
-import { scoreCategory, submitRoll } from '../../api/games';
+import { scoreCategory, submitRoll, leaveGame } from '../../api/games';
 
 type GameScreenProps = {
   game: GameView;
@@ -60,12 +61,14 @@ const gridByLayout: Record<Layout, string> = {
 
 export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const gridRef = useRef<HTMLElement>(null);
+  const pendingRef = useRef(false)
   const [gridWidth, setGridWidth] = useState(0);
   const [labelWidth, setLabelWidth] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selected, setSelected] = useState<Category | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   useLayoutEffect(() => {
     const grid = gridRef.current;
@@ -89,6 +92,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     : 0;
 
   async function run(action: () => Promise<GameView>) {
+    if (pendingRef.current) return
+    pendingRef.current = true
     setPending(true);
     setError(null);
     try {
@@ -98,6 +103,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setPending(false);
+      pendingRef.current = false
     }
   }
 
@@ -107,13 +113,27 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }
 
   function saveCategory(category: Category) {
-    if (!currentPlayerId || pending) return;
+    if (!currentPlayerId) return;
     run(() => scoreCategory(game.id, currentPlayerId, category));
+  }
+
+  function leaveGameSubmit() {
+    run(async (): Promise<GameView> => {
+      const updatedGame = await leaveGame(game.id)
+      router.push('/games')
+      return updatedGame
+    })
   }
 
   // TODO: leave the game (POST /games/:id/leave from PR #6)
   const leaveButton = (
-    <Button variant="secondary" size="top" onClick={() => {}} aria-label="Leave game">
+    <Button
+      variant="secondary"
+      size="top"
+      onClick={leaveGameSubmit}
+      disabled={pending}
+      aria-label="Leave game"
+    >
       <LeaveIcon />
       <span className="max-[560px]:hidden">Leave game</span>
     </Button>
