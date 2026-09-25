@@ -35,43 +35,76 @@ type ActionAccess = { hostOnly: false } | { hostOnly: true; hostSecret: string |
 export class GameService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(input: CreateGameInput, idempotencyKey: string | undefined) {
+  /**
+   * Creates a game hosted by this device. A device that already has a host cookie keeps its
+   * identity (no new secret), so the one-active-game-per-host index applies to it.
+   */
+  async create(
+    input: CreateGameInput,
+    idempotencyKey: string | undefined,
+    currentHostSecret: string | undefined,
+  ) {
     const key = requireIdempotencyKey(idempotencyKey);
-    const hostSecret = randomBytes(32).toString('hex');
+
+    // Replayed Idempotency-Key: return the game created by the first request, without its secret.
+    const replayed = await this.findCreatedGame(key);
+    if (replayed) {
+      return { game: replayed, hostSecret: null };
+    }
+
+    const identity = await this.findIdentity(currentHostSecret);
+    if (identity && (await this.findActiveHostedGame(identity.id))) {
+      throw new ConflictException('This device is already hosting a game');
+    }
+
+    const newHostSecret = identity ? null : randomBytes(32).toString('hex');
 
     try {
-      const game = await this.prisma.game.create({
-        data: {
-          creationKey: key,
-          participants: {
-            create: input.players.map((name, index) => ({
-              name,
-              scoreCard: createEmptyScoreCard(),
-              turnOrder: index + 1,
-              role: index === 0 ? 'HOST' : 'PLAYER',
-              ...(index === 0 && {
-                identity: { create: { secretHash: hashSecret(hostSecret) } },
-              }),
-            })),
-          },
-        },
-        include: gameInclude,
-      });
+      const game = await this.prisma.$transaction(async (tx) => {
+        const hostIdentityId = newHostSecret
+          ? (await tx.identity.create({ data: { secretHash: hashSecret(newHostSecret) } })).id
+          : identity!.id;
 
-      return { game: toGameView(game), hostSecret };
-    } catch (error) {
-      // Replayed Idempotency-Key: return the game created by the first request, without its secret.
-      if (isUniqueViolation(error)) {
-        const existingGame = await this.prisma.game.findUniqueOrThrow({
-          where: { creationKey: key },
+        return tx.game.create({
+          data: {
+            creationKey: key,
+            hostIdentityId,
+            participants: {
+              create: input.players.map((name, index) => ({
+                name,
+                scoreCard: createEmptyScoreCard(),
+                turnOrder: index + 1,
+                role: index === 0 ? 'HOST' : 'PLAYER',
+                ...(index === 0 && { identityId: hostIdentityId }),
+              })),
+            },
+          },
           include: gameInclude,
         });
+      });
 
-        return { game: toGameView(existingGame), hostSecret: null };
+      return { game: toGameView(game), hostSecret: newHostSecret };
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        // Lost a race: either to the same Idempotency-Key, or to another game of this host.
+        const existingGame = await this.findCreatedGame(key);
+        if (existingGame) {
+          return { game: existingGame, hostSecret: null };
+        }
+
+        throw new ConflictException('This device is already hosting a game');
       }
 
       throw error;
     }
+  }
+
+  // The LOBBY / IN_PROGRESS game hosted by this device, or null.
+  async hosted(hostSecret: string | undefined): Promise<GameView | null> {
+    const identity = await this.findIdentity(hostSecret);
+    const game = identity && (await this.findActiveHostedGame(identity.id));
+
+    return game ? toGameView(game) : null;
   }
 
   async findAll(): Promise<GameView[]> {
@@ -102,8 +135,14 @@ export class GameService {
     return events.map(toGameEventView);
   }
 
-  join(id: string, input: JoinGameInput, idempotencyKey: string | undefined) {
-    return this.runAction(id, idempotencyKey, { hostOnly: false }, async (tx, game) => {
+  join(
+    id: string,
+    input: JoinGameInput,
+    idempotencyKey: string | undefined,
+    hostSecret: string | undefined,
+  ) {
+    // Local mode: only the host adds players (DECYZJE.md §3).
+    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
       if (game.status !== 'LOBBY') {
         throw new BadRequestException('Players can only join a lobby');
       }
@@ -236,6 +275,68 @@ export class GameService {
     });
   }
 
+  // Host leaves: the game is abandoned, which frees the host's active-game slot; abandoned games
+  // never count towards statistics. Players leaving on their own comes with accounts.
+  leave(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
+    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, (_tx, game) => {
+      if (game.status !== 'LOBBY' && game.status !== 'IN_PROGRESS') {
+        throw new BadRequestException('Game is already over');
+      }
+
+      return {
+        actionType: 'hostLeft',
+        payload: {},
+        update: {
+          status: 'ABANDONED',
+          currentPlayerId: null,
+          currentDice: Prisma.DbNull,
+        },
+      };
+    });
+  }
+
+  // The host removes a player — only in the lobby, before the game starts.
+  removePlayer(
+    id: string,
+    participantId: string,
+    idempotencyKey: string | undefined,
+    hostSecret: string | undefined,
+  ) {
+    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
+      if (game.status !== 'LOBBY') {
+        throw new BadRequestException('Players can only be removed in the lobby');
+      }
+
+      const player = game.participants.find((participant) => participant.id === participantId);
+
+      if (!player) {
+        throw new NotFoundException('Player not found');
+      }
+
+      if (player.role === 'HOST') {
+        throw new BadRequestException('The host cannot remove themselves');
+      }
+
+      await tx.participant.delete({ where: { id: participantId } });
+
+      // Keep turn order contiguous (1..n) after the removal.
+      const remaining = game.participants.filter((participant) => participant.id !== participantId);
+      await Promise.all(
+        remaining.map((participant, index) =>
+          tx.participant.update({
+            where: { id: participant.id },
+            data: { turnOrder: index + 1 },
+          }),
+        ),
+      );
+
+      return {
+        actionType: 'playerRemoved',
+        payload: { playerId: participantId },
+      };
+    });
+  }
+
   /**
    * Runs one game action: host check (for host-only actions), then a single transaction with
    * idempotency check, action-specific
@@ -324,6 +425,30 @@ export class GameService {
     }
 
     return host;
+  }
+
+  private async findIdentity(secret: string | undefined) {
+    if (!secret) {
+      return null;
+    }
+
+    return this.prisma.identity.findFirst({ where: { secretHash: hashSecret(secret) } });
+  }
+
+  private findActiveHostedGame(identityId: string) {
+    return this.prisma.game.findFirst({
+      where: { hostIdentityId: identityId, status: { in: ['LOBBY', 'IN_PROGRESS'] } },
+      include: gameInclude,
+    });
+  }
+
+  private async findCreatedGame(creationKey: string) {
+    const game = await this.prisma.game.findUnique({
+      where: { creationKey },
+      include: gameInclude,
+    });
+
+    return game && toGameView(game);
   }
 }
 

@@ -17,6 +17,10 @@ model Game {
   currentPlayerId String?      @unique
   currentPlayer   Participant? @relation("CurrentPlayerGame", fields: [currentPlayerId], references: [id])
   currentDice     Json?
+  // The device hosting this game. A partial unique index (hand-written SQL in the migration)
+  // allows one LOBBY/IN_PROGRESS game per host identity.
+  hostIdentityId  String?
+  hostIdentity    Identity?    @relation("HostedGames", fields: [hostIdentityId], references: [id])
   events          EventLog[]
   participants    Participant[]
 }
@@ -48,6 +52,7 @@ model Identity {
   secretHash   String
   createdAt    DateTime      @default(now())
   participants Participant[]
+  hostedGames  Game[]        @relation("HostedGames")
 }
 
 model EventLog {

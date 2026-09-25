@@ -1,4 +1,4 @@
-import { Controller, Req, Get, Post, Body, Param, Headers, Res, Query } from '@nestjs/common';
+import { Controller, Req, Get, Post, Delete, Body, Param, Headers, Res, Query } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import {
   createGameSchema,
@@ -23,9 +23,10 @@ export class GameController {
   async create(
     @Body(new ZodValidationPipe(createGameSchema)) input: CreateGameInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.gameService.create(input, idempotencyKey);
+    const result = await this.gameService.create(input, idempotencyKey, hostSecretFrom(request));
 
     if (result.hostSecret) {
       response.cookie('host_secret', result.hostSecret, {
@@ -41,6 +42,12 @@ export class GameController {
   @Get()
   findAll() {
     return this.gameService.findAll();
+  }
+
+  // Declared before ':id', so that "hosted" is not read as a game id.
+  @Get('hosted')
+  hosted(@Req() request: Request) {
+    return this.gameService.hosted(hostSecretFrom(request));
   }
 
   @Get(':id')
@@ -61,8 +68,28 @@ export class GameController {
     @Param('id') id: string,
     @Body(new ZodValidationPipe(joinGameSchema)) input: JoinGameInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request,
   ) {
-    return this.gameService.join(id, input, idempotencyKey);
+    return this.gameService.join(id, input, idempotencyKey, hostSecretFrom(request));
+  }
+
+  @Post(':id/leave')
+  leave(
+    @Param('id') id: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request,
+  ) {
+    return this.gameService.leave(id, idempotencyKey, hostSecretFrom(request));
+  }
+
+  @Delete(':id/participants/:participantId')
+  removePlayer(
+    @Param('id') id: string,
+    @Param('participantId') participantId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request,
+  ) {
+    return this.gameService.removePlayer(id, participantId, idempotencyKey, hostSecretFrom(request));
   }
 
   @Post(':id/start')
