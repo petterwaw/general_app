@@ -3,7 +3,10 @@
 Schemat, migracje, endpointy: utwórz grę, dodaj uczestnika, wykonaj akcję, pobierz stan.
 Obowiązkowo: `revision`, log zdarzeń, klucz idempotencji, `status` gry, `ostatniaAktywnosc`.
 
-**Gotowe gdy:** partię da się rozegrać z Postmana, a restart serwera w połowie niczego nie psuje.
+**Gotowe gdy:** partię da się rozegrać z Postmana.
+
+> Sprawdzenie „restart serwera w połowie partii niczego nie psuje” przeniesione do etapu 4
+> (decyzja właściciela 2026-09-25) — do przećwiczenia na działającym UI.
 
 **Postęp: W TRAKCIE (stan na 2026-09-25 — wpis na końcu pliku).** Wszystkie endpointy z opisu etapu istnieją
 i działają: `POST /games` (tworzy grę z listą graczy, zakłada `Identity` hosta i odsyła
