@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '../ui/button';
+import { IconButton } from '../ui/iconButton';
 import { Input } from '../ui/input';
 import { createGame } from '../../api/games';
 
@@ -37,14 +38,9 @@ export function OfflineGameForm() {
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Players</h2>
 
-        <Button
-          type="button"
-          onClick={addPlayer}
-          aria-label="Add player"
-          className="h-10 w-10 rounded-full p-0 text-xl"
-        >
+        <IconButton type="button" onClick={addPlayer} aria-label="Add player" className="text-xl">
           +
-        </Button>
+        </IconButton>
       </div>
 
       <div className="mt-6 space-y-3">
