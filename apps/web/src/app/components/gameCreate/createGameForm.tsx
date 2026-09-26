@@ -83,7 +83,7 @@ export function CreateGameForm() {
         </p>
       )}
 
-      <Button type="submit" size="lg" disabled={!canCreate}>
+      <Button type="submit" size="lg" disabled={!canCreate} loading={pending}>
         Create game
       </Button>
     </form>

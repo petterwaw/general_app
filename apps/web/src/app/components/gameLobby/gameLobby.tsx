@@ -6,6 +6,7 @@ import { MAX_PLAYERS, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
+import { ThreeBodySpinner } from '../ui/threeBodySpinner';
 import PlayerRow from '../players/playerRow';
 import PlayerNameRow from '../players/playerNameRow';
 import LogItem from '../gameLog/logItem';
@@ -25,6 +26,8 @@ type LobbyLogEntry = {
 };
 
 // a name sent to the server whose join has not come back yet
+type ClosingAction = 'start' | 'leave';
+
 type JoiningPlayer = {
   id: string;
   name: string;
@@ -55,7 +58,9 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   const queueRef = useRef<Promise<boolean>>(Promise.resolve(true));
   // Start or Leave was clicked: the lobby is on its way out, so neither can be queued twice
   const closingRef = useRef(false);
-  const [closing, setClosing] = useState(false);
+  // which of the two was clicked: that one spins, the other is only blocked
+  const [closingAction, setClosingAction] = useState<ClosingAction | null>(null);
+  const closing = closingAction !== null;
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -130,10 +135,10 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   }
 
   // Start and Leave: queued behind the joins and removals, and let through once only
-  async function close(action: () => Promise<void>) {
+  async function close(kind: ClosingAction, action: () => Promise<void>) {
     if (closingRef.current) return;
     closingRef.current = true;
-    setClosing(true);
+    setClosingAction(kind);
     setError(null);
     // a failed join or removal stops the start, so the game never starts without a player the
     // host saw on the list
@@ -148,16 +153,16 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
     // on success the lobby goes away (the game starts or the page changes), so it stays locked
     if (!done) {
       closingRef.current = false;
-      setClosing(false);
+      setClosingAction(null);
     }
   }
 
   function start() {
-    close(async () => onGameChange(await startGame(game.id)));
+    close('start', async () => onGameChange(await startGame(game.id)));
   }
 
   function leave() {
-    close(async () => {
+    close('leave', async () => {
       await leaveGame(game.id);
       router.push('/games');
     });
@@ -261,20 +266,31 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
         )}
 
         <div className="flex items-center gap-3">
-          <Button size="lg" onClick={start} disabled={closing} className="flex-1">
+          {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
+          <Button
+            size="lg"
+            onClick={start}
+            loading={closingAction === 'start'}
+            inert={closingAction === 'leave'}
+            className="flex-1"
+          >
             Start game
           </Button>
           {/* a quiet text action, so leaving does not compete with starting */}
           <button
             type="button"
             onClick={leave}
-            disabled={closing}
+            disabled={closingAction === 'leave'}
+            inert={closingAction === 'start'}
+            aria-busy={closingAction === 'leave' || undefined}
             className={[
-              'flex-1 cursor-pointer rounded-full px-2 py-3 font-bold text-ink-muted transition-colors duration-150',
-              'hover:text-danger disabled:cursor-not-allowed disabled:text-ink-faint',
+              'relative grid flex-1 cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
+              'transition-colors duration-150 enabled:hover:text-danger disabled:cursor-default',
             ].join(' ')}
           >
-            Leave game
+            {/* the label stays, hidden, so the button keeps its size */}
+            <span className={closingAction === 'leave' ? 'invisible' : undefined}>Leave game</span>
+            {closingAction === 'leave' && <ThreeBodySpinner className="absolute" />}
           </button>
         </div>
       </Card>

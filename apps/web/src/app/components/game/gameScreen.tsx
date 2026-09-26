@@ -151,7 +151,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       variant="secondary"
       size="top"
       onClick={leaveGameSubmit}
-      disabled={leaving}
+      loading={leaving}
       aria-label="Leave game"
     >
       <LeaveIcon />
