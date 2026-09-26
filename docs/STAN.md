@@ -19,7 +19,7 @@ to uwagę. Rzeczy z listy „Świadomie POZA MVP" niżej nie proponuj.
 | [1](etapy/etap-1.md) | Fundament | KRYTERIUM SPEŁNIONE — `pnpm dev` w korzeniu odpala `web` i `api` naraz (`concurrently`), front woła API; nadal brak notatki postępu w `etap-1.md` |
 | [2](etapy/etap-2.md) | Silnik gry (`game-core`) | KRYTERIUM SPEŁNIONE |
 | [3](etapy/etap-3.md) | API i baza | KRYTERIUM SPEŁNIONE (2026-09-25: wynik końcowy w bazie, `GET /games/:id/events`, `join` tylko dla hosta, jedna gra na urządzenie hosta, wyjście hosta i wyrzucanie w lobby — PR #6; otwarte: `maxAge` ciasteczka hosta; test restartu serwera przeniesiony do etapu 4) |
-| [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | **W TRAKCIE** — ekran gry złożony z komponentów, zatwierdzenie kości i zapis kategorii wołają API (gałąź `ui/game-screen`); brakuje logu gry, wyjścia z gry, ekranu końca i lobby w nowym designie; otwarte: poprawianie kości po „Confirm” (serwer odrzuca drugi `roll`) |
+| [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | **W TRAKCIE** — ekran gry złożony z komponentów, zatwierdzenie kości i zapis kategorii wołają API; wyjście z gry, `/games` w nowym designie i karta niedokończonej gry hosta (gałąź `ui/wire-api`); brakuje logu gry, ekranu końca i lobby w nowym designie; otwarte: poprawianie kości po „Confirm” (serwer odrzuca drugi `roll`) |
 | [5](etapy/etap-5.md) | Konta i goście | nierozpoczęte |
 | [6](etapy/etap-6.md) | QR i realtime | nierozpoczęte |
 | [7](etapy/etap-7.md) | Kości wirtualne | nierozpoczęte |

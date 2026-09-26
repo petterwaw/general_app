@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation'
 import { CATEGORIES, type Category, type DiceRoll, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
@@ -12,7 +13,7 @@ import DiceEntry from '../dice/diceEntry';
 import TurnPill from '../dice/turnPill';
 import PlayersPanel from '../players/playersPanel';
 import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
-import { scoreCategory, submitRoll } from '../../api/games';
+import { scoreCategory, submitRoll, leaveGame } from '../../api/games';
 
 type GameScreenProps = {
   game: GameView;
@@ -60,12 +61,14 @@ const gridByLayout: Record<Layout, string> = {
 
 export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const gridRef = useRef<HTMLElement>(null);
+  const pendingRef = useRef(false)
   const [gridWidth, setGridWidth] = useState(0);
   const [labelWidth, setLabelWidth] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selected, setSelected] = useState<Category | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   useLayoutEffect(() => {
     const grid = gridRef.current;
@@ -77,6 +80,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }, []);
 
   const { participants, currentPlayerId } = game;
+  // the screen stays as it was after the last category; only entering dice is closed
+  const finished = game.status === 'COMPLETED';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
   // the panel has its own column now; the drawer must not pop back open when the window narrows
@@ -89,6 +94,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     : 0;
 
   async function run(action: () => Promise<GameView>) {
+    if (pendingRef.current) return
+    pendingRef.current = true
     setPending(true);
     setError(null);
     try {
@@ -98,6 +105,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setPending(false);
+      pendingRef.current = false
     }
   }
 
@@ -107,13 +115,31 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }
 
   function saveCategory(category: Category) {
-    if (!currentPlayerId || pending) return;
+    if (!currentPlayerId) return;
     run(() => scoreCategory(game.id, currentPlayerId, category));
   }
 
-  // TODO: leave the game (POST /games/:id/leave from PR #6)
+  function leaveGameSubmit() {
+    // a finished game has nothing to abandon (the server refuses it), so just go back
+    if (finished) {
+      router.push('/games');
+      return;
+    }
+    run(async (): Promise<GameView> => {
+      const updatedGame = await leaveGame(game.id)
+      router.push('/games')
+      return updatedGame
+    })
+  }
+
   const leaveButton = (
-    <Button variant="secondary" size="top" onClick={() => {}} aria-label="Leave game">
+    <Button
+      variant="secondary"
+      size="top"
+      onClick={leaveGameSubmit}
+      disabled={pending}
+      aria-label="Leave game"
+    >
       <LeaveIcon />
       <span className="max-[560px]:hidden">Leave game</span>
     </Button>
@@ -176,11 +202,11 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             key={game.revision}
             confirmedDice={game.currentDice}
             pending={pending}
+            disabled={finished}
             onConfirm={confirmDice}
             trayFooter={
               current && (
                 <TurnPill
-                  participantId={current.id}
                   name={current.name}
                   seat={seat}
                   round={round}

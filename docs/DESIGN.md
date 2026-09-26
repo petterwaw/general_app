@@ -44,7 +44,7 @@ wartości. Ten plik opisuje, **jak** ich używać.
 | `felt`, `tray-rim` | taca z kośćmi: fioletowe sukno w drewnianym rancie — jedyny ciemny, nasycony obiekt na ekranie |
 | `danger` | zapisane zero, usuwanie |
 | `good` | potwierdzenia, zdobyty bonus |
-| `player-1` … `player-8` | kolor gracza wg miejsca; ten sam w tabeli, awatarze i logu |
+| kolory graczy | kolor gracza wg miejsca; ten sam w tabeli, awatarze i logu. **Nie są tokenem w `globals.css`** (zmienione 2026-09-25) — jedno źródło to `PLAYER_COLORS` w `components/players/playerColors.ts` (oklch), bo awatar potrzebuje samego odcienia jako liczby; `playerColor(seat)` daje pełny kolor, `playerHue(seat)` odcień |
 
 ## Zasady
 
