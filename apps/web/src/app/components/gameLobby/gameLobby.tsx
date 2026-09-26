@@ -167,7 +167,8 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
     <div className="flex flex-1 items-center justify-center py-8">
       <Card className="grid w-full max-w-[480px] gap-6 motion-safe:animate-rise">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-bold">
+          {/* pl-2 lines the heading up with the Add player text (its own px-2), away from the corner */}
+          <h2 className="pl-2 text-xl font-bold">
             Players{' '}
             <span className="text-sm font-semibold text-ink-muted tabular-nums">
               {playerCount}/{MAX_PLAYERS}

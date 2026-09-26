@@ -49,7 +49,10 @@
 
   /* player colours live in components/players/playerColors.ts: the avatars need the hue as a number */
 
-  --radius-card: 28px;
+  /* menu cards: concentric with the lg pill button at their bottom (pill radius ~30 + padding 22) */
+  --radius-card: 52px;
+  /* the scorecard's card: 52 would eat its cells at padding 12 (its table corners: 28 - 12 = 16) */
+  --radius-board: 28px;
   --radius-panel: 20px;
   --radius-tile: 14px;
 

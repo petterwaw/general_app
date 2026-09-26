@@ -82,8 +82,17 @@ wartości. Ten plik opisuje, **jak** ich używać.
   wiersze w pionie tylko suwakiem. **Przy zmianie tury tabela płynnie przesuwa się tak, żeby
   aktywny gracz był pierwszą kolumną za nazwami kategorii** (przy ostatnich graczach zatrzymuje
   się na końcu); przy wejściu na ekran bez animacji (2026-09-26).
-- **Zewnętrzne rogi tabeli** mają promień karty minus jej padding (28 − 12 = 16 px), żeby oba
-  łuki miały wspólny środek. Środkowe wiersze zostają przy 10 px.
+- **Promienie** (ustalone 2026-09-26): przyciski są pigułkami. **Karty menu** (`/games`,
+  tworzenie gry, lobby, karta niedokończonej gry) mają `radius-card` = 52 px — koncentrycznie
+  z pigułką przycisku `lg` przy ich dolnej krawędzi (promień pigułki ≈ 30 + padding 22), więc
+  przycisk w takiej karcie jest zawsze `lg`. **Karta tabeli wyników** to „plansza”:
+  `radius-board` = 28 px, bo 52 przy paddingu 12 zjadałoby komórki. `Card` dobiera promień
+  z paddingu (`default` → `card`, `compact` → `board`). Elementy w środku karty (wiersze graczy
+  20, input 14) nie muszą być koncentryczne — nie stykają się z rogami. **Tekst przy rogach**
+  (nagłówki, akapity) jest w kartach menu wcięty o dodatkowe 8 px (`px-2`), bo przy 52 px sam
+  padding wygląda ciasno; przyciski zostają na pełną szerokość.
+- **Zewnętrzne rogi tabeli** mają promień karty (`radius-board`) minus jej padding
+  (28 − 12 = 16 px), żeby oba łuki miały wspólny środek. Środkowe wiersze zostają przy 10 px.
 - **Pasek przewijania** (tabela i lista graczy, klasa `scrollbar-soft`, zmienione 2026-09-26):
   na ekranach dotykowych brak paska. Przy myszce (`pointer: fine`) cienki pasek (8 px)
   z zaokrąglonymi końcami, uchwyt w kolorze sukna (`felt`), **bez strzałek**. Pasek tabeli
