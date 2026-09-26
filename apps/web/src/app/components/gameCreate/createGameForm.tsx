@@ -12,9 +12,9 @@ type GameMode = 'offline' | 'online';
 
 const MODE_DESCRIPTIONS: Record<GameMode, string> = {
   offline:
-    'Played at one table on real dice. This device runs the game: you enter the dice at the end of each turn and the app keeps score for everyone. Players are added in the lobby.',
+    'Everyone plays at one table with real dice. You enter the dice after each turn, and the app keeps score.',
   online:
-    'Everyone plays on their own device. The app rolls the dice, and each turn has a 90-second limit.',
+    'Everyone joins from their own device, and the app rolls virtual dice for everyone.',
 };
 
 // Only the host's name here: the other players are added in the lobby.
@@ -59,7 +59,22 @@ export function CreateGameForm() {
 
       <div className="grid gap-2.5">
         <GameModeSwitch mode={mode} onChange={setMode} />
-        <p className="px-2 text-center text-sm text-ink-muted">{MODE_DESCRIPTIONS[mode]}</p>
+        {/* both descriptions share one grid cell, so the card keeps the height of the longer one
+            and does not jump when the mode changes; the other one fades out */}
+        <div className="grid">
+          {(Object.keys(MODE_DESCRIPTIONS) as GameMode[]).map((option) => (
+            <p
+              key={option}
+              className={[
+                'col-start-1 row-start-1 px-2 text-center text-sm text-ink-muted',
+                'transition-[opacity,visibility] duration-300 motion-reduce:transition-none',
+                option === mode ? 'visible opacity-100' : 'invisible opacity-0',
+              ].join(' ')}
+            >
+              {MODE_DESCRIPTIONS[option]}
+            </p>
+          ))}
+        </div>
       </div>
 
       {error && (
