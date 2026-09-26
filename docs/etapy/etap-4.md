@@ -8,12 +8,13 @@ w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 
 > **Tu następuje przerwa.** Właściciel gra kilka partii i zgłasza poprawki, zanim ruszamy dalej.
 
-**Postęp: W TRAKCIE (stan na 2026-09-26).** Ekran gry w trakcie partii jest złożony
+**Postęp: W TRAKCIE (stan na 2026-09-27).** Ekran gry w trakcie partii jest złożony
 z komponentów i podpięty pod API w zakresie zatwierdzenia kości i zapisu kategorii (gałąź
 `ui/game-screen`). Doszły (gałąź `ui/wire-api`, PR #8): wyjście z gry, ekran `/games` w nowym
 designie i karta niedokończonej gry hosta. Zakończona gra zostaje na ekranie gry z zablokowanymi
-kośćmi. Log gry pod graczami i ekran gry dopasowany do telefonów (`f1338c3`). Brakuje ekranu
-końca z wynikami i przestylowania lobby.
+kośćmi. Log gry pod graczami i ekran gry dopasowany do telefonów (`f1338c3`). Ekran końca gry
+z wynikami i animacje stołu (gałąź `ux/game-end-and-dice-motion`). Brakuje przestylowania lobby
+i sprawdzenia restartu serwera w połowie partii.
 
 ## Komponenty UI — 2026-09-25
 
@@ -245,3 +246,68 @@ Dług / do zrobienia:
 - Nieużywane: `LockIcon` (`ui/icons.tsx`), prop `isGuest` w `PlayerRow` (przyda się przy
   kontach).
 - ~~`DESIGN.md` nie opisuje jeszcze tych zmian~~ — zrobione.
+
+## Ekran końca gry i ruch na stole — 2026-09-27
+
+Gałąź `ux/game-end-and-dice-motion`. Szczegóły wyglądu w `DESIGN.md` („Koniec gry”, „Ruch na
+stole”, log gry).
+
+- **Ekran końca gry** — `components/results/`. `gameOver.tsx` trzyma cały harmonogram (stałe na
+  górze pliku) i montuje się tylko przy `COMPLETED`: 1 s planszy → `pixelCover.tsx` (siatka
+  kwadratów, maks. 220, rosną w rozsypanej kolejności przez 1,4 s) → `scoreReveal.tsx`
+  (kafelki od najniższego wyniku, bieżący 1,2× większy, `countUp.tsx` liczy od zera
+  z wykładniczym zwolnieniem, potem zjeżdża w dół) → przyciski. Całość w Base UI `Dialog`,
+  żeby fokus nie uciekał na planszę; Esc i klik obok nic nie robią, wyjście tylko przez „Leave
+  game” (`leaveGameSubmit` z `gameScreen.tsx` — przy skończonej grze samo przejście na
+  `/games`).
+- **Wyniki tylko z serwera** — kafelki czytają `participant.finalScore`; miejsce to 1 + liczba
+  wyższych wyników, więc remis dzieli miejsce. Medale 1–3 (`medal.tsx`, tokeny
+  `medal-gold/silver/bronze`), dalej `#4`…
+- **Fajerwerki** — `fireworks.tsx`, własny canvas zamiast tsParticles (preset „fireworks2”
+  wymagałby kilku paczek: silnik, emitery, smuga, rozpad). Start razem z liczeniem zwycięzcy
+  (`onLastStart`), rakiety przez 5 s, bez dźwięku. Losowość z `seededRandom.ts` (mulberry32) —
+  wspólny z zasłoną; `Math.random` nie pojawia się na kliencie nawet w dekoracji.
+- **Tabela na ekranie wyników** — `finalScoreboard.tsx` używa `ScoreCard` tylko do odczytu
+  (bez gracza w turze i kości, więc bez podpowiedzi). Układ z szerokości okna i liczby graczy
+  (`scoreboardWidth`, `useSyncExternalStore` na `resize`): obok wyników (`SideBoard`) albo pod
+  przyciskami (`BoardBelow`, rozwijanie `Unfold` 0fr → 1fr + przewinięcie do tabeli). Oba
+  układy mają te same elementy wokół wyników — przełączenie (np. obrót telefonu) nie montuje
+  wyników od nowa, więc odsłanianie nie startuje od początku.
+- **Kości** — `diceEntry.tsx` nie jest już montowany od nowa co `revision` (usunięty `key`
+  w `gameScreen.tsx`): sam czyści szkic, gdy potwierdzone kości z serwera znikają (zapis
+  kategorii, koniec gry), i przekazuje stare do `diceSlots.tsx`, gdzie pękają (`bubble-out`).
+  Nowa albo poprawiona wartość remontuje `Die` przez `key`, co odtwarza `bubble-in`; kości
+  widoczne przy wejściu na ekran się nie animują. Puste pole bez „–”.
+- **Tabela w grze** — `scoreCell.tsx`: ptaszek z `bubble-in` i wciśnięciem, komórka po przejściu
+  „zaznaczona → zapisana” z `saved-flash` i wyskakującą liczbą.
+- **Suma usunięta z `PlayerRow`** — po `COMPLETED` pokazywała wyniki, zanim zasłona je zakryła.
+- **Log gry** — 30–50vh, `mt-auto` (przy dolnej krawędzi). Przesuwanie starszych wpisów
+  techniką FLIP (`element.animate` na różnicy `offsetTop`); animowanie `grid-template-rows`
+  szarpało, bo co klatkę przeliczało układ i maskę.
+- Wspólne: `ui/reducedMotion.ts` (`prefersReducedMotion()` dla animacji z JS), token
+  `--ease-settle`. `'use client'` tylko na granicy — w pliku, który importuje komponent
+  serwerowy (strona, layout); nowe pliki są renderowane wewnątrz klienta, więc go nie mają.
+
+Przegląd dwoma niezależnymi agentami (poprawność, uproszczenia) — bez błędów; uproszczenia
+z niego wprowadzone (harmonogram w jednym pliku, podział `gameOver.tsx`, `useEffectEvent`
+zamiast refów z callbackami, jeden generator, martwy prop w `Die`).
+
+Sprawdzone: typecheck `web` zielony, lint bez błędów; w Chrome układ pierwszego kafelka,
+medal, pikselowa zasłona. Czego nie sprawdzono: płynności animacji (karta w tle), obu układów
+tabeli wyników, fajerwerków, prawdziwego telefonu. Strony podglądu `/dev/*` użyte przy pracy
+zostały usunięte — koniec gry widać tylko po rozegraniu partii.
+
+Dług / do zrobienia:
+
+- Odświeżenie zakończonej gry odtwarza całą sekwencję od nowa — nie ustalono, czy ma od razu
+  pokazywać wyniki.
+- Przy `prefers-reduced-motion` stan „kości schodzą ze stołu” w `DiceEntry` nie jest czyszczony
+  (warstwa jest ukryta, a następna tura go nadpisuje — niewidoczne).
+- Dialog końca gry nie ma `Dialog.Close` (Base UI zaleca go dla czytników ekranu na dotyku);
+  „Leave game” jest osiągalny.
+- `Card` ma nadal obwódkę `border-surface-line` — nowa zasada „bez obwódek” dotyczy nowych
+  elementów, istniejących nie ruszano.
+- Zbędne `'use client'` w starszych plikach (`diceEntry`, `gameScreen`, `scoreCard`, `avatar`,
+  `gameLobby`, `activeGameCard`, `createGameForm`, `hooks/useGameLog`).
+- `DESIGN.md` mówi „seed awatara = ID uczestnika”, a kod wszędzie używa imienia (także nowy
+  `scoreReveal.tsx`) — było tak przed tą gałęzią.
