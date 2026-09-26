@@ -12,7 +12,7 @@ export async function createTestApp() {
 
     const app = moduleRef.createNestApplication();
 
-    configureApp(app, 'http://localhost:8080');
+    configureApp(app, ['http://localhost:8080']);
 
     await app.init();
 

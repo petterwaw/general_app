@@ -10,6 +10,7 @@ import PlayerRow from '../players/playerRow';
 import PlayerNameRow from '../players/playerNameRow';
 import LogItem from '../gameLog/logItem';
 import { joinGame, leaveGame, removeParticipant, startGame } from '../../api/games';
+import { randomId } from '../../api/randomId';
 
 type GameLobbyProps = {
   game: GameView;
@@ -78,7 +79,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   function addLogEntry(seat: number, text: string) {
     setLog((current) => [
       ...current,
-      { id: crypto.randomUUID(), seat, text, time: formatTime(new Date()) },
+      { id: randomId(), seat, text, time: formatTime(new Date()) },
     ]);
   }
 
@@ -88,7 +89,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
     setAdding(false);
     if (!name || playerCount >= MAX_PLAYERS) return;
 
-    const pendingPlayer = { id: crypto.randomUUID(), name };
+    const pendingPlayer = { id: randomId(), name };
     setJoining((current) => [...current, pendingPlayer]);
     setError(null);
     enqueue(async () => {
