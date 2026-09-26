@@ -13,6 +13,7 @@ import DiceEntry from '../dice/diceEntry';
 import TurnPill from '../dice/turnPill';
 import PlayersPanel from '../players/playersPanel';
 import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
+import GameOver from '../results/gameOver';
 import { scoreCategory, submitRoll, leaveGame } from '../../api/games';
 import useGameLog from '../../hooks/useGameLog';
 
@@ -213,9 +214,9 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             columns ? 'self-center' : '',
           ].join(' ')}
         >
-          {/* a new revision means a new draft: confirmed dice or the next player's turn */}
+          {/* stays mounted across turns: it clears itself when the confirmed dice go, so the old
+              ones can animate away */}
           <DiceEntry
-            key={game.revision}
             confirmedDice={game.currentDice}
             pending={pending}
             disabled={finished}
@@ -261,6 +262,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           </div>
         </Drawer>
       )}
+
+      {finished && <GameOver participants={participants} onLeave={leaveGameSubmit} />}
     </>
   );
 }

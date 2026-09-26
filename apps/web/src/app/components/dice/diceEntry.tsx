@@ -38,6 +38,21 @@ export default function DiceEntry({
   const [roll, setRoll] = useState<LocalRoll>(EMPTY);
   // -1 = all five entered, no slot active
   const [active, setActive] = useState(0);
+  // dice of the turn that just ended, popping off the felt
+  const [leaving, setLeaving] = useState<DiceRoll | null>(null);
+  const [lastConfirmed, setLastConfirmed] = useState(confirmedDice);
+
+  // Confirmed dice gone = the turn is over (category saved, or the game ended): a fresh draft for
+  // the next turn, while the old dice leave. Kept mounted across turns so they have something to
+  // leave from.
+  if (confirmedDice !== lastConfirmed) {
+    setLastConfirmed(confirmedDice);
+    if (confirmedDice === null && lastConfirmed !== null) {
+      setLeaving(lastConfirmed);
+      setRoll(EMPTY);
+      setActive(0);
+    }
+  }
 
   function pick(value: DieFace) {
     if (active === -1) return;
@@ -58,6 +73,8 @@ export default function DiceEntry({
           onSlotClick={(index) => {
             if (!closed) setActive(index);
           }}
+          leaving={leaving}
+          onLeft={() => setLeaving(null)}
         />
       </DiceTray>
 

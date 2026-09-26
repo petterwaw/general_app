@@ -1,6 +1,8 @@
+import { useLayoutEffect, useRef } from 'react';
 import type { Category, GameEventView, ParticipantView } from '@dice-app/contracts';
 
 import LogItem from './logItem';
+import { prefersReducedMotion } from '../ui/reducedMotion';
 import { CHANCE_ROW, LOWER_ROWS, UPPER_ROWS } from '../scorecard/categories';
 import type { GameLogEntry } from '../../hooks/useGameLog';
 
@@ -8,6 +10,9 @@ type GameLogProps = {
   entries: GameLogEntry[];
   participants: ParticipantView[];
 };
+
+// older entries slide down this long when new ones arrive on top
+const LOG_MOVE_MS = 500;
 
 const CATEGORY_LABELS = Object.fromEntries(
   [...UPPER_ROWS, ...LOWER_ROWS, CHANCE_ROW].map(({ category, label }) => [category, label]),
@@ -52,11 +57,36 @@ function categorySaved(name: string, category: Category, points: number | null) 
 // Not flex-wrap: with no room left (many players in the drawer) every entry became its own
 // clipped column, thousands of pixels wide.
 export default function GameLog({ entries, participants }: GameLogProps) {
+  const items = useRef(new Map<number, HTMLDivElement>());
+  const lastTops = useRef(new Map<number, number>());
+
+  // FLIP: the new entries take their room at once, and every older entry is drawn back where it
+  // was and slides down from there with a transform only. Animating the height instead made the
+  // browser redo the layout (and the fade mask) every frame, which stuttered.
+  useLayoutEffect(() => {
+    const tops = new Map<number, number>();
+    items.current.forEach((element, revision) => tops.set(revision, element.offsetTop));
+
+    if (!prefersReducedMotion()) {
+      items.current.forEach((element, revision) => {
+        const before = lastTops.current.get(revision);
+        const after = tops.get(revision);
+        if (before === undefined || after === undefined || before === after) return;
+        element.animate([{ transform: `translateY(${before - after}px)` }, { transform: 'translateY(0)' }], {
+          duration: LOG_MOVE_MS,
+          easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)',
+        });
+      });
+    }
+    lastTops.current = tops;
+  }, [entries]);
+
   return (
     <div
       aria-label="Game log"
       className={[
-        'flex min-h-[30vh] flex-1 flex-col gap-2 overflow-hidden',
+        // mt-auto: capped at half the screen, the log sits on the bottom edge; the free space goes above it
+        'relative mt-auto flex min-h-[30vh] max-h-[50vh] flex-1 flex-col gap-2 overflow-hidden',
         '[mask-image:linear-gradient(to_bottom,#000_calc(100%-5rem),transparent)]',
       ].join(' ')}
     >
@@ -65,7 +95,17 @@ export default function GameLog({ entries, participants }: GameLogProps) {
           'playerId' in event ? participants.findIndex((participant) => participant.id === event.playerId) : -1;
         const name = seat === -1 ? 'Someone' : participants[seat].name;
         return (
-          <div key={event.revision} className={['shrink-0', isNew ? 'motion-safe:animate-log-in' : ''].join(' ')}>
+          <div
+            key={event.revision}
+            ref={(element) => {
+              if (!element) return;
+              items.current.set(event.revision, element);
+              return () => {
+                items.current.delete(event.revision);
+              };
+            }}
+            className={['shrink-0', isNew ? 'motion-safe:animate-log-in' : ''].join(' ')}
+          >
             <LogItem seat={seat === -1 ? undefined : seat} time={formatTime(event.createdAt)}>
               {describe(event, name)}
             </LogItem>
