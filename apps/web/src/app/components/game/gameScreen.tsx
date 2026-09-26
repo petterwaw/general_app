@@ -67,6 +67,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selected, setSelected] = useState<Category | null>(null);
   const [pending, setPending] = useState(false);
+  // only the leave request disables "Leave game": tied to pending, it greyed out on every roll
+  const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter()
 
@@ -119,17 +121,27 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     run(() => scoreCategory(game.id, currentPlayerId, category));
   }
 
-  function leaveGameSubmit() {
+  // Not through run(): the abandoned game must not reach onGameChange, or GameView swaps to its
+  // "no longer available" text for the moment before /games replaces the screen.
+  async function leaveGameSubmit() {
     // a finished game has nothing to abandon (the server refuses it), so just go back
     if (finished) {
       router.push('/games');
       return;
     }
-    run(async (): Promise<GameView> => {
-      const updatedGame = await leaveGame(game.id)
-      router.push('/games')
-      return updatedGame
-    })
+    if (pendingRef.current) return;
+    // on success both stay set: nothing else may run until /games replaces the screen
+    pendingRef.current = true;
+    setLeaving(true);
+    setError(null);
+    try {
+      await leaveGame(game.id);
+      router.push('/games');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setLeaving(false);
+      pendingRef.current = false;
+    }
   }
 
   const leaveButton = (
@@ -137,7 +149,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       variant="secondary"
       size="top"
       onClick={leaveGameSubmit}
-      disabled={pending}
+      disabled={leaving}
       aria-label="Leave game"
     >
       <LeaveIcon />

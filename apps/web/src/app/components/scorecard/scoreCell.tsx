@@ -19,8 +19,10 @@ type ScoreCellProps = {
 };
 
 const base = 'px-2 py-[3px] text-center tabular-nums';
-// the suggested-points box; identical in the hint and selected states
-const pill = 'inline-block rounded-lg px-2.5 py-0.5 font-extrabold inset-ring-2 inset-ring-primary';
+// the suggested-points box; identical in the hint and selected states. The negative margin
+// cancels the vertical padding, so the pill is no taller than a plain "–": showing hints after
+// Confirm must not grow the rows
+const pill = 'inline-block rounded-lg px-2.5 py-0.5 -my-0.5 font-extrabold inset-ring-2 inset-ring-primary';
 
 export default function ScoreCell({ state, isActive, categoryLabel }: ScoreCellProps) {
   const fill = isActive ? 'bg-primary-soft' : 'bg-white/55';
