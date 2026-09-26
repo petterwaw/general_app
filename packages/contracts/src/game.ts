@@ -80,6 +80,8 @@ export type GameView = {
   currentPlayerId: string | null;
   currentDice: DiceRoll | null;
   participants: ParticipantView[];
+  // ISO timestamp
+  createdAt: string;
 };
 
 // Public shape of a game-log entry. Only the events worth showing are exposed:

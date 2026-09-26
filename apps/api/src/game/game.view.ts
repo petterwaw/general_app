@@ -29,5 +29,6 @@ export function toGameView(game: GameWithParticipants): GameView {
       finalScore: game.status === 'COMPLETED' ? participant.finalScore : null,
       upperBonus: game.status === 'COMPLETED' ? participant.upperBonus : null,
     })),
+    createdAt: game.createdAt.toISOString(),
   };
 }

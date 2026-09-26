@@ -39,7 +39,7 @@ describe('Games API contract', () => {
             const { game } = await createGame(['Piotr', 'Ania'], 'contract-fields');
 
             expect(Object.keys(game).sort()).toEqual(
-                ['currentDice', 'currentPlayerId', 'id', 'participants', 'revision', 'status'],
+                ['createdAt', 'currentDice', 'currentPlayerId', 'id', 'participants', 'revision', 'status'],
             );
 
             for (const participant of game.participants) {
