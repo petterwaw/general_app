@@ -80,6 +80,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }, []);
 
   const { participants, currentPlayerId } = game;
+  // the screen stays as it was after the last category; only entering dice is closed
+  const finished = game.status === 'COMPLETED';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
   // the panel has its own column now; the drawer must not pop back open when the window narrows
@@ -118,6 +120,11 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }
 
   function leaveGameSubmit() {
+    // a finished game has nothing to abandon (the server refuses it), so just go back
+    if (finished) {
+      router.push('/games');
+      return;
+    }
     run(async (): Promise<GameView> => {
       const updatedGame = await leaveGame(game.id)
       router.push('/games')
@@ -125,7 +132,6 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     })
   }
 
-  // TODO: leave the game (POST /games/:id/leave from PR #6)
   const leaveButton = (
     <Button
       variant="secondary"
@@ -196,6 +202,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             key={game.revision}
             confirmedDice={game.currentDice}
             pending={pending}
+            disabled={finished}
             onConfirm={confirmDice}
             trayFooter={
               current && (

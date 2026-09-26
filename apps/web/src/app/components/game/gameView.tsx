@@ -16,7 +16,7 @@ export default function GameView({ gameId }: { gameId: string }) {
   }
 
   if (game.status === 'COMPLETED') {
-    return <div>Game completed</div>;
+    return <GameScreen game={game} onGameChange={setGame} />;
   }
 
   if (game.status === 'ABANDONED' || game.status === 'EXPIRED') {

@@ -13,6 +13,8 @@ type DiceEntryProps = {
   // dice the server already holds for this turn; entry is closed once they are set
   confirmedDice: DiceRoll | null;
   pending: boolean;
+  // the game is over: the tray stays on screen, but nothing can be entered
+  disabled?: boolean;
   onConfirm: (dice: DiceRoll) => void;
   // sits on the tray's bottom edge, e.g. <TurnPill />
   trayFooter?: React.ReactNode;
@@ -26,7 +28,13 @@ function isComplete(roll: LocalRoll): roll is DiceRoll {
 
 // Physical dice typed in by the host, like a one-time-code field (docs/DESIGN.md).
 // Must be rendered inside an @container: the dice are sized from the column width.
-export default function DiceEntry({ confirmedDice, pending, onConfirm, trayFooter }: DiceEntryProps) {
+export default function DiceEntry({
+  confirmedDice,
+  pending,
+  disabled = false,
+  onConfirm,
+  trayFooter,
+}: DiceEntryProps) {
   const [roll, setRoll] = useState<LocalRoll>(EMPTY);
   // -1 = all five entered, no slot active
   const [active, setActive] = useState(0);
@@ -39,24 +47,25 @@ export default function DiceEntry({ confirmedDice, pending, onConfirm, trayFoote
   }
 
   const confirmed = confirmedDice !== null;
+  const closed = confirmed || disabled;
 
   return (
     <>
       <DiceTray footer={trayFooter}>
         <DiceSlots
           dice={confirmedDice ?? roll}
-          activeIndex={confirmed ? -1 : active}
+          activeIndex={closed ? -1 : active}
           onSlotClick={(index) => {
-            if (!confirmed) setActive(index);
+            if (!closed) setActive(index);
           }}
         />
       </DiceTray>
 
       <div className="grid gap-4 pt-[34px]">
-        <DicePicker disabled={confirmed || active === -1} onPick={pick} />
+        <DicePicker disabled={closed || active === -1} onPick={pick} />
         <Button
           size="lg"
-          disabled={confirmed || pending || !isComplete(roll)}
+          disabled={closed || pending || !isComplete(roll)}
           onClick={() => {
             if (isComplete(roll)) onConfirm(roll);
           }}
