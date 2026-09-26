@@ -22,7 +22,7 @@ export function Drawer({ open, onOpenChange, label, closeLabel, children }: Draw
           aria-label={label}
           className={[
             "fixed inset-y-0 right-0 z-20 w-[min(380px,88vw)] overflow-auto",
-            "rounded-l-card bg-surface-solid p-[22px]",
+            "rounded-l-card [corner-shape:squircle] bg-surface-solid p-[22px]",
             "transition-transform duration-250 ease-out motion-reduce:transition-none",
             "data-ending-style:translate-x-[105%] data-starting-style:translate-x-[105%]",
           ].join(" ")}

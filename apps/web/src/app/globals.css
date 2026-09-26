@@ -49,7 +49,8 @@
 
   /* player colours live in components/players/playerColors.ts: the avatars need the hue as a number */
 
-  /* menu cards: concentric with the lg pill button at their bottom (pill radius ~30 + padding 22) */
+  /* menu cards: concentric with the lg pill button at their bottom (pill radius ~30 + padding 22);
+     where corner-shape works they are a superellipse instead, see @supports below */
   --radius-card: 52px;
   /* the scorecard's card: 52 would eat its cells at padding 12 (its table corners: 28 - 12 = 16) */
   --radius-board: 28px;
@@ -92,6 +93,15 @@
       opacity: 0;
       transform: translateY(-8px);
     }
+  }
+}
+
+/* a squircle needs ~1.5x the radius to look as round as a circular arc (Apple's continuous corners
+   use the same ratio); without corner-shape (Safari, every iOS browser) an 80px arc would be too
+   round, so those keep 52 */
+@supports (corner-shape: squircle) {
+  :root {
+    --radius-card: 80px;
   }
 }
 

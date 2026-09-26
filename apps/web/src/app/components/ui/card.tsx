@@ -13,7 +13,7 @@ const paddingClasses: Record<CardPadding, string> = {
 
 // the radius follows the padding: menu cards stay concentric with the lg pill button inside them
 const radiusClasses: Record<CardPadding, string> = {
-  default: "rounded-card",
+  default: "rounded-card [corner-shape:squircle]",
   compact: "rounded-board",
   none: "rounded-board",
 };
