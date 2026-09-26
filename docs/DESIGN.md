@@ -178,3 +178,20 @@ wierszy graczy (`rounded-panel`, `bg-white/60`):
 - Online jest zablokowane (`soon`, dymek „Coming soon”) — tryb online jest POZA MVP. Dymek
   (`ComingSoon`) otwiera się po najechaniu **i po tapnięciu** — to `Popover` z `openOnHover`,
   bo tooltip na dotyk się nie otwiera; zamyka tapnięcie obok.
+
+## Przyciski w trakcie akcji (2026-09-26)
+
+- **Kliknięty przycisk pokazuje loader zamiast napisu** — trzy krążące kropki
+  (`ThreeBodySpinner`, z uiverse.io, licencja MIT z notką w pliku CSS). Kropki mają kolor
+  napisu przycisku. Przycisk **zachowuje swój kolor** (jest zajęty, nie niedostępny) i nie
+  reaguje na kliknięcia. Napis zostaje pod spodem niewidoczny, więc przycisk nie zmienia
+  szerokości.
+- **Drugi przycisk z pary** (Back / Leave na karcie niedokończonej gry, Start / Leave
+  w lobby) jest w tym czasie zablokowany (`inert`), ale **nie jest wyszarzony** — na ekranie
+  zmienia się tylko kliknięty.
+- Dotyczy: Create game, Start game, każdego Leave game (karta, lobby, róg ekranu gry) i Back to
+  the game. W `Button` to prop `loading`; ciche przyciski tekstowe Leave rysują loader same.
+- Wyszarzenie (`disabled`) zostaje dla przycisków, których **teraz nie da się użyć** (np.
+  Create game bez imienia).
+- **Karta niedokończonej gry:** Back to the game i Leave game stoją obok siebie, a pod siebie
+  schodzą tylko wtedy, gdy napisy nie mieszczą się w jednym wierszu.
