@@ -8,11 +8,11 @@ w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 
 > **Tu następuje przerwa.** Właściciel gra kilka partii i zgłasza poprawki, zanim ruszamy dalej.
 
-**Postęp: W TRAKCIE (stan na 2026-09-25).** Ekran gry w trakcie partii jest złożony
+**Postęp: W TRAKCIE (stan na 2026-09-26).** Ekran gry w trakcie partii jest złożony
 z komponentów i podpięty pod API w zakresie zatwierdzenia kości i zapisu kategorii (gałąź
-`ui/game-screen`). Doszły (gałąź `ui/wire-api`): wyjście z gry, ekran `/games` w nowym
-designie i karta niedokończonej gry hosta. Brakuje logu gry, ekranu końca i przestylowania
-lobby.
+`ui/game-screen`). Doszły (gałąź `ui/wire-api`, PR #8): wyjście z gry, ekran `/games` w nowym
+designie i karta niedokończonej gry hosta. Zakończona gra zostaje na ekranie gry z zablokowanymi
+kośćmi. Brakuje logu gry, ekranu końca z wynikami i przestylowania lobby.
 
 ## Komponenty UI — 2026-09-25
 
@@ -90,7 +90,8 @@ Dług / do zrobienia w tym etapie:
   są szkicem. Na razie UI blokuje kości po zatwierdzeniu. Wymaga zmiany w API.
 - Podpięcie API (właściciel, w trybie nauki): Game log (`GET /games/:id/events`, `TODO`
   w `playersPanel.tsx`), ekran końca gry z `finalScore` (`gameView.tsx` przy `COMPLETED`
-  pokazuje sam napis). „Leave game” i niedokończona gra hosta — zrobione, wpis niżej.
+  pokazuje na razie zwykły ekran gry z zablokowanymi kośćmi — wpis z 2026-09-26). „Leave game”
+  i niedokończona gra hosta — zrobione, wpis niżej.
 - Przestylowanie lobby (tworzenie gry — zrobione, wpis niżej).
 - Ptaszek przy zaznaczonym polu w ostatniej kolumnie wystaje poza komórkę.
 - Kolory spoza tokenów: `text-[#cfc6ea]` w `TurnPill`, `bg-white/55` / `bg-white/60`.
@@ -110,7 +111,8 @@ niedokończonej gry napisał właściciel w trybie nauki; wygląd `/games` — C
   jest w akcji przekazanej do `run`, więc wykonuje się tylko po sukcesie. `run()` blokuje
   równoległe żądania refem (`pendingRef`) zamiast stanu, bo `pending` ze `useState` zmienia się
   dopiero przy następnym renderze i szybkie podwójne kliknięcie przeszłoby dwa razy. Przycisk
-  jest nieaktywny w trakcie żądania.
+  jest nieaktywny w trakcie żądania. *(Zmienione 2026-09-26: wyjście nie idzie już przez
+  `run()` — wpis niżej.)*
 - `hooks/useHostedGame.ts` — `GET /games/hosted` przy wejściu; „brak gry” (`null`) od „jeszcze
   nie wiem” odróżnia `loading`.
 - `/games` (`games/page.tsx`) — ekran startowy z „Create game” i „Join game”; „Create game”
@@ -144,3 +146,37 @@ Dług / do zrobienia:
 - Czy przed wyjściem z gry ma być potwierdzenie — nieustalone.
 - Usuwany gracz znika bez animacji; wysokość karty skacze.
 - Formularz online nie ma logiki (i jest dziś nieosiągalny).
+
+## Zakończona gra i poprawki skaczącego ekranu — 2026-09-26
+
+Na `main` (commity `7cc4df8`, w PR #8, i `102c469`). Kod — Claude, w trybie tempa.
+
+- **Zakończona gra** — `gameView.tsx` przy `COMPLETED` renderuje `GameScreen` zamiast napisu
+  „Game completed”. Ekran zostaje taki, jak po ostatniej kategorii; `DiceEntry` dostało prop
+  `disabled` (taca widoczna, wpisywanie zamknięte). „Leave game” w zakończonej grze tylko wraca
+  na `/games` — serwer i tak odmawia porzucenia zakończonej gry. To stan przejściowy do czasu
+  ekranu końca z wynikami.
+- **Tabela skakała po „Confirm” i po zapisie kategorii** — podpowiedź (`pill` w
+  `scoreCell.tsx`) miała `py-0.5`, więc była ~4 px wyższa niż `–` w pustej komórce i każdy
+  wiersz z podpowiedzią rósł. Dodane `-my-0.5`: pigułka wygląda tak samo, ale w układzie nie
+  jest wyższa od tekstu. Zasada jak przy stanie `selected`: zmiana stanu komórki nie może
+  zmieniać jej wymiarów.
+- **„Leave game” migał co turę** — miał `disabled={pending}`, a `pending` ustawia `run()` przy
+  każdej akcji (`roll`, `score`), więc przycisk na chwilę szarzał. Teraz ma własny stan
+  `leaving`.
+- **Mignięcie „Game is no longer available” przy wyjściu** — `run()` przekazywało grę
+  `ABANDONED` do `onGameChange`, a `gameView.tsx` przerysowywał się, zanim `router.push`
+  załadował `/games`. `leaveGameSubmit` nie idzie już przez `run()`: woła `leaveGame`
+  i nawiguje, nie ruszając stanu gry. Po sukcesie `leaving` i `pendingRef` zostają ustawione,
+  żeby do zmiany ekranu nic innego nie ruszyło; przy błędzie komunikat jak przy innych akcjach.
+
+Porzucony prototyp animowanego odsłaniania wyników (`/dev/reveal`) nie trafił do repo.
+
+Sprawdzone: typecheck `web` zielony, lint bez błędów (3 stare ostrzeżenia o nieużywanych
+zmiennych). **W przeglądarce nie sprawdzano** poprawek z `102c469`.
+
+Dług / do zrobienia:
+
+- `leaveGameSubmit` powtarza część logiki `run()` (blokada, błędy), bo `run()` zakłada, że akcja
+  zwraca nową grę. Przy kolejnym takim wyjątku — dopuścić w `run()` akcję bez wyniku.
+- Ekran końca gry z `finalScore` / zwycięzcą — nadal do zrobienia.
