@@ -244,4 +244,4 @@ Dług / do zrobienia:
   i tacy.
 - Nieużywane: `LockIcon` (`ui/icons.tsx`), prop `isGuest` w `PlayerRow` (przyda się przy
   kontach).
-- `DESIGN.md` nie opisuje jeszcze tych zmian (wiersz „Suma punktów” mówi o „???” z kłódką).
+- ~~`DESIGN.md` nie opisuje jeszcze tych zmian~~ — zrobione.
