@@ -1,13 +1,12 @@
 import Avatar from './avatar';
 import { Badge } from '../ui/badge';
-import { CloseIcon, LockIcon } from '../ui/icons';
+import { CloseIcon } from '../ui/icons';
 
 type PlayerRowProps = {
   name: string;
   seat: number;
-  isHost?: boolean;
   isGuest?: boolean;
-  // null = total still sealed (hidden until the game ends); left out = no total (lobby)
+  // null or left out = no total: in the lobby, and during play (totals appear when the game ends)
   total?: number | null;
   // shows an X instead of the total
   onRemove?: () => void;
@@ -16,7 +15,6 @@ type PlayerRowProps = {
 export default function PlayerRow({
   name,
   seat,
-  isHost = false,
   isGuest = false,
   total,
   onRemove,
@@ -28,7 +26,6 @@ export default function PlayerRow({
 
       <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-bold">
         {name}
-        {isHost && <Badge>Host</Badge>}
         {isGuest && <Badge tone="muted">Guest</Badge>}
       </span>
 
@@ -44,16 +41,7 @@ export default function PlayerRow({
         >
           <CloseIcon size={20} />
         </button>
-      ) : total === undefined ? null : total === null ? (
-        <span
-          title="Totals are revealed when the game ends"
-          className="inline-flex items-center gap-1.25 rounded-full bg-surface-sunken py-1 pr-2.5 pl-2.25 text-[.95rem] font-extrabold tracking-[.12em] text-ink-faint"
-        >
-          <LockIcon />
-          <span aria-hidden="true">???</span>
-          <span className="sr-only">Score hidden until the game ends</span>
-        </span>
-      ) : (
+      ) : total == null ? null : (
         <span className="text-[1.2rem] font-extrabold tabular-nums">{total}</span>
       )}
     </div>

@@ -16,6 +16,8 @@ type ScoreCellProps = {
   isActive: boolean;
   // used in aria labels of the hint and the tick
   categoryLabel: string;
+  // the last column has no room on its right: the table's scroller would cut the tick off
+  tickOnLeft?: boolean;
 };
 
 const base = 'px-2 py-[3px] text-center tabular-nums';
@@ -24,7 +26,7 @@ const base = 'px-2 py-[3px] text-center tabular-nums';
 // Confirm must not grow the rows
 const pill = 'inline-block rounded-lg px-2.5 py-0.5 -my-0.5 font-extrabold inset-ring-2 inset-ring-primary';
 
-export default function ScoreCell({ state, isActive, categoryLabel }: ScoreCellProps) {
+export default function ScoreCell({ state, isActive, categoryLabel, tickOnLeft = false }: ScoreCellProps) {
   const fill = isActive ? 'bg-primary-soft' : 'bg-white/55';
 
   switch (state.kind) {
@@ -78,7 +80,10 @@ export default function ScoreCell({ state, isActive, categoryLabel }: ScoreCellP
               autoFocus
               onClick={state.onSave}
               aria-label={`Save ${state.points} in ${categoryLabel}`}
-              className="absolute top-1/2 left-full z-10 ml-1 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-good text-white"
+              className={[
+                'absolute top-1/2 z-10 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-good text-white',
+                tickOnLeft ? 'right-full mr-1' : 'left-full ml-1',
+              ].join(' ')}
             >
               <CheckIcon />
             </button>

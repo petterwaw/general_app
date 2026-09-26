@@ -128,6 +128,39 @@ export default function ScoreCard({
     };
   }, [count, onLabelWidth]);
 
+  // The wheel moves the players sideways: the rows rarely need it, the scrollbar is there for that.
+  // At either end the wheel goes on to the page, so the stacked layout still scrolls.
+  useEffect(() => {
+    const box = scrollRef.current;
+    if (!box) return;
+
+    function onWheel(event: WheelEvent) {
+      if (!box || event.shiftKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+      const max = box.scrollWidth - box.clientWidth;
+      const canMove = event.deltaY > 0 ? box.scrollLeft < max - 1 : box.scrollLeft > 0;
+      if (!canMove) return;
+      event.preventDefault();
+      box.scrollLeft += event.deltaY;
+    }
+
+    box.addEventListener('wheel', onWheel, { passive: false });
+    return () => box.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // When the players do not all fit, the turn's player slides in as the first column after the
+  // labels (the browser stops at the end, so the last ones just come into view).
+  const seatOfCurrent = participants.findIndex((participant) => participant.id === currentPlayerId);
+  const alignedRef = useRef(false);
+  useEffect(() => {
+    const box = scrollRef.current;
+    // nothing to align while every player fits (also on the first measurements, before fonts load)
+    if (!box || !sizes || seatOfCurrent === -1 || box.scrollWidth <= box.clientWidth) return;
+    // the first time the screen opens it jumps there without the animation
+    const smooth = alignedRef.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    alignedRef.current = true;
+    box.scrollTo({ left: seatOfCurrent * sizes.col, behavior: smooth ? 'smooth' : 'auto' });
+  }, [seatOfCurrent, sizes]);
+
   // Esc or a click anywhere but a scorecard button drops the selection without saving
   useEffect(() => {
     if (!selected) return;
@@ -150,13 +183,14 @@ export default function ScoreCard({
   }, [selected, onSelect]);
 
   function cells(category: Category, label: string) {
-    return participants.map((participant) => {
+    return participants.map((participant, seat) => {
       const isCurrent = participant.id === currentPlayerId;
       return (
         <ScoreCell
           key={participant.id}
           categoryLabel={label}
           isActive={isCurrent}
+          tickOnLeft={seat === count - 1}
           state={cellState(category, participant.scoreCard, isCurrent, turnDice, selected, onSelect, onSave)}
         />
       );
@@ -177,9 +211,13 @@ export default function ScoreCard({
   }
 
   return (
+    // relative: the screen-reader labels in the cells are absolutely positioned; without a
+    // positioned box here they hang off the page, not this scroller, and widen it sideways
     <div
       ref={scrollRef}
-      className="overflow-x-auto [scrollbar-width:none] pointer-fine:[scrollbar-color:var(--color-felt)_rgb(109_92_159/.18)] pointer-fine:[scrollbar-width:thin]"
+      // the sideways scrollbar starts where the player columns do
+      style={{ '--scrollbar-inset': `${sizes?.label ?? 0}px` } as React.CSSProperties}
+      className="scrollbar-soft relative overflow-x-auto"
     >
       <table
         ref={tableRef}
@@ -205,9 +243,10 @@ export default function ScoreCard({
                   participant.id === currentPlayerId ? 'bg-primary-soft' : '',
                 ].join(' ')}
               >
-                <span className="flex flex-col items-center gap-0.5">
+                {/* avatars only: names do not fit narrow columns; the players panel has them */}
+                <span title={participant.name} className="flex justify-center">
                   <Avatar seed={participant.name} seat={seat} size={34} />
-                  <span className="max-w-full truncate">{participant.name}</span>
+                  <span className="sr-only">{participant.name}</span>
                 </span>
               </th>
             ))}

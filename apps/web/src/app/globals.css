@@ -65,6 +65,16 @@
       transform: translateY(6px);
     }
   }
+
+  /* a new game-log entry: slides down from under the players and fades in, slower than rise */
+  --animate-log-in: log-in 450ms cubic-bezier(0.2, 0.7, 0.3, 1);
+
+  @keyframes log-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
 }
 
 @theme inline {
@@ -80,6 +90,48 @@ body {
 :focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
+}
+
+/* Scrollbars (scorecard, players list): none on touch screens; with a mouse a thin rounded bar
+   in the felt colour, without arrows. Chrome and Safari draw it from the ::-webkit-scrollbar
+   parts, which they skip whenever scrollbar-width / scrollbar-color are set, so those two are
+   only used by Firefox (which cannot shorten the track: --scrollbar-inset is ignored there). */
+@utility scrollbar-soft {
+  scrollbar-width: none;
+
+  @media (pointer: fine) {
+    @supports selector(::-webkit-scrollbar) {
+      scrollbar-width: auto;
+
+      &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      &::-webkit-scrollbar-button {
+        display: none;
+      }
+      &::-webkit-scrollbar-track {
+        border-radius: 999px;
+        background: rgb(109 92 159 / 0.18);
+      }
+      /* the scorecard's bar runs under the player columns only */
+      &::-webkit-scrollbar-track:horizontal {
+        margin-left: var(--scrollbar-inset, 0px);
+      }
+      &::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: var(--color-felt);
+      }
+      &::-webkit-scrollbar-corner {
+        background: transparent;
+      }
+    }
+
+    @supports not selector(::-webkit-scrollbar) {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-felt) rgb(109 92 159 / 0.18);
+    }
+  }
 }
 
 /* multi-layer backgrounds that do not fit a single utility class */

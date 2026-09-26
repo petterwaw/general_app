@@ -201,7 +201,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
                 <PlayerRow
                   name={participant.name}
                   seat={seat}
-                  isHost={participant.role === 'HOST'}
                   onRemove={removable ? () => removePlayer(participant.id) : undefined}
                 />
               </div>

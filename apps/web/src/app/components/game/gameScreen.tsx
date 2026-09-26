@@ -14,6 +14,7 @@ import TurnPill from '../dice/turnPill';
 import PlayersPanel from '../players/playersPanel';
 import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
 import { scoreCategory, submitRoll, leaveGame } from '../../api/games';
+import useGameLog from '../../hooks/useGameLog';
 
 type GameScreenProps = {
   game: GameView;
@@ -82,6 +83,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }, []);
 
   const { participants, currentPlayerId } = game;
+  const log = useGameLog(game.id, game.revision);
   // the screen stays as it was after the last category; only entering dice is closed
   const finished = game.status === 'COMPLETED';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
@@ -159,6 +161,20 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
 
   return (
     <>
+      {/* above the grid, not in the tray column: the buttons sit at the screen's edges, however
+          narrow the tray is */}
+      {layout !== 'three' && (
+        <div className="flex items-center justify-between gap-3">
+          {leaveButton}
+          <DrawerHandle
+            label="Players"
+            aria-label="Show players and game log"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen(true)}
+          />
+        </div>
+      )}
+
       <section
         ref={gridRef}
         aria-label="Game"
@@ -197,18 +213,6 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             columns ? 'self-center' : '',
           ].join(' ')}
         >
-          {layout !== 'three' && (
-            <div className="flex items-center justify-between gap-3">
-              {leaveButton}
-              <DrawerHandle
-                label="Players"
-                aria-label="Show players and game log"
-                aria-expanded={drawerOpen}
-                onClick={() => setDrawerOpen(true)}
-              />
-            </div>
-          )}
-
           {/* a new revision means a new draft: confirmed dice or the next player's turn */}
           <DiceEntry
             key={game.revision}
@@ -238,9 +242,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
         {layout === 'three' && (
           <div className="flex min-h-0 flex-col gap-4" aria-label="Players and game log">
             <div className="flex justify-end">{leaveButton}</div>
-            <div className="min-h-0 overflow-auto">
-              <PlayersPanel participants={participants} />
-            </div>
+            <PlayersPanel participants={participants} log={log} />
           </div>
         )}
       </section>
@@ -254,8 +256,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           closeLabel="Close players and game log"
         >
           {/* room for the close button, which used to sit beside the heading */}
-          <div className="pt-12">
-            <PlayersPanel participants={participants} />
+          <div className="flex h-full flex-col pt-12">
+            <PlayersPanel participants={participants} log={log} />
           </div>
         </Drawer>
       )}
