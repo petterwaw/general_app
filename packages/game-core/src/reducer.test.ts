@@ -7,6 +7,7 @@ import {
     reducer
 } from './reducer.js'
 import type { Action } from './reducer.js'
+import { GameRuleError } from './errors.js'
 import type { Category, DiceRoll } from './types.js'
 
 describe('createInitialState', () => {
@@ -138,7 +139,7 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }])
         const action: Action = { type: 'saveCategory', playerId: 'p2', category: 'one', dice: [1, 1, 1, 2, 3] }
 
-        expect(() => reducer(state, action)).toThrow()
+        expect(() => reducer(state, action)).toThrow(GameRuleError)
     })
 
     it('should throw when the category is already occupied', () => {
@@ -146,14 +147,14 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
         state.players[0].card.one = 3
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'one', dice: [1, 1, 1, 2, 3] }
 
-        expect(() => reducer(state, action)).toThrow()
+        expect(() => reducer(state, action)).toThrow(GameRuleError)
     })
 
     it('should throw when a lower section category is locked and forced zero does not apply', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }])
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'pair', dice: [6, 6, 6, 2, 3] }
 
-        expect(() => reducer(state, action)).toThrow()
+        expect(() => reducer(state, action)).toThrow(GameRuleError)
     })
 
     it('should throw when playerId does not exist in the state', () => {
@@ -162,6 +163,7 @@ describe('reducer — saveCategory (nielegalne ruchy, oczekuj throw)', () => {
         const action: Action = { type: 'saveCategory', playerId: 'p1', category: 'one', dice: [1, 1, 1, 2, 3] }
 
         expect(() => reducer(state, action)).toThrow()
+        expect(() => reducer(state, action)).not.toThrow(GameRuleError)
     })
 
     it('should throw when the action type is unknown', () => {
