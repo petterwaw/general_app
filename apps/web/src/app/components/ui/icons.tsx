@@ -21,15 +21,6 @@ function Icon({ size = 18, strokeWidth = 2.2, children, ...props }: IconProps) {
   );
 }
 
-export function CopyIcon(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <rect x="9" y="9" width="12" height="12" rx="3" />
-      <path d="M5 15V6a3 3 0 0 1 3-3h9" />
-    </Icon>
-  );
-}
-
 export function LeaveIcon(props: IconProps) {
   return (
     <Icon size={20} {...props}>
@@ -60,15 +51,6 @@ export function CheckIcon(props: IconProps) {
   return (
     <Icon size={14} strokeWidth={3.4} {...props}>
       <path d="M5 12.5l4.5 4.5L19 7.5" />
-    </Icon>
-  );
-}
-
-export function LockIcon(props: IconProps) {
-  return (
-    <Icon size={12} strokeWidth={2.6} {...props}>
-      <rect x="5" y="11" width="14" height="10" rx="2.5" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
     </Icon>
   );
 }
