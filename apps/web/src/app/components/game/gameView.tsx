@@ -31,7 +31,15 @@ export default function GameView({ gameId }: { gameId: string }) {
     return <GameScreen game={game} onGameChange={setGame} />;
   }
 
-  if (game.status === 'ABANDONED' || game.status === 'EXPIRED') {
+  if (game.status === 'ABANDONED') {
+    return (
+      <ErrorScreen mood="sad" title="The host left and took the dice along">
+        <GoToGames />
+      </ErrorScreen>
+    );
+  }
+
+  if (game.status === 'EXPIRED') {
     return <div>Game is no longer available</div>;
   }
 
