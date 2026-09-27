@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
 import PlayerNameRow from '../players/playerNameRow';
 import { GameModeSwitch } from './gameModeSwitch';
-import { createGame } from '../../api/games';
+import { createGame, getHostedGame } from '../../api/games';
 
 type GameMode = 'offline' | 'online';
 
@@ -15,8 +16,13 @@ const MODE_DESCRIPTIONS: Record<GameMode, string> = {
     'Everyone joins from their own device, and the app rolls virtual dice for everyone.',
 };
 
+type CreateGameFormProps = {
+  // called when creating failed but this device turns out to host a game after all
+  onHostedGame: (game: GameView) => void;
+};
+
 // Only the host's name here: the other players are added in the lobby.
-export function CreateGameForm() {
+export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
   const [name, setName] = useState('');
   const [mode, setMode] = useState<GameMode>('offline');
   const pendingRef = useRef(false);
@@ -38,6 +44,13 @@ export function CreateGameForm() {
       const game = await createGame([name.trim()]);
       router.push(`/games/${game.id}`);
     } catch (err) {
+      // The game may exist after all: the response got lost on the way, or another tab of this
+      // device created one first (409). Show that game instead of the error.
+      const hostedGame = await getHostedGame().catch(() => null);
+      if (hostedGame) {
+        onHostedGame(hostedGame);
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setPending(false);
       pendingRef.current = false;
