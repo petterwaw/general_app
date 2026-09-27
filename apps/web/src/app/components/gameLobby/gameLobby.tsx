@@ -260,9 +260,14 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
-          {!watching && (
+        {/* a watcher has nothing to start: leaving is their only button, so it looks like one */}
+        {watching ? (
+          <Button size="lg" variant="secondary" onClick={leave}>
+            Leave spectating
+          </Button>
+        ) : (
+          <div className="flex items-center gap-3">
+            {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
             <Button
               size="lg"
               onClick={start}
@@ -272,24 +277,24 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             >
               Start game
             </Button>
-          )}
-          {/* a quiet text action, so leaving does not compete with starting */}
-          <button
-            type="button"
-            onClick={leave}
-            disabled={closingAction === 'leave'}
-            inert={closingAction === 'start'}
-            aria-busy={closingAction === 'leave' || undefined}
-            className={[
-              'relative grid flex-1 cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
-              'transition-colors duration-150 enabled:hover:text-danger disabled:cursor-default',
-            ].join(' ')}
-          >
-            {/* the label stays, hidden, so the button keeps its size */}
-            <span className={closingAction === 'leave' ? 'invisible' : undefined}>Leave game</span>
-            {closingAction === 'leave' && <ThreeBodySpinner className="absolute" />}
-          </button>
-        </div>
+            {/* a quiet text action, so leaving does not compete with starting */}
+            <button
+              type="button"
+              onClick={leave}
+              disabled={closingAction === 'leave'}
+              inert={closingAction === 'start'}
+              aria-busy={closingAction === 'leave' || undefined}
+              className={[
+                'relative grid flex-1 cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
+                'transition-colors duration-150 enabled:hover:text-danger disabled:cursor-default',
+              ].join(' ')}
+            >
+              {/* the label stays, hidden, so the button keeps its size */}
+              <span className={closingAction === 'leave' ? 'invisible' : undefined}>Leave game</span>
+              {closingAction === 'leave' && <ThreeBodySpinner className="absolute" />}
+            </button>
+          </div>
+        )}
       </Card>
     </div>
   );

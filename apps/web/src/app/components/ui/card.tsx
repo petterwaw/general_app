@@ -2,6 +2,8 @@ type CardPadding = "default" | "compact" | "none";
 
 type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   padding?: CardPadding;
+  // the thin light outline; flat cards leave it out
+  outlined?: boolean;
 };
 
 const paddingClasses: Record<CardPadding, string> = {
@@ -18,12 +20,13 @@ const radiusClasses: Record<CardPadding, string> = {
   none: "rounded-board",
 };
 
-export function Card({ padding = "default", className = "", ...props }: CardProps) {
+export function Card({ padding = "default", outlined = true, className = "", ...props }: CardProps) {
   return (
     <div
       {...props}
       className={[
-        "border border-surface-line bg-surface backdrop-blur-[18px] backdrop-saturate-[1.2]",
+        "bg-surface backdrop-blur-[18px] backdrop-saturate-[1.2]",
+        outlined ? "border border-surface-line" : "",
         radiusClasses[padding],
         paddingClasses[padding],
         className,

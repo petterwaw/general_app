@@ -80,7 +80,7 @@ export default function DiceEntry({
       </DiceTray>
 
       {!readOnly && (
-        <div className="grid gap-4 pt-[34px]">
+        <div className="grid gap-4 pt-4">
           <DicePicker disabled={closed || active === -1} onPick={pick} />
           <Button
             size="lg"

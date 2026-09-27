@@ -57,6 +57,7 @@ function Unfold({
 type EndActionsProps = {
   shown: boolean;
   onLeave: () => void;
+  leaveLabel: string;
   boardOpen: boolean;
   onToggleBoard: () => void;
   // which way the scoreboard comes from: beside the results or below them
@@ -64,7 +65,7 @@ type EndActionsProps = {
 };
 
 // "Leave game" and the scoreboard toggle, unfolding under the scores once they are all counted.
-function EndActions({ shown, onLeave, boardOpen, onToggleBoard, side }: EndActionsProps) {
+function EndActions({ shown, onLeave, leaveLabel, boardOpen, onToggleBoard, side }: EndActionsProps) {
   // right / left beside the results, down / up under them
   const arrow = side ? (boardOpen ? '' : 'rotate-180') : boardOpen ? 'rotate-90' : '-rotate-90';
 
@@ -77,7 +78,7 @@ function EndActions({ shown, onLeave, boardOpen, onToggleBoard, side }: EndActio
           style={{ animationDelay: '250ms' }}
         >
           <Button size="lg" onClick={onLeave}>
-            Leave game
+            {leaveLabel}
           </Button>
           <button
             type="button"
@@ -145,6 +146,8 @@ function BoardBelow({ participants, open }: BoardProps) {
 type GameOverProps = {
   participants: ParticipantView[];
   onLeave: () => void;
+  // "Leave spectating" for someone who only watched
+  leaveLabel: string;
 };
 
 // Shown once the game is COMPLETED: after a moment a pixel cover hides the board and the final
@@ -152,7 +155,7 @@ type GameOverProps = {
 // scoreboard comes in beside the results where it fits, otherwise below them. Mounted only while
 // finished, so the stage starts over. The delays are presentation only; nothing about the game
 // depends on them.
-export default function GameOver({ participants, onLeave }: GameOverProps) {
+export default function GameOver({ participants, onLeave, leaveLabel }: GameOverProps) {
   const [stage, setStage] = useState<Stage>('waiting');
   // they go up with the winner's count, not after it
   const [fireworks, setFireworks] = useState(false);
@@ -178,6 +181,7 @@ export default function GameOver({ participants, onLeave }: GameOverProps) {
       <EndActions
         shown={stage === 'done'}
         onLeave={onLeave}
+        leaveLabel={leaveLabel}
         boardOpen={boardOpen}
         onToggleBoard={() => setBoardOpen((open) => !open)}
         side={side}

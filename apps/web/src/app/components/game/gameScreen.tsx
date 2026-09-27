@@ -88,6 +88,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const finished = game.status === 'COMPLETED';
   // not the host's device: the game is only watched, nothing on it can be changed
   const watching = !game.isHost;
+  const leaveLabel = watching ? 'Leave spectating' : 'Leave game';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
   // the panel has its own column now; the drawer must not pop back open when the window narrows
@@ -153,10 +154,10 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       size="top"
       onClick={leaveGameSubmit}
       loading={leaving}
-      aria-label="Leave game"
+      aria-label={leaveLabel}
     >
       <LeaveIcon />
-      <span className="max-[560px]:hidden">Leave game</span>
+      <span className="max-[560px]:hidden">{leaveLabel}</span>
     </Button>
   );
 
@@ -190,6 +191,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       >
         <Card
           padding="compact"
+          outlined={false}
           className={[
             columns
               ? 'flex min-h-0 flex-col [&>div]:min-h-0 [&>div]:flex-1 [&>div]:overflow-auto'
@@ -259,7 +261,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
         </Drawer>
       )}
 
-      {finished && <GameOver participants={participants} onLeave={leaveGameSubmit} />}
+      {finished && <GameOver participants={participants} onLeave={leaveGameSubmit} leaveLabel={leaveLabel} />}
     </>
   );
 }
