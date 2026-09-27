@@ -70,7 +70,9 @@ export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCar
         </div>
         {/* a quiet text action, so leaving does not compete with going back; it asks first,
             since leaving abandons the game */}
-        <div className="grid grow" inert={goingBack}>
+        {/* at least as wide as the "Leave?" question, so it opens on the button instead of
+            growing past the card's edge */}
+        <div className="grid min-w-40 grow" inert={goingBack}>
           <ConfirmLeave
             onConfirm={onLeave}
             loading={pending}

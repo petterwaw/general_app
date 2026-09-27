@@ -23,7 +23,8 @@ const variantClasses: Record<ButtonVariant, string> = {
 
 const sizeClasses: Record<ButtonSize, string> = {
   md: "px-[22px] py-3 text-base",
-  lg: "w-full px-7 py-4 text-[1.15rem]",
+  // full width, but as tall as the top-bar and leave buttons, so buttons side by side line up
+  lg: "w-full px-7 py-3 text-[1.05rem]",
   // top bar: as tall as the game-code chip, shrinks to the icon below 560px
   top: "px-[13px] py-3 text-base min-[561px]:px-[26px] min-[561px]:text-[1.05rem]",
 };
