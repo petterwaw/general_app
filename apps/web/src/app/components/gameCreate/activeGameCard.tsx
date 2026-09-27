@@ -3,8 +3,8 @@ import Link from 'next/link';
 import type { GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
+import { ConfirmLeave } from '../ui/confirmLeave';
 import { Card } from '../ui/card';
-import { ThreeBodySpinner } from '../ui/threeBodySpinner';
 import Avatar from '../players/avatar';
 
 type ActiveGameCardProps = {
@@ -68,22 +68,28 @@ export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCar
             Back to the game
           </Button>
         </div>
-        {/* a quiet text action, so leaving does not compete with going back */}
-        <button
-          type="button"
-          onClick={onLeave}
-          disabled={pending}
-          inert={goingBack}
-          aria-busy={pending || undefined}
-          className={[
-            'relative grid grow cursor-pointer place-items-center whitespace-nowrap rounded-full px-2 py-3',
-            'font-bold text-ink-muted transition-colors duration-150 enabled:hover:text-danger disabled:cursor-default',
-          ].join(' ')}
-        >
-          {/* the label stays, hidden, so the button keeps its size */}
-          <span className={pending ? 'invisible' : undefined}>Leave game</span>
-          {pending && <ThreeBodySpinner className="absolute" />}
-        </button>
+        {/* a quiet text action, so leaving does not compete with going back; it asks first,
+            since leaving abandons the game */}
+        {/* at least as wide as the "Leave?" question, so it opens on the button instead of
+            growing past the card's edge */}
+        <div className="grid min-w-40 grow" inert={goingBack}>
+          <ConfirmLeave
+            onConfirm={onLeave}
+            loading={pending}
+            trigger={(ask) => (
+              <button
+                type="button"
+                onClick={ask}
+                className={[
+                  'grid cursor-pointer place-items-center whitespace-nowrap rounded-full px-2 py-3',
+                  'font-bold text-ink-muted transition-colors duration-150 hover:text-danger',
+                ].join(' ')}
+              >
+                Leave game
+              </button>
+            )}
+          />
+        </div>
       </div>
     </Card>
   );

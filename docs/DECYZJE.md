@@ -129,8 +129,8 @@ zapis daje 0, decyduje reducer, nie klient.
 - **Host opuszcza grę → gra dostaje status `ABANDONED`** (ustalone 2026-09-25). Zwalnia to
   slot „jednej gry”; gra porzucona nie liczy się do statystyk (§8). Po wyjściu z ekranu gry
   host trafia na `/games`; osoby oglądające (etap 6) mają dostać zaktualizowany, zablokowany
-  ekran z informacją, że gra się skończyła (ustalone 2026-09-25). **Czy przed wyjściem jest
-  potwierdzenie — nie ustalono.**
+  ekran z informacją, że gra się skończyła (ustalone 2026-09-25). Przed wyjściem jest potwierdzenie
+  (ustalone 2026-09-27): przycisk ciemnieje i pyta „Leave?” z ptaszkiem i krzyżykiem.
 - **Gracz opuszcza grę → wypada tylko on, gra trwa dalej** (ustalone 2026-09-25, do
   zaimplementowania razem z kontami — dziś poza hostem nikt nie ma urządzenia). Jego zapisane
   punkty zostają, wolne kategorie dostają 0, jego kolumna w tabeli jest przyciemniona, a jego

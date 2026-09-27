@@ -3,8 +3,8 @@ import { useRouter } from 'next/navigation';
 import { MAX_PLAYERS, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
+import { ConfirmLeave } from '../ui/confirmLeave';
 import { Card } from '../ui/card';
-import { ThreeBodySpinner } from '../ui/threeBodySpinner';
 import PlayerRow from '../players/playerRow';
 import PlayerNameRow from '../players/playerNameRow';
 import LogItem from '../gameLog/logItem';
@@ -260,36 +260,45 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
-          {!watching && (
+        {/* a watcher has nothing to start: leaving is their only button, so it looks like one */}
+        {watching ? (
+          <Button size="lg" variant="secondary" onClick={leave}>
+            Leave spectating
+          </Button>
+        ) : (
+          // two equal columns, whatever the labels: the "Leave?" question then fits on its half
+          <div className="grid grid-cols-2 items-center gap-3">
+            {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
             <Button
               size="lg"
               onClick={start}
               loading={closingAction === 'start'}
               inert={closingAction === 'leave'}
-              className="flex-1"
             >
               Start game
             </Button>
-          )}
-          {/* a quiet text action, so leaving does not compete with starting */}
-          <button
-            type="button"
-            onClick={leave}
-            disabled={closingAction === 'leave'}
-            inert={closingAction === 'start'}
-            aria-busy={closingAction === 'leave' || undefined}
-            className={[
-              'relative grid flex-1 cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
-              'transition-colors duration-150 enabled:hover:text-danger disabled:cursor-default',
-            ].join(' ')}
-          >
-            {/* the label stays, hidden, so the button keeps its size */}
-            <span className={closingAction === 'leave' ? 'invisible' : undefined}>Leave game</span>
-            {closingAction === 'leave' && <ThreeBodySpinner className="absolute" />}
-          </button>
-        </div>
+            {/* a quiet text action, so leaving does not compete with starting; it asks first,
+                since the host leaving abandons the game */}
+            <div className="grid" inert={closingAction === 'start'}>
+              <ConfirmLeave
+                onConfirm={leave}
+                loading={closingAction === 'leave'}
+                trigger={(ask) => (
+                  <button
+                    type="button"
+                    onClick={ask}
+                    className={[
+                      'grid cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
+                      'transition-colors duration-150 hover:text-danger',
+                    ].join(' ')}
+                  >
+                    Leave game
+                  </button>
+                )}
+              />
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

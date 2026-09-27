@@ -8,7 +8,9 @@ type DiceTrayProps = {
 // the dice inside are sized from that column's width, not the window's.
 export default function DiceTray({ children, footer }: DiceTrayProps) {
   return (
-    <div className="relative rounded-[40px] bg-tray-wood p-[18px]">
+    // with a footer, a bottom margin as deep as the footer hangs below the rim, so nothing under the
+    // tray (the dice picker, or the scorecard for someone who only watches) runs into it
+    <div className={['relative rounded-[40px] bg-tray-wood p-[18px]', footer ? 'mb-[18px]' : ''].join(' ')}>
       <div className="relative grid min-h-[clamp(200px,60cqi,300px)] rounded-[28px] bg-felt-cloth">
         {children}
       </div>

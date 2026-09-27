@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { CATEGORIES, type Category, type DiceRoll, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
+import { ConfirmLeave } from '../ui/confirmLeave';
 import { Card } from '../ui/card';
 import { LeaveIcon } from '../ui/icons';
 import { Drawer } from '../ui/drawer';
@@ -88,6 +89,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const finished = game.status === 'COMPLETED';
   // not the host's device: the game is only watched, nothing on it can be changed
   const watching = !game.isHost;
+  const leaveLabel = watching ? 'Leave spectating' : 'Leave game';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
   // the panel has its own column now; the drawer must not pop back open when the window narrows
@@ -147,18 +149,18 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     }
   }
 
-  const leaveButton = (
-    <Button
-      variant="secondary"
-      size="top"
-      onClick={leaveGameSubmit}
-      loading={leaving}
-      aria-label="Leave game"
-    >
-      <LeaveIcon />
-      <span className="max-[560px]:hidden">Leave game</span>
-    </Button>
-  );
+  // only the host leaving a game still going abandons it for everyone, so only that asks first;
+  // a watcher, or anyone after the end, just goes back
+  const leaveButton =
+    watching || finished ? (
+      <TopLeaveButton label={leaveLabel} onClick={leaveGameSubmit} />
+    ) : (
+      <ConfirmLeave
+        trigger={(ask) => <TopLeaveButton label={leaveLabel} onClick={ask} />}
+        onConfirm={leaveGameSubmit}
+        loading={leaving}
+      />
+    );
 
   return (
     <>
@@ -190,6 +192,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
       >
         <Card
           padding="compact"
+          outlined={false}
           className={[
             columns
               ? 'flex min-h-0 flex-col [&>div]:min-h-0 [&>div]:flex-1 [&>div]:overflow-auto'
@@ -259,7 +262,18 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
         </Drawer>
       )}
 
-      {finished && <GameOver participants={participants} onLeave={leaveGameSubmit} />}
+      {finished && <GameOver participants={participants} onLeave={leaveGameSubmit} leaveLabel={leaveLabel} />}
     </>
+  );
+}
+
+// "Leave game" in the corner of the game screen; below 560px only its icon
+function TopLeaveButton({ label, onClick }: { label: string; onClick: (event: React.MouseEvent) => void }) {
+  return (
+    // no nudge on press: the confirm question answers the click with its own animation
+    <Button variant="secondary" size="top" pressable={false} onClick={onClick} aria-label={label}>
+      <LeaveIcon />
+      <span className="max-[560px]:hidden">{label}</span>
+    </Button>
   );
 }

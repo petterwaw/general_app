@@ -35,6 +35,8 @@
   /* dice tray: wooden rim, violet felt */
   --color-tray-rim: #d9a877;
   --color-tray-rim-shade: #b9844f;
+  /* the rim's solid bottom edge (thickness), like a die's */
+  --color-tray-rim-edge: #9a6a3b;
   --color-felt: #6d5c9f;
   --color-felt-deep: #574889;
   --color-die: #fff7f5;
@@ -267,7 +269,8 @@ body {
 /* multi-layer backgrounds that do not fit a single utility class */
 @utility bg-tray-wood {
   background: linear-gradient(170deg, var(--color-tray-rim), var(--color-tray-rim-shade));
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.6);
+  /* thickness at the bottom, the same way the dice show theirs */
+  box-shadow: 0 6px 0 var(--color-tray-rim-edge);
 }
 
 @utility bg-felt-cloth {
