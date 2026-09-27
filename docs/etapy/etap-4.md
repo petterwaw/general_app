@@ -13,8 +13,8 @@ z komponentów i podpięty pod API w zakresie zatwierdzenia kości i zapisu kate
 `ui/game-screen`). Doszły (gałąź `ui/wire-api`, PR #8): wyjście z gry, ekran `/games` w nowym
 designie i karta niedokończonej gry hosta. Zakończona gra zostaje na ekranie gry z zablokowanymi
 kośćmi. Log gry pod graczami i ekran gry dopasowany do telefonów (`f1338c3`). Ekran końca gry
-z wynikami i animacje stołu (gałąź `ux/game-end-and-dice-motion`). Brakuje przestylowania lobby
-i sprawdzenia restartu serwera w połowie partii.
+z wynikami i animacje stołu (gałąź `ux/game-end-and-dice-motion`). Restart serwera w połowie
+partii sprawdzony ręcznie (2026-09-27, wpis niżej). Brakuje przestylowania lobby.
 
 ## Komponenty UI — 2026-09-25
 
@@ -311,3 +311,11 @@ Dług / do zrobienia:
   `gameLobby`, `activeGameCard`, `createGameForm`, `hooks/useGameLog`).
 - `DESIGN.md` mówi „seed awatara = ID uczestnika”, a kod wszędzie używa imienia (także nowy
   `scoreReveal.tsx`) — było tak przed tą gałęzią.
+
+## Restart serwera w trakcie partii — 2026-09-27
+
+Druga połowa kryterium „gotowe gdy”, przeniesiona z etapu 3. Sprawdzone ręcznie: restart
+Dockera (kontenery API i Postgres) w trakcie partii — po restarcie gra wróciła w tym samym
+stanie. Potwierdza, że stan gry żyje wyłącznie w bazie, a nie w pamięci procesu API.
+
+Bez zmian w kodzie. Test jest ręczny — automatycznego testu restartu nie ma.
