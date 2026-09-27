@@ -11,8 +11,9 @@ export type GameWithParticipants = Prisma.GameGetPayload<{
   include: typeof gameInclude;
 }>;
 
-// The only place that decides which game fields leave the server.
-export function toGameView(game: GameWithParticipants): GameView {
+// The only place that decides which game fields leave the server. isHost describes the device
+// asking, not the game, so the caller works it out.
+export function toGameView(game: GameWithParticipants, isHost: boolean): GameView {
   return {
     id: game.id,
     status: game.status,
@@ -30,5 +31,6 @@ export function toGameView(game: GameWithParticipants): GameView {
       upperBonus: game.status === 'COMPLETED' ? participant.upperBonus : null,
     })),
     createdAt: game.createdAt.toISOString(),
+    isHost,
   };
 }

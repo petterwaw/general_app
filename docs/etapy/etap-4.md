@@ -322,3 +322,20 @@ Kryterium „gotowe gdy” spełnione:
   stanie. Potwierdza, że stan gry żyje wyłącznie w bazie, a nie w pamięci procesu API.
 
 Bez zmian w kodzie. Test jest ręczny — automatycznego testu restartu nie ma.
+
+## Ekrany błędów i widz — 2026-09-27
+
+Poza kryterium etapu, dopisane po partii przy stole.
+
+- **Ekrany błędów** (PR #11) — wspólny `components/errors/errorScreen.tsx`: nieistniejąca
+  strona (`app/not-found.tsx`), gra nie istnieje (404 z API), gra porzucona, gra wygasła,
+  API/sieć nie odpowiada (z „Try again” — `retry` w `useGame`), `app/error.tsx`
+  i `app/global-error.tsx`.
+- **Widz** (gałąź `feat/view-only-guests`) — kto zna ID gry, a nie ma ciasteczka jej hosta,
+  tylko ogląda: `GameView.isHost` liczone przy każdym `GET /games/:id` z ciasteczka, nic nie
+  trafia do bazy. Widz nie ma wpisywania kości ani akcji w lobby; „Leave game” wraca na
+  `/games`. Testy e2e dla `isHost`.
+
+Dług: widz nie widzi zmian bez odświeżenia (realtime — etap 6); ekranów gry wygasłej,
+`error.tsx` i `global-error.tsx` nie widziano w przeglądarce; widoku hosta po tej zmianie nie
+sprawdzono w przeglądarce (pokrywają go testy e2e).

@@ -43,6 +43,9 @@ Dla trybu online obowiązuje osobno ustalone 2–5.
 klient tylko do odczytu. Jedyna różnica polega na tym, czy do slotu uczestnika w partii przypięte
 jest konto użytkownika. Nie buduj dwóch osobnych ścieżek.
 
+**Widz bez roli** (ustalone 2026-09-27): kto zna ID gry, a nie jest jej hostem, może ją tylko
+oglądać. Nie jest uczestnikiem i nic nie trafia do bazy (`GameView.isHost`).
+
 Rola jest polem na rekordzie uczestnika, nie wynika z kolejności na liście. Host identyfikuje się
 tokenem zapisanym na urządzeniu (sekret w cookie), sprawdzanym przy każdej akcji. Samo ID gry nie
 może wystarczać do bycia hostem.

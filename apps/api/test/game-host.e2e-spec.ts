@@ -101,6 +101,45 @@ describe('Host rules', () => {
     });
   });
 
+  // Anyone with the game ID may watch it; only the host's device is told it is the host.
+  describe('GET /games/:id for the host and for watchers', () => {
+    it('tells the host device it is the host', async () => {
+      const { agent, game } = await createHostedGame(['Piotr'], 'view-host');
+
+      const response = await agent.get(`/games/${game.id}`);
+
+      expect(response.status).toBe(200);
+      expect(gameFrom(response.body).isHost).toBe(true);
+    });
+
+    it('lets a device without a host cookie watch the game', async () => {
+      const { game } = await createHostedGame(['Piotr', 'Ania'], 'view-no-cookie');
+
+      const response = await request(app.getHttpServer()).get(`/games/${game.id}`);
+
+      expect(response.status).toBe(200);
+      expect(gameFrom(response.body)).toMatchObject({ id: game.id, isHost: false });
+      expect(gameFrom(response.body).participants).toHaveLength(2);
+    });
+
+    it('treats the host of another game as a watcher', async () => {
+      const { agent } = await createHostedGame(['Piotr'], 'view-own-game');
+      const { game: otherGame } = await createHostedGame(['Ania'], 'view-other-game');
+
+      const response = await agent.get(`/games/${otherGame.id}`);
+
+      expect(gameFrom(response.body).isHost).toBe(false);
+    });
+
+    it('adds no participant for a watcher', async () => {
+      const { game } = await createHostedGame(['Piotr'], 'view-no-write');
+
+      await request(app.getHttpServer()).get(`/games/${game.id}`).expect(200);
+
+      expect(await prisma.participant.count({ where: { gameId: game.id } })).toBe(1);
+    });
+  });
+
   describe('GET /games/hosted', () => {
     it("returns the device's active game", async () => {
       const { agent, game } = await createHostedGame(['Piotr'], 'hosted-active');

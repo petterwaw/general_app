@@ -13,6 +13,8 @@ type DiceEntryProps = {
   pending: boolean;
   // the game is over: the tray stays on screen, but nothing can be entered
   disabled?: boolean;
+  // someone who only watches: the tray shows the confirmed dice, with no picker or Confirm at all
+  readOnly?: boolean;
   onConfirm: (dice: DiceRoll) => void;
   // sits on the tray's bottom edge, e.g. <TurnPill />
   trayFooter?: React.ReactNode;
@@ -30,6 +32,7 @@ export default function DiceEntry({
   confirmedDice,
   pending,
   disabled = false,
+  readOnly = false,
   onConfirm,
   trayFooter,
 }: DiceEntryProps) {
@@ -60,7 +63,7 @@ export default function DiceEntry({
   }
 
   const confirmed = confirmedDice !== null;
-  const closed = confirmed || disabled;
+  const closed = confirmed || disabled || readOnly;
 
   return (
     <>
@@ -76,18 +79,20 @@ export default function DiceEntry({
         />
       </DiceTray>
 
-      <div className="grid gap-4 pt-[34px]">
-        <DicePicker disabled={closed || active === -1} onPick={pick} />
-        <Button
-          size="lg"
-          disabled={closed || pending || !isComplete(roll)}
-          onClick={() => {
-            if (isComplete(roll)) onConfirm(roll);
-          }}
-        >
-          Confirm
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="grid gap-4 pt-[34px]">
+          <DicePicker disabled={closed || active === -1} onPick={pick} />
+          <Button
+            size="lg"
+            disabled={closed || pending || !isComplete(roll)}
+            onClick={() => {
+              if (isComplete(roll)) onConfirm(roll);
+            }}
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
     </>
   );
 }

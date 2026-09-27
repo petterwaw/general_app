@@ -42,6 +42,8 @@ function errorMessage(err: unknown) {
 // TODO: the log is local — GET /games/:id/events does not expose joins and removals (DECYZJE.md §13)
 export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   const { participants } = game;
+  // not the host's device: the list is only watched, so every lobby action is hidden
+  const watching = !game.isHost;
   const [log, setLog] = useState<LobbyLogEntry[]>([]);
   const [joining, setJoining] = useState<JoiningPlayer[]>([]);
   // removals sent and not back yet: their X is hidden, so a double click sends one DELETE
@@ -160,6 +162,11 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   }
 
   function leave() {
+    // a watcher is not in the game: leaving is just going back
+    if (watching) {
+      router.push('/games');
+      return;
+    }
     close('leave', async () => {
       await leaveGame(game.id);
       router.push('/games');
@@ -179,24 +186,26 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           </h2>
 
           {/* plain text action, same as on the create form */}
-          <button
-            type="button"
-            onClick={startAdding}
-            disabled={adding || closing || playerCount >= MAX_PLAYERS}
-            className={[
-              'cursor-pointer rounded-full px-2 py-1 font-bold text-primary transition-colors duration-150',
-              'hover:text-primary-hover disabled:cursor-not-allowed disabled:text-ink-faint',
-            ].join(' ')}
-          >
-            + Add player
-          </button>
+          {!watching && (
+            <button
+              type="button"
+              onClick={startAdding}
+              disabled={adding || closing || playerCount >= MAX_PLAYERS}
+              className={[
+                'cursor-pointer rounded-full px-2 py-1 font-bold text-primary transition-colors duration-150',
+                'hover:text-primary-hover disabled:cursor-not-allowed disabled:text-ink-faint',
+              ].join(' ')}
+            >
+              + Add player
+            </button>
+          )}
         </div>
 
         <div className="grid gap-2">
           {participants.map((participant, seat) => {
             const isRemoving = removing.includes(participant.id);
             // the host always stays in their own game (the server refuses it too)
-            const removable = participant.role !== 'HOST' && !isRemoving && !closing;
+            const removable = !watching && participant.role !== 'HOST' && !isRemoving && !closing;
             return (
               // faded while its removal is on the way
               <div
@@ -265,15 +274,17 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
 
         <div className="flex items-center gap-3">
           {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
-          <Button
-            size="lg"
-            onClick={start}
-            loading={closingAction === 'start'}
-            inert={closingAction === 'leave'}
-            className="flex-1"
-          >
-            Start game
-          </Button>
+          {!watching && (
+            <Button
+              size="lg"
+              onClick={start}
+              loading={closingAction === 'start'}
+              inert={closingAction === 'leave'}
+              className="flex-1"
+            >
+              Start game
+            </Button>
+          )}
           {/* a quiet text action, so leaving does not compete with starting */}
           <button
             type="button"

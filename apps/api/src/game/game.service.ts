@@ -92,7 +92,7 @@ export class GameService {
         });
       });
 
-      return { game: toGameView(game), hostSecret: newHostSecret };
+      return { game: toGameView(game, true), hostSecret: newHostSecret };
     } catch (error) {
       if (isUniqueViolation(error)) {
         // Lost a race: either to the same Idempotency-Key, or to another game of this host.
@@ -113,16 +113,19 @@ export class GameService {
     const identity = await this.findIdentity(hostSecret);
     const game = identity && (await this.findActiveHostedGame(identity.id));
 
-    return game ? toGameView(game) : null;
+    return game ? toGameView(game, true) : null;
   }
 
   async findAll(): Promise<GameView[]> {
     const games = await this.prisma.game.findMany({ include: gameInclude });
-    return games.map(toGameView);
+    // a list, not a game this device opened: nobody is treated as the host here
+    return games.map((game) => toGameView(game, false));
   }
 
-  async findOne(id: string): Promise<GameView> {
-    return toGameView(await loadGame(this.prisma, id));
+  // Anyone with the ID may look at a game; only the host's device gets isHost. Nothing is written.
+  async findOne(id: string, hostSecret: string | undefined): Promise<GameView> {
+    const game = await loadGame(this.prisma, id);
+    return toGameView(game, (await this.findHost(id, hostSecret)) !== null);
   }
 
   async events(id: string, query: GameEventsQuery): Promise<GameEventView[]> {
@@ -381,7 +384,7 @@ export class GameService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         if (await findEvent(tx, id, key)) {
-          return toGameView(await loadGame(tx, id));
+          return toGameView(await loadGame(tx, id), access.hostOnly);
         }
 
         const game = await loadGame(tx, id);
@@ -415,12 +418,12 @@ export class GameService {
           },
         });
 
-        return toGameView(updatedGame);
+        return toGameView(updatedGame, access.hostOnly);
       });
     } catch (error) {
       // A concurrent request with the same key won the race — return its result.
       if (isUniqueViolation(error) && (await findEvent(this.prisma, id, key))) {
-        return this.findOne(id);
+        return toGameView(await loadGame(this.prisma, id), access.hostOnly);
       }
 
       throw error;
@@ -428,23 +431,28 @@ export class GameService {
   }
 
   private async verifyHost(gameId: string, hostSecret: string | undefined) {
-    if (!hostSecret) {
-      throw new ForbiddenException('Invalid host credentials');
-    }
-
-    const host = await this.prisma.participant.findFirst({
-      where: {
-        gameId,
-        role: 'HOST',
-        identity: { secretHash: hashSecret(hostSecret) },
-      },
-    });
+    const host = await this.findHost(gameId, hostSecret);
 
     if (!host) {
       throw new ForbiddenException('Invalid host credentials');
     }
 
     return host;
+  }
+
+  // The game's host participant when the secret is its host cookie, otherwise null.
+  private async findHost(gameId: string, hostSecret: string | undefined) {
+    if (!hostSecret) {
+      return null;
+    }
+
+    return this.prisma.participant.findFirst({
+      where: {
+        gameId,
+        role: 'HOST',
+        identity: { secretHash: hashSecret(hostSecret) },
+      },
+    });
   }
 
   private async findIdentity(secret: string | undefined) {
@@ -468,7 +476,7 @@ export class GameService {
       include: gameInclude,
     });
 
-    return game && toGameView(game);
+    return game && toGameView(game, true);
   }
 }
 
