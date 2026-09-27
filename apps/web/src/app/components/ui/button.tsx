@@ -10,6 +10,8 @@ type ButtonProps = React.ComponentProps<typeof BaseButton> & {
   size?: ButtonSize;
   // the action is on its way: a spinner instead of the label, and no more clicks
   loading?: boolean;
+  // false: no nudge down on press, for a button that answers the click with its own animation
+  pressable?: boolean;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -30,6 +32,7 @@ export function Button({
   variant = "primary",
   size = "md",
   loading = false,
+  pressable = true,
   disabled,
   className = "",
   children,
@@ -42,7 +45,8 @@ export function Button({
       aria-busy={loading || undefined}
       className={[
         "relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-full font-bold",
-        "transition-[background-color,transform] duration-150 active:translate-y-px active:scale-[.99]",
+        "transition-[background-color,transform] duration-150",
+        pressable ? "active:translate-y-px active:scale-[.99]" : "",
         variantClasses[variant],
         sizeClasses[size],
         // loading keeps the button's own colours: it is busy, not unavailable. pointer-events

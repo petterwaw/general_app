@@ -268,9 +268,10 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
 }
 
 // "Leave game" in the corner of the game screen; below 560px only its icon
-function TopLeaveButton({ label, onClick }: { label: string; onClick: () => void }) {
+function TopLeaveButton({ label, onClick }: { label: string; onClick: (event: React.MouseEvent) => void }) {
   return (
-    <Button variant="secondary" size="top" onClick={onClick} aria-label={label}>
+    // no nudge on press: the confirm question answers the click with its own animation
+    <Button variant="secondary" size="top" pressable={false} onClick={onClick} aria-label={label}>
       <LeaveIcon />
       <span className="max-[560px]:hidden">{label}</span>
     </Button>
