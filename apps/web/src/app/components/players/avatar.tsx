@@ -1,4 +1,4 @@
-import type { Expression, TraitOverrides } from 'blobatar';
+import type { TraitOverrides } from 'blobatar';
 import { Blobatar } from '@blobatar/react';
 import { useGaze } from '@blobatar/react/gaze';
 import 'blobatar/motion.css';
@@ -15,8 +15,6 @@ type AvatarProps = {
   label?: string;
   seat: number;
   size: number;
-  // a held pose from blobatar/expression; idle when left out
-  expression?: Expression;
   // pinned looks (tone, shape, eyes...) the seed would otherwise pick; the hue stays the seat's
   traits?: TraitOverrides;
   className?: string;
@@ -29,7 +27,7 @@ const GAZE_TRAVEL = 5;
 // Blobatar drawn in the browser, hue locked to the seat colour, no background plate.
 // The eyes follow the pointer; idle motion only plays on hover. The library turns both off
 // under prefers-reduced-motion and on touch screens.
-export default function Avatar({ seed, label = '', seat, size, expression, traits, className = '' }: AvatarProps) {
+export default function Avatar({ seed, label = '', seat, size, traits, className = '' }: AvatarProps) {
   const { ref } = useGaze({ travel: GAZE_TRAVEL, lookAt: 'pointer' });
 
   return (
@@ -39,7 +37,6 @@ export default function Avatar({ seed, label = '', seat, size, expression, trait
       hue={playerHue(seat)}
       background={false}
       size={size}
-      expression={expression}
       traits={traits}
       animate="hover"
       {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}

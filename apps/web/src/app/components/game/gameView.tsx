@@ -23,7 +23,7 @@ export default function GameView({ gameId }: { gameId: string }) {
   // the API is down, the network dropped, or the server failed: worth another go
   if (error) {
     return (
-      <ErrorScreen mood="scared" title="Something went wrong. The table isn't answering">
+      <ErrorScreen title="Something went wrong. The table isn't answering">
         <Button onClick={retry}>Try again</Button>
       </ErrorScreen>
     );
@@ -40,7 +40,7 @@ export default function GameView({ gameId }: { gameId: string }) {
 
   if (game.status === 'ABANDONED') {
     return (
-      <ErrorScreen mood="sad" title="The host left and took the dice along">
+      <ErrorScreen title="The host left and took the dice along">
         <GoToGames />
       </ErrorScreen>
     );
@@ -49,7 +49,7 @@ export default function GameView({ gameId }: { gameId: string }) {
   // nothing expires a game yet: that comes with stage 6
   if (game.status === 'EXPIRED') {
     return (
-      <ErrorScreen mood="sleepy" title="This game sat idle so long it fell asleep">
+      <ErrorScreen title="This game sat idle so long it fell asleep">
         <GoToGames />
       </ErrorScreen>
     );

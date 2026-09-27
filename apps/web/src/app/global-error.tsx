@@ -13,7 +13,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
       <body className="min-h-full flex flex-col">
         <title>Something went wrong</title>
         <main className="flex min-h-dvh flex-col">
-          <ErrorScreen mood="sick" title="Something went wrong. Even the dice gave up">
+          <ErrorScreen title="Something went wrong. Even the dice gave up">
             <Button onClick={() => retry()}>Try again</Button>
           </ErrorScreen>
         </main>

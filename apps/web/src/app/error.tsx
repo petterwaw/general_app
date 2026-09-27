@@ -7,7 +7,7 @@ import { Button } from './components/ui/button';
 export default function Error({ retry }: { error: Error & { digest?: string }; retry: () => void }) {
   return (
     <main className="flex min-h-dvh flex-col">
-      <ErrorScreen mood="sick" title="Something went wrong. The dice landed on their edge">
+      <ErrorScreen title="Something went wrong. The dice landed on their edge">
         <Button onClick={() => retry()}>Try again</Button>
       </ErrorScreen>
     </main>
