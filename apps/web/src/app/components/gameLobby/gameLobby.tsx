@@ -10,6 +10,7 @@ import PlayerNameRow from '../players/playerNameRow';
 import LogItem from '../gameLog/logItem';
 import { joinGame, leaveGame, removeParticipant, startGame } from '../../api/games';
 import { randomId } from '../../api/randomId';
+import { useErrorToast } from '../ui/toast';
 
 type GameLobbyProps = {
   game: GameView;
@@ -35,10 +36,6 @@ function formatTime(date: Date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function errorMessage(err: unknown) {
-  return err instanceof Error ? err.message : 'Something went wrong';
-}
-
 // TODO: the log is local — GET /games/:id/events does not expose joins and removals (DECYZJE.md §13)
 export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   const { participants } = game;
@@ -61,7 +58,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
   // which of the two was clicked: that one spins, the other is only blocked
   const [closingAction, setClosingAction] = useState<ClosingAction | null>(null);
   const closing = closingAction !== null;
-  const [error, setError] = useState<string | null>(null);
+  const showError = useErrorToast();
   const router = useRouter();
 
   const playerCount = participants.length + joining.length;
@@ -74,7 +71,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
         await action();
         return true;
       } catch (err) {
-        setError(errorMessage(err));
+        showError(err);
         return false;
       }
     });
@@ -96,7 +93,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
 
     const pendingPlayer = { id: randomId(), name };
     setJoining((current) => [...current, pendingPlayer]);
-    setError(null);
     enqueue(async () => {
       try {
         const updated = await joinGame(game.id, name);
@@ -120,7 +116,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
 
   function removePlayer(participantId: string) {
     setRemoving((current) => [...current, participantId]);
-    setError(null);
     enqueue(async () => {
       try {
         const updated = await removeParticipant(game.id, participantId);
@@ -139,7 +134,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
     if (closingRef.current) return;
     closingRef.current = true;
     setClosingAction(kind);
-    setError(null);
     // a failed join or removal stops the start, so the game never starts without a player the
     // host saw on the list
     let done = false;
@@ -265,12 +259,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             </LogItem>
           ))}
         </div>
-
-        {error && (
-          <p role="alert" className="text-center font-semibold text-danger">
-            {error}
-          </p>
-        )}
 
         <div className="flex items-center gap-3">
           {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}

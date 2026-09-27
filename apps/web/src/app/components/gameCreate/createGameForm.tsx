@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import PlayerNameRow from '../players/playerNameRow';
 import { GameModeSwitch } from './gameModeSwitch';
 import { createGame, getHostedGame } from '../../api/games';
+import { useErrorToast } from '../ui/toast';
 
 type GameMode = 'offline' | 'online';
 
@@ -27,7 +28,7 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
   const [mode, setMode] = useState<GameMode>('offline');
   const pendingRef = useRef(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const showError = useErrorToast();
   const router = useRouter();
 
   // online play is outside the MVP; the switch does not let it be picked yet
@@ -39,7 +40,6 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
     if (!canCreate || pendingRef.current) return;
     pendingRef.current = true;
     setPending(true);
-    setError(null);
     try {
       const game = await createGame([name.trim()]);
       router.push(`/games/${game.id}`);
@@ -51,7 +51,7 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
         onHostedGame(hostedGame);
         return;
       }
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      showError(err);
       setPending(false);
       pendingRef.current = false;
     }
@@ -87,12 +87,6 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
           ))}
         </div>
       </div>
-
-      {error && (
-        <p role="alert" className="text-center font-semibold text-danger">
-          {error}
-        </p>
-      )}
 
       <Button type="submit" size="lg" disabled={!canCreate} loading={pending}>
         Create game

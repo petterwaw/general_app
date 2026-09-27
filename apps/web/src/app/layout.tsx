@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ToastProvider } from "./components/ui/toast";
 import { nunito } from "./fonts";
 import "./globals.css";
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

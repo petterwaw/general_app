@@ -14,6 +14,7 @@ import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
 import GameOver from '../results/gameOver';
 import { scoreCategory, submitRoll, leaveGame } from '../../api/games';
 import useGameLog from '../../hooks/useGameLog';
+import { useErrorToast } from '../ui/toast';
 
 type GameScreenProps = {
   game: GameView;
@@ -69,7 +70,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const [pending, setPending] = useState(false);
   // only the leave request disables "Leave game": tied to pending, it greyed out on every roll
   const [leaving, setLeaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const showError = useErrorToast();
   const router = useRouter()
 
   useLayoutEffect(() => {
@@ -102,12 +103,11 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     if (pendingRef.current) return
     pendingRef.current = true
     setPending(true);
-    setError(null);
     try {
       onGameChange(await action());
       setSelected(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      showError(err);
     } finally {
       setPending(false);
       pendingRef.current = false
@@ -137,12 +137,11 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     // on success both stay set: nothing else may run until /games replaces the screen
     pendingRef.current = true;
     setLeaving(true);
-    setError(null);
     try {
       await leaveGame(game.id);
       router.push('/games');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      showError(err);
       setLeaving(false);
       pendingRef.current = false;
     }
@@ -235,12 +234,6 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
               )
             }
           />
-
-          {error && (
-            <p role="alert" className="text-center font-semibold text-danger">
-              {error}
-            </p>
-          )}
         </div>
 
         {layout === 'three' && (
