@@ -10,7 +10,7 @@ import GameLobby from '../gameLobby/gameLobby';
 import GameScreen from './gameScreen';
 
 export default function GameView({ gameId }: { gameId: string }) {
-  const { game, loading, error, setGame } = useGame(gameId);
+  const { game, loading, error, setGame, retry } = useGame(gameId);
 
   if (loading) return <div>Loading...</div>;
   if (error instanceof ApiError && error.statusCode === 404) {
@@ -20,7 +20,14 @@ export default function GameView({ gameId }: { gameId: string }) {
       </ErrorScreen>
     );
   }
-  if (error) return <div>{error.message}</div>;
+  // the API is down, the network dropped, or the server failed: worth another go
+  if (error) {
+    return (
+      <ErrorScreen mood="scared" title="Something went wrong. The table isn't answering">
+        <Button onClick={retry}>Try again</Button>
+      </ErrorScreen>
+    );
+  }
   if (!game) return null;
 
   if (game.status === 'LOBBY') {
