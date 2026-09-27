@@ -179,6 +179,40 @@ describe('Game results', () => {
       expect(game.participants[0].finalScore).toBe(45 + 98);
     });
 
+    it('stores the total of every player, not only the one who scored last', async () => {
+      const { agent, game: created } = await createGame(app, ['Piotr', 'Ania'], 'two-players-create');
+      const gameId = (created as GameView).id;
+      const [piotr, ania] = (created as GameView).participants;
+      await agent
+        .post(`/games/${gameId}/start`)
+        .set('Idempotency-Key', 'two-players-start')
+        .send()
+        .expect(201);
+
+      const piotrTurns = [...UPPER_AT_THRESHOLD, ...LOWER_SECTION];
+      // Ania misses the bonus: two sixes scratch Sixes for 0
+      const aniaTurns = piotrTurns.map((turn): Turn =>
+        turn.category === 'six' ? { category: 'six', dice: [6, 6, 1, 2, 3] } : turn,
+      );
+
+      let game: GameView | undefined;
+      for (const [index, piotrTurn] of piotrTurns.entries()) {
+        await playTurn(agent, gameId, piotr.id, piotrTurn, `two-players-piotr-${index}`);
+        game = await playTurn(agent, gameId, ania.id, aniaTurns[index], `two-players-ania-${index}`);
+      }
+
+      expect(game?.status).toBe('COMPLETED');
+
+      const stored = await prisma.participant.findMany({
+        where: { gameId },
+        orderBy: { turnOrder: 'asc' },
+      });
+      expect(stored.map(({ finalScore, upperBonus }) => ({ finalScore, upperBonus }))).toEqual([
+        { finalScore: 63 + 35 + 98, upperBonus: 35 },
+        { finalScore: 45 + 98, upperBonus: 0 },
+      ]);
+    });
+
     it('keeps the total hidden while the game is in progress', async () => {
       const { agent, gameId, playerId } = await startSoloGame('hidden');
 
