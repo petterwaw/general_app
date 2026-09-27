@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { nunito } from "./fonts";
 import "./globals.css";
-
-const nunito = Nunito({
-  variable: "--font-nunito",
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "Create Next App",
