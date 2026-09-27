@@ -266,20 +266,20 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             Leave spectating
           </Button>
         ) : (
-          <div className="flex items-center gap-3">
+          // two equal columns, whatever the labels: the "Leave?" question then fits on its half
+          <div className="grid grid-cols-2 items-center gap-3">
             {/* inert, not disabled, while leaving: blocked, but not greyed out next to the spinner */}
             <Button
               size="lg"
               onClick={start}
               loading={closingAction === 'start'}
               inert={closingAction === 'leave'}
-              className="flex-1"
             >
               Start game
             </Button>
             {/* a quiet text action, so leaving does not compete with starting; it asks first,
                 since the host leaving abandons the game */}
-            <div className="grid flex-1" inert={closingAction === 'start'}>
+            <div className="grid" inert={closingAction === 'start'}>
               <ConfirmLeave
                 onConfirm={leave}
                 loading={closingAction === 'leave'}
