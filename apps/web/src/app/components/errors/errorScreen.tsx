@@ -1,12 +1,12 @@
 'use client';
 
-import { sad, scared, sick, sleepy, unsure } from 'blobatar/expression';
+import { sad, scared, sick, sleepy } from 'blobatar/expression';
 
 import Avatar from '../players/avatar';
 
 // Named here, not passed in: an expression carries functions, and a server page cannot hand
 // functions to a client component.
-const MOODS = { sad, scared, sick, sleepy, unsure };
+const MOODS = { sad, scared, sick, sleepy };
 
 // One mascot on every error screen; only its mood changes.
 const MASCOT = {

@@ -15,7 +15,7 @@ export default function GameView({ gameId }: { gameId: string }) {
   if (loading) return <div>Loading...</div>;
   if (error instanceof ApiError && error.statusCode === 404) {
     return (
-      <ErrorScreen mood="unsure" title="No game here. Someone must have pocketed the dice">
+      <ErrorScreen title="No game here. Someone must have pocketed the dice">
         <GoToGames />
       </ErrorScreen>
     );
