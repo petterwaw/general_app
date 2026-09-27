@@ -8,6 +8,8 @@ import { ComingSoon } from "../components/ui/comingSoon";
 import { IconButton } from "../components/ui/iconButton";
 import { ChevronLeftIcon } from "../components/ui/icons";
 import { ActiveGameCard } from "../components/gameCreate/activeGameCard";
+import { ErrorScreen } from "../components/errors/errorScreen";
+import { useErrorToast } from "../components/ui/toast";
 import { CreateGameForm } from "../components/gameCreate/createGameForm";
 import useHostedGame from '../hooks/useHostedGame'
 import { leaveGame } from '../api/games'
@@ -18,24 +20,33 @@ export default function GamesPage() {
   const [view, setView] = useState<View>("start");
 
   const [pending, setPending] = useState(false);
-  const [leaveError, setLeaveError] = useState<string | null>(null);
+  const showError = useErrorToast();
 
-  const { game: hostedGame, loading, error, setGame } = useHostedGame();
+  const { game: hostedGame, loading, error, setGame, retry } = useHostedGame();
 
   async function leaveHostedGame() {
     // checked before try, so an early return does not reach finally and unlock the button
     if (pending || !hostedGame) return;
     setPending(true);
-    setLeaveError(null);
     try {
       await leaveGame(hostedGame.id);
       setGame(null);
     } catch (err) {
-      // TODO: show it once there is a shared error message component
-      setLeaveError(err instanceof Error ? err.message : 'Something went wrong');
+      showError(err);
     } finally {
       setPending(false);
     }
+  }
+
+  // without the answer the page cannot tell whether to offer "Create game" or the game going on
+  if (error) {
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <ErrorScreen title="Something went wrong. The table isn't answering">
+          <Button onClick={retry}>Try again</Button>
+        </ErrorScreen>
+      </div>
+    );
   }
 
   return (
