@@ -14,7 +14,7 @@ type ConfirmLeaveProps = {
 };
 
 const answerButton =
-  'grid size-9 cursor-pointer place-items-center rounded-full bg-white/20 transition-colors duration-150 hover:bg-white/35';
+  'grid size-8 cursor-pointer place-items-center rounded-full bg-white/20 transition-colors duration-150 hover:bg-white/35';
 
 // Leaving a game the host runs abandons it for everyone, so the button asks first: it darkens to
 // the app's ink and shows "Leave?" with a tick and a cross. Esc or a click elsewhere drops the
@@ -43,14 +43,23 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
     };
   }, [asking, loading]);
 
+  const open = asking || loading;
+
   return (
-    <div ref={slotRef} className={['grid', className].join(' ')}>
-      {asking || loading ? (
+    // The usual button stays in the layout, only hidden, and the question is laid over it: the
+    // slot keeps its size, so nothing around it moves. The question starts at the button's left
+    // edge and may reach past its right one (the icon-only button on phones is narrower).
+    <div ref={slotRef} className={['relative grid', className].join(' ')}>
+      <div className={['grid', open ? 'invisible' : ''].join(' ')}>
+        {trigger(() => setAsking(true))}
+      </div>
+
+      {open && (
         <div
           role="group"
           aria-label="Leave the game?"
           aria-busy={loading || undefined}
-          className="flex h-12 items-center justify-between gap-3 rounded-full bg-ink py-1.5 pr-1.5 pl-5 font-bold whitespace-nowrap text-white motion-safe:animate-rise"
+          className="absolute inset-y-0 left-0 z-10 flex min-w-full items-center justify-between gap-2 rounded-full bg-ink pr-1.5 pl-4 font-bold whitespace-nowrap text-white motion-safe:animate-rise"
         >
           {loading ? (
             <span className="relative grid flex-1 place-items-center">
@@ -61,7 +70,7 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
           ) : (
             <>
               <span>Leave?</span>
-              <span className="flex gap-1.5">
+              <span className="flex gap-1">
                 <button type="button" aria-label="Yes, leave" onClick={onConfirm} className={answerButton}>
                   <CheckIcon />
                 </button>
@@ -78,8 +87,6 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
             </>
           )}
         </div>
-      ) : (
-        trigger(() => setAsking(true))
       )}
     </div>
   );
