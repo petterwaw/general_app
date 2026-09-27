@@ -51,8 +51,8 @@ export class GameController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.gameService.findOne(id);
+  findOne(@Param('id') id: string, @Req() request: Request) {
+    return this.gameService.findOne(id, hostSecretFrom(request));
   }
 
   @Get(':id/events')
