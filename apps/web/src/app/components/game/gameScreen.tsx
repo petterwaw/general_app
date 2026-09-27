@@ -1,5 +1,3 @@
-'use client';
-
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation'
 import { CATEGORIES, type Category, type DiceRoll, type GameView } from '@dice-app/contracts';

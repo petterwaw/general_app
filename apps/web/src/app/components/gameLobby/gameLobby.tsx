@@ -1,5 +1,3 @@
-'use client';
-
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MAX_PLAYERS, type GameView } from '@dice-app/contracts';
