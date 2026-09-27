@@ -8,13 +8,13 @@ w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 
 > **Tu następuje przerwa.** Właściciel gra kilka partii i zgłasza poprawki, zanim ruszamy dalej.
 
-**Postęp: W TRAKCIE (stan na 2026-09-27).** Ekran gry w trakcie partii jest złożony
-z komponentów i podpięty pod API w zakresie zatwierdzenia kości i zapisu kategorii (gałąź
-`ui/game-screen`). Doszły (gałąź `ui/wire-api`, PR #8): wyjście z gry, ekran `/games` w nowym
-designie i karta niedokończonej gry hosta. Zakończona gra zostaje na ekranie gry z zablokowanymi
-kośćmi. Log gry pod graczami i ekran gry dopasowany do telefonów (`f1338c3`). Ekran końca gry
-z wynikami i animacje stołu (gałąź `ux/game-end-and-dice-motion`). Restart serwera w połowie
-partii sprawdzony ręcznie (2026-09-27, wpis niżej). Brakuje przestylowania lobby.
+**Postęp: KRYTERIUM SPEŁNIONE (2026-09-27).** Pełna partia rozegrana przy stole, restart
+serwera w połowie partii sprawdzony ręcznie (wpis na końcu). Ekran gry złożony z komponentów
+i podpięty pod API (gałąź `ui/game-screen`); wyjście z gry, ekran `/games` w nowym designie
+i karta niedokończonej gry hosta (gałąź `ui/wire-api`, PR #8); zakończona gra zostaje na ekranie
+gry z zablokowanymi kośćmi; log gry pod graczami i ekran gry dopasowany do telefonów
+(`f1338c3`); ekran końca gry z wynikami i animacje stołu (gałąź `ux/game-end-and-dice-motion`).
+Poza kryterium zostaje: przestylowanie lobby i poprawianie kości po „Confirm”.
 
 ## Komponenty UI — 2026-09-25
 
@@ -312,10 +312,13 @@ Dług / do zrobienia:
 - `DESIGN.md` mówi „seed awatara = ID uczestnika”, a kod wszędzie używa imienia (także nowy
   `scoreReveal.tsx`) — było tak przed tą gałęzią.
 
-## Restart serwera w trakcie partii — 2026-09-27
+## Partia przy stole i restart serwera — 2026-09-27
 
-Druga połowa kryterium „gotowe gdy”, przeniesiona z etapu 3. Sprawdzone ręcznie: restart
-Dockera (kontenery API i Postgres) w trakcie partii — po restarcie gra wróciła w tym samym
-stanie. Potwierdza, że stan gry żyje wyłącznie w bazie, a nie w pamięci procesu API.
+Kryterium „gotowe gdy” spełnione:
+
+- **Partia przy stole** — rozegrana pełna partia, od utworzenia gry do ekranu końca.
+- **Restart serwera** (przeniesiony z etapu 3) — sprawdzony ręcznie: restart
+  Dockera (kontenery API i Postgres) w trakcie partii — po restarcie gra wróciła w tym samym
+  stanie. Potwierdza, że stan gry żyje wyłącznie w bazie, a nie w pamięci procesu API.
 
 Bez zmian w kodzie. Test jest ręczny — automatycznego testu restartu nie ma.
