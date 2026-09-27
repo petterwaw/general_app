@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 
 import { CheckIcon, CloseIcon } from './icons';
 import { prefersReducedMotion } from './reducedMotion';
@@ -35,6 +35,12 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
   const slotRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const stayRef = useRef<HTMLButtonElement>(null);
+  // the opening animations, played backwards to close
+  const animationsRef = useRef<Animation[]>([]);
+  // on its way back: the answers no longer take clicks
+  const [closing, setClosing] = useState(false);
+  // closed from the keyboard: the button gets the focus back once it is no longer inert
+  const refocusRef = useRef(false);
   const asking = origin !== null;
   const open = asking || loading;
 
@@ -61,57 +67,86 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
     const button = slot.querySelector('button');
     const buttonColor = button ? getComputedStyle(button).backgroundColor : 'transparent';
 
+    let keyframes: Keyframe[];
     if (to.width > from.width + 1) {
       // grows to the right out of the button, in the button's colour turning ink
-      pill.animate(
-        [
-          { clipPath: `inset(0 ${to.width - from.width}px 0 0 round 9999px)`, backgroundColor: buttonColor },
-          { clipPath: 'inset(0 0 0 0 round 9999px)' },
-        ],
-        { duration: OPEN_MS, easing: 'cubic-bezier(0.3, 0.9, 0.35, 1)' },
-      );
+      keyframes = [
+        { clipPath: `inset(0 ${to.width - from.width}px 0 0 round 9999px)`, backgroundColor: buttonColor },
+        { clipPath: 'inset(0 0 0 0 round 9999px)' },
+      ];
     } else {
       // a circle of ink from the click point, big enough to reach the farthest corner
       const radius = Math.hypot(
         Math.max(origin.x, to.width - origin.x),
         Math.max(origin.y, to.height - origin.y),
       );
-      pill.animate(
-        [
-          { clipPath: `circle(0px at ${origin.x}px ${origin.y}px)` },
-          { clipPath: `circle(${radius}px at ${origin.x}px ${origin.y}px)` },
-        ],
-        { duration: OPEN_MS, easing: 'ease-out' },
-      );
+      keyframes = [
+        { clipPath: `circle(0px at ${origin.x}px ${origin.y}px)` },
+        { clipPath: `circle(${radius}px at ${origin.x}px ${origin.y}px)` },
+      ];
     }
-    // the words come in once there is ink under them
-    for (const child of pill.children) {
-      child.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: OPEN_MS / 2,
-        delay: OPEN_MS / 2,
-        fill: 'backwards',
-      });
-    }
+
+    // fill both: held at either end, so the reversed close does not flash the open pill before
+    // it unmounts
+    const animations = [
+      pill.animate(keyframes, { duration: OPEN_MS, easing: 'cubic-bezier(0.3, 0.9, 0.35, 1)', fill: 'both' }),
+      // the words come in once there is ink under them
+      ...Array.from(pill.children, (child) =>
+        child.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: OPEN_MS / 2,
+          delay: OPEN_MS / 2,
+          fill: 'both',
+        }),
+      ),
+    ];
+    animationsRef.current = animations;
   }, [origin]);
 
+  // Back to the button the way it came: the circle shrinks to where it started, or the pill
+  // shrinks back into the icon while the colour returns. From the keyboard (Esc, the cross) the
+  // focus goes back to the button; a click elsewhere leaves it where the click put it.
+  function close(restoreFocus: boolean) {
+    const [pillAnimation, ...rest] = animationsRef.current;
+    animationsRef.current = [];
+    refocusRef.current = restoreFocus;
+    const done = () => {
+      setOrigin(null);
+      setClosing(false);
+    };
+    if (!pillAnimation || prefersReducedMotion()) {
+      done();
+      return;
+    }
+    setClosing(true);
+    for (const animation of [pillAnimation, ...rest]) animation.reverse();
+    pillAnimation.finished.then(done, done);
+  }
+
   useEffect(() => {
-    if (!asking || loading) return;
+    if (open || !refocusRef.current) return;
+    refocusRef.current = false;
+    slotRef.current?.querySelector('button')?.focus();
+  }, [open]);
+
+  const onKey = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key === 'Escape') close(true);
+  });
+  const onPointer = useEffectEvent((event: PointerEvent) => {
+    if (!slotRef.current?.contains(event.target as Node)) close(false);
+  });
+
+  useEffect(() => {
+    if (!asking || loading || closing) return;
     // the safe answer takes the focus, so an Enter pressed out of habit does not leave
     stayRef.current?.focus();
 
-    function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOrigin(null);
-    }
-    function onPointer(event: PointerEvent) {
-      if (!slotRef.current?.contains(event.target as Node)) setOrigin(null);
-    }
     document.addEventListener('keydown', onKey);
     document.addEventListener('pointerdown', onPointer);
     return () => {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('pointerdown', onPointer);
     };
-  }, [asking, loading]);
+  }, [asking, loading, closing]);
 
   return (
     <div ref={slotRef} className={['relative grid', className].join(' ')}>
@@ -126,6 +161,7 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
           role="group"
           aria-label="Leave the game?"
           aria-busy={loading || undefined}
+          inert={closing}
           className="absolute inset-y-0 left-0 z-10 flex min-w-full items-center justify-between gap-2 rounded-full bg-ink pr-1.5 pl-4 font-bold whitespace-nowrap text-white"
         >
           {loading ? (
@@ -145,7 +181,7 @@ export function ConfirmLeave({ trigger, onConfirm, loading = false, className = 
                   ref={stayRef}
                   type="button"
                   aria-label="No, stay"
-                  onClick={() => setOrigin(null)}
+                  onClick={() => close(true)}
                   className={answerButton}
                 >
                   <CloseIcon />
