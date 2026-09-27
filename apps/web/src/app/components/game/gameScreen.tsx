@@ -85,6 +85,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const log = useGameLog(game.id, game.revision);
   // the screen stays as it was after the last category; only entering dice is closed
   const finished = game.status === 'COMPLETED';
+  // not the host's device: the game is only watched, nothing on it can be changed
+  const watching = !game.isHost;
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
   // the panel has its own column now; the drawer must not pop back open when the window narrows
@@ -125,8 +127,9 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   // Not through run(): the abandoned game must not reach onGameChange, or GameView swaps to its
   // "no longer available" text for the moment before /games replaces the screen.
   async function leaveGameSubmit() {
-    // a finished game has nothing to abandon (the server refuses it), so just go back
-    if (finished) {
+    // a finished game has nothing to abandon (the server refuses it), and a watcher is not in
+    // the game at all: both just go back
+    if (finished || watching) {
       router.push('/games');
       return;
     }
@@ -197,7 +200,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           <ScoreCard
             participants={participants}
             currentPlayerId={currentPlayerId}
-            turnDice={game.currentDice}
+            // no dice, no score hints: a watcher has nothing to pick
+            turnDice={watching ? null : game.currentDice}
             selected={selected}
             onSelect={setSelected}
             onSave={saveCategory}
@@ -218,6 +222,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             confirmedDice={game.currentDice}
             pending={pending}
             disabled={finished}
+            readOnly={watching}
             onConfirm={confirmDice}
             trayFooter={
               current && (
