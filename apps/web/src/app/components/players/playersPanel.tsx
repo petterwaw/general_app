@@ -26,7 +26,7 @@ function fadeMask(above: boolean, below: boolean): React.CSSProperties | undefin
 }
 
 // Players + Game log: the third column on wide screens, the side drawer otherwise.
-// Fills the height it is given: the log keeps at least 30% of the screen, the players get the
+// Fills the height it is given: the log keeps 30-50% of the screen, the players get the
 // rest and scroll when they do not all fit.
 export default function PlayersPanel({ participants, log }: PlayersPanelProps) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -67,7 +67,6 @@ export default function PlayersPanel({ participants, log }: PlayersPanelProps) {
             key={participant.id}
             name={participant.name}
             seat={seat}
-            total={participant.finalScore}
           />
         ))}
       </div>

@@ -6,9 +6,7 @@ type PlayerRowProps = {
   name: string;
   seat: number;
   isGuest?: boolean;
-  // null or left out = no total: in the lobby, and during play (totals appear when the game ends)
-  total?: number | null;
-  // shows an X instead of the total
+  // shows an X on the right (lobby)
   onRemove?: () => void;
 };
 
@@ -16,7 +14,6 @@ export default function PlayerRow({
   name,
   seat,
   isGuest = false,
-  total,
   onRemove,
 }: PlayerRowProps) {
   return (
@@ -41,9 +38,7 @@ export default function PlayerRow({
         >
           <CloseIcon size={20} />
         </button>
-      ) : total == null ? null : (
-        <span className="text-[1.2rem] font-extrabold tabular-nums">{total}</span>
-      )}
+      ) : null}
     </div>
   );
 }

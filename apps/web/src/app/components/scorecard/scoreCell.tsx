@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { CheckIcon } from '../ui/icons';
 
 // Every look a scorecard cell can have (docs/DESIGN.md, "Komórki tabeli").
@@ -26,15 +28,34 @@ const base = 'px-2 py-[3px] text-center tabular-nums';
 // Confirm must not grow the rows
 const pill = 'inline-block rounded-lg px-2.5 py-0.5 -my-0.5 font-extrabold inset-ring-2 inset-ring-primary';
 
+// a cell just saved with the tick: the number blows in like a die and the cell flashes green
+const justSavedCell = 'motion-safe:animate-saved-flash';
+const justSavedValue = 'inline-block motion-safe:animate-bubble-in';
+
 export default function ScoreCell({ state, isActive, categoryLabel, tickOnLeft = false }: ScoreCellProps) {
   const fill = isActive ? 'bg-primary-soft' : 'bg-white/55';
+  // selected -> scored means the tick was just used (not a page load, not another player's cell)
+  const [lastKind, setLastKind] = useState(state.kind);
+  const [justSaved, setJustSaved] = useState(false);
+  if (state.kind !== lastKind) {
+    setLastKind(state.kind);
+    setJustSaved(lastKind === 'selected' && (state.kind === 'scored' || state.kind === 'zero'));
+  }
 
   switch (state.kind) {
     case 'scored':
-      return <td className={`${base} ${fill}`}>{state.value}</td>;
+      return (
+        <td className={`${base} ${fill} ${justSaved ? justSavedCell : ''}`}>
+          <span className={justSaved ? justSavedValue : ''}>{state.value}</span>
+        </td>
+      );
 
     case 'zero':
-      return <td className={`${base} ${fill} font-bold text-danger`}>0</td>;
+      return (
+        <td className={`${base} ${fill} font-bold text-danger ${justSaved ? justSavedCell : ''}`}>
+          <span className={justSaved ? justSavedValue : ''}>0</span>
+        </td>
+      );
 
     case 'open':
       return (
@@ -82,6 +103,8 @@ export default function ScoreCell({ state, isActive, categoryLabel, tickOnLeft =
               aria-label={`Save ${state.points} in ${categoryLabel}`}
               className={[
                 'absolute top-1/2 z-10 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-good text-white',
+                // pops out on select like a die; pressed in under the finger on click
+                'motion-safe:animate-bubble-in transition-[scale] duration-100 active:scale-80',
                 tickOnLeft ? 'right-full mr-1' : 'left-full ml-1',
               ].join(' ')}
             >

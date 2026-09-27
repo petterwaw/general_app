@@ -21,10 +21,10 @@ wartości. Ten plik opisuje, **jak** ich używać.
 | Krój pisma | **Nunito** (400/600/700/800), jeden krój na wszystko, cyfry `tabular-nums` |
 | Motyw | jeden, jasny — pastelowa lawenda i róż. Tryb ciemny nie był omawiany |
 | Tło | **jeden statyczny kolor** (`backdrop`). Bez sceny 3D, bez paralaksy, bez gradientu (2026-09-25 — scena three.js odrzucona) |
-| Cienie | **brak cieni pod elementami** (karty, przyciski, taca, pasek tury). Kości mają tylko pełną dolną krawędź (`shadow-die`) — to ich grubość, nie cień |
+| Cienie i obwódki | **brak cieni pod elementami** (karty, przyciski, taca, pasek tury). Kości mają tylko pełną dolną krawędź (`shadow-die`) — to ich grubość, nie cień. **Nowe elementy bez obwódek** (2026-09-26) — oddziela je kolor wypełnienia, np. biały kafelek na fiolecie. Obwódki, które coś znaczą (aktywne pole kości, podpowiedź punktów), zostają |
 | Awatary | **blobatar** (`blobatar` + `@blobatar/react`, generowane w przeglądarce, bez zapytań sieciowych), seed = **ID uczestnika**, odcień zablokowany na kolor gracza. Bez tła i obwódki — sam stworek. Ten sam awatar w tabeli, panelu Players i pasku tury. **Oczy podążają za kursorem** (`useGaze` z `@blobatar/react/gaze`, zasięg 5); oddychanie i mruganie tylko po najechaniu (`animate="hover"`). Biblioteka wyłącza to na ekranach dotykowych i przy `prefers-reduced-motion` (ustalone 2026-09-25) |
-| Kości | płaskie kości 2D w CSS, **bez animacji rzutu**. Taca: drewniany rant + fioletowe sukno, w czystym CSS |
-| Suma punktów | **ukryta do końca gry** — w trakcie gry przy graczu **nie ma żadnego pola sumy** (bez „???”, zmienione 2026-09-26); suma pojawia się w panelu Players dopiero po zakończeniu gry. Jak ma wyglądać ekran końca gry — do ustalenia później. Tabela nie ma wiersza Total. **Postęp bonusu** (np. „53/63”) w wierszu Bonus jest widoczny w trakcie gry (ustalone 2026-09-25) |
+| Kości | płaskie kości 2D w CSS, **bez animacji rzutu**. Animowane jest tylko wejście i zejście ze stołu (patrz „Ruch na stole”) — kość zawsze pokazuje znaną wartość, nigdy losowe oczka. Taca: drewniany rant + fioletowe sukno, w czystym CSS |
+| Suma punktów | **nigdzie na ekranie gry** — przy graczu w panelu Players nie ma pola sumy ani w trakcie, ani po zakończeniu gry (zmienione 2026-09-26: suma po końcu gry zdradzała wyniki, zanim odsłonił je ekran końca gry). Wynik końcowy pokazuje wyłącznie ekran końca gry. Tabela nie ma wiersza Total. **Postęp bonusu** (np. „53/63”) w wierszu Bonus jest widoczny w trakcie gry (ustalone 2026-09-25) |
 | Nazwy kategorii (EN) | Ones, Twos, Threes, Fours, Fives, Sixes, One Pair, Two Pairs, Three of a Kind, Four of a Kind, Small Straight, Large Straight, Full House, **General**, a na samym dole osobno **Chance** — po małej przerwie bez podpisu, bo nigdy nie jest zablokowana (ustalone 2026-09-25). Nigdy „Yahtzee” (znak towarowy) |
 
 ---
@@ -50,8 +50,8 @@ wartości. Ten plik opisuje, **jak** ich używać.
 
 - **Sukno jest bohaterem.** Wszystko wokół jasne i spokojne.
 - **Czytelne z odległości.** Wyniki ogląda kilka osób przy stole — cyfry duże, grube, tabelaryczne.
-- **Wpisywanie kości — jak pole kodu w authenticatorze.** Na suknie 5 pól w rzędzie (puste
-  pokazuje „–”, aktywne ma obwódkę `secondary`). Pod tacą sześć samych kości (bez ramek) do
+- **Wpisywanie kości — jak pole kodu w authenticatorze.** Na suknie 5 pól w rzędzie (puste to
+  sam obrysowany kwadrat, bez „–” — zmienione 2026-09-26; aktywne ma obwódkę `secondary`). Pod tacą sześć samych kości (bez ramek) do
   wyboru wartości: klik wpisuje wartość do aktywnego pola i **zawsze przeskakuje na następne**;
   po piątym wpisywanie się kończy, a kości wyboru się wygaszają. Klik w wypełnione pole robi je
   znowu aktywnym (poprawka). Przycisk „Confirm” aktywny dopiero, gdy wszystkie 5 pól jest
@@ -62,6 +62,15 @@ wartości. Ten plik opisuje, **jak** ich używać.
   w kolorze `good`; dopiero klik w ptaszek zapisuje. Klik gdziekolwiek indziej albo Esc anuluje
   zaznaczenie. Poprawienie kości po „Confirm” chowa podpowiedzi do ponownego potwierdzenia.
   Podpowiedź jest tylko podpowiedzią — punkty zawsze przelicza serwer (`DECYZJE.md` §4).
+  Ptaszek **wyskakuje jak bańka** (ta sama animacja co kości), a pod palcem się wciska. Po
+  zapisie liczba w komórce wyskakuje, a komórka na chwilę błyska na zielono (`good-soft`)
+  (2026-09-26). Tylko komórka, która przeszła z „zaznaczonej” w „zapisaną” — nie przy wejściu
+  na ekran.
+- **Ruch na stole** (2026-09-26). Wpisana albo poprawiona kość **wydmuchuje się jak bańka**
+  (`bubble-in`: z zera, lekko za duża, sprężynuje; delikatnie, bo gra przy każdej kości). Na
+  koniec tury — po zapisie kategorii i na końcu gry — kości **pękają po kolei od lewej**
+  (`bubble-out`, co 70 ms), a pod nimi są już puste pola następnej tury. Kości widoczne przy
+  wejściu na ekran stoją w miejscu.
 - **Rozmiar kości liczony od szerokości kolumny z tacą** (container query, `cqi`), nie od okna —
   inaczej taca wychodzi poza swoją kolumnę.
 - **Pasek tury** („Kuba's turn · round 7 of 15”) na dolnej krawędzi tacy, z awatarem gracza.
@@ -130,20 +139,55 @@ z oknem do 440 px. Liczba graczy decyduje tylko o tym, gdzie jest tabela — trz
   w pionie. Za niskie okno (poniżej ok. 660 px) przewija się normalnie.
 - **Panel graczy bez karty i bez nagłówków** (2026-09-25): same wiersze graczy, pod nimi log,
   bez napisów „Players” / „Game log” i bez kreski oddzielającej. Wiersz gracza: awatar i imię,
-  **bez znaczka „Host”** (w trybie lokalnym zbędny) i bez sumy w trakcie gry (2026-09-26).
-- **Log gry** (2026-09-26): wpisy na tle, **najnowszy na górze**, tuż pod graczami — „Game
-  started”, „Anna rolled 6 6 6 2 3”, „Anna scored 18 in Sixes” (zero w `danger`). Kropka
-  w kolorze gracza, godzina w `ink-muted`. Nowy wpis wsuwa się łagodnie z góry (450 ms, bez
-  animacji przy `prefers-reduced-motion`). **Log się nie przewija** — co się nie mieści, jest
-  ucięte, a dół płynnie zanika, jakby stare wpisy tonęły w tle.
-- **Podział wysokości panelu** (2026-09-26): log ma co najmniej 30% wysokości ekranu, gracze
-  resztę. Gdy gracze się nie mieszczą, ich lista się przewija, a krawędź, za którą są ukryci
+  **bez znaczka „Host”** (w trybie lokalnym zbędny) i **bez sumy** — także po końcu gry
+  (2026-09-26).
+- **Log gry** (2026-09-26): wpisy na tle, **najnowszy na górze** — „Game started”, „Anna
+  rolled 6 6 6 2 3”, „Anna scored 18 in Sixes” (zero w `danger`). Kropka w kolorze gracza,
+  godzina w `ink-muted`. Nowy wpis rozjaśnia się i lekko zjeżdża z góry, a **starsze płynnie
+  zjeżdżają w dół** (500 ms, samym `transform` — technika FLIP; animowanie wysokości
+  szarpało). Bez animacji przy `prefers-reduced-motion`. **Log się nie przewija** — co się nie
+  mieści, jest ucięte, a dół płynnie zanika, jakby stare wpisy tonęły w tle.
+- **Podział wysokości panelu** (2026-09-26): log ma **30–50% wysokości ekranu** i jest
+  **przyklejony do dolnej krawędzi**; gracze u góry, wolne miejsce między nimi a logiem, reszta
+  dla graczy. Gdy gracze się nie mieszczą, ich lista się przewija, a krawędź, za którą są ukryci
   gracze (góra i/lub dół), zanika. Tak samo w szufladzie i w trzeciej kolumnie.
 - **Szuflada Players + Game log** wysuwa się z prawej, z przyciemnionym tłem. Otwiera ją
   **cichy napis „Players” z okrągłym uchwytem ‹** (tło `primary-soft`) przy prawej krawędzi
   ekranu — widoczny, ale nie na pierwszym planie jak „Leave game”, który stoi w tym samym
   wierszu przy lewej krawędzi. Zamyka: krzyżyk, klik w tło, Esc. Przy zmianie trybu animacja wysuwania jest
   wyłączona (inaczej panel miga). Szuflada ma u góry odstęp na krzyżyk, bo nie ma nagłówka.
+
+## Koniec gry (2026-09-26)
+
+Gdy serwer zwróci grę w stanie `COMPLETED`, ekran gry zostaje, a nad nim rusza sekwencja
+(`components/results/`, harmonogram w `gameOver.tsx`):
+
+1. **1 s** widać zakończoną planszę z ostatnim wpisem.
+2. **Pikselowa zasłona** (w stylu Pixel Swap z React Bits): fioletowe kwadraty w kolorze sukna
+   wyskakują w rozsypanej kolejności i w 1,4 s zakrywają cały ekran — na telefonie i na
+   komputerze. Bez przycisku „Reveal” — wyniki ruszają same.
+3. **Odsłanianie wyników, od najniższego:** każdy gracz to biały kafelek (miejsce, awatar,
+   imię, wynik) bez obwódki. Nowy kafelek **wpada z „bangiem”** (`bang` — mocniejsza siostra
+   `bubble-in`) na górę, większy (1,2×), i **liczy wynik od zera** (licznik jak Count Up
+   z React Bits: 0,4 s na zerze, potem szybko, a ostatnie punkty wyraźnie wolniej). Po
+   doliczeniu zmniejsza się i płynnie zjeżdża w dół pod następny. Zwycięzca kończy na górze.
+4. **Miejsca:** medal (złoty / srebrny / brązowy) dla 1–3, dla reszty `#4`, `#5`…; remis
+   dzieli miejsce (dwa `#1` — obaj wygrywają, `ZASADY-GRY.md`).
+5. **Fajerwerki** startują, gdy zaczyna liczyć zwycięzca: przez 5 s rakiety pod różnym kątem
+   pękają w górnej części ekranu na kolorowe iskry (jak preset „fireworks2” z tsParticles,
+   własny canvas, bez dźwięku, nie blokują kliknięć).
+6. Po ostatnim wyniku rozwija się miejsce na przyciski (wyniki płynnie podjeżdżają do góry):
+   **„Leave game”** (`primary`) i pod nim cichy napis **„See the scoreboard”** ze strzałką.
+   Z ekranu wyników wychodzi się tylko przez „Leave game”.
+7. **Tabela wyników** (ta sama co w grze, tylko do odczytu, rogi jak karty menu —
+   superelipsa tam, gdzie przeglądarka ją rysuje): gdy mieści się obok wyników, **wjeżdża
+   z prawej**, a wyniki przesuwają się w lewo i zostają wyśrodkowane w reszcie ekranu (strzałka
+   → / ←). Gdy się nie mieści — **rozwija się w dół spod przycisków** i ekran do niej
+   przewija (strzałka ↓ / ↑). Napis zmienia się na „Hide the scoreboard”.
+
+Wyniki to wyłącznie `finalScore` z serwera. Wszystkie ruchy mają łagodne wejście
+(`ease-settle`), a przy `prefers-reduced-motion` są wyłączone (licznik od razu pokazuje wynik,
+fajerwerków nie ma).
 
 ## „Leave game” zamiast górnego paska
 

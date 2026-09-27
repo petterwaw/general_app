@@ -16,6 +16,7 @@ import Avatar from '../players/avatar';
 import Die from '../dice/die';
 import ScoreCell, { type ScoreCellState } from './scoreCell';
 import { CHANCE_ROW, LOWER_ROWS, UPPER_ROWS } from './categories';
+import { prefersReducedMotion } from '../ui/reducedMotion';
 
 type ScoreCardProps = {
   participants: ParticipantView[];
@@ -156,7 +157,7 @@ export default function ScoreCard({
     // nothing to align while every player fits (also on the first measurements, before fonts load)
     if (!box || !sizes || seatOfCurrent === -1 || box.scrollWidth <= box.clientWidth) return;
     // the first time the screen opens it jumps there without the animation
-    const smooth = alignedRef.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const smooth = alignedRef.current && !prefersReducedMotion();
     alignedRef.current = true;
     box.scrollTo({ left: seatOfCurrent * sizes.col, behavior: smooth ? 'smooth' : 'auto' });
   }, [seatOfCurrent, sizes]);

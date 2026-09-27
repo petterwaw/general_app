@@ -11,7 +11,7 @@ const PIPS: Record<DieFace, number[]> = {
 };
 
 type DieProps = {
-  // null = empty slot, drawn as a dash on the felt
+  // null = empty slot, an outlined square on the felt
   value: DieFace | null;
   // any CSS length; slot and picker sizes are computed from the tray column (cqi)
   size?: string;
@@ -30,16 +30,13 @@ export default function Die({ value, size = '64px', held = false, mini = false, 
         aria-hidden="true"
         style={style}
         className={[
-          'grid size-(--s) shrink-0 place-items-center rounded-[calc(var(--s)*.24)]',
-          'text-[calc(var(--s)*.4)] font-extrabold text-white/55',
+          'block size-(--s) shrink-0 rounded-[calc(var(--s)*.24)]',
           held
             ? 'bg-secondary/16 inset-ring-2 inset-ring-secondary'
             : 'bg-white/8 inset-ring-2 inset-ring-white/35',
           className,
         ].join(' ')}
-      >
-        –
-      </span>
+      />
     );
   }
 
