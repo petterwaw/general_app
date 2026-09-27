@@ -1,6 +1,11 @@
 'use client';
 
+import Link from 'next/link';
+
+import { ApiError } from '../../api/client';
 import useGame from '../../hooks/useGame';
+import { ErrorScreen } from '../errors/errorScreen';
+import { Button } from '../ui/button';
 import GameLobby from '../gameLobby/gameLobby';
 import GameScreen from './gameScreen';
 
@@ -8,8 +13,15 @@ export default function GameView({ gameId }: { gameId: string }) {
   const { game, loading, error, setGame } = useGame(gameId);
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!game) return <div>Game not found</div>;
+  if (error instanceof ApiError && error.statusCode === 404) {
+    return (
+      <ErrorScreen mood="unsure" title="No game here. Someone must have pocketed the dice">
+        <GoToGames />
+      </ErrorScreen>
+    );
+  }
+  if (error) return <div>{error.message}</div>;
+  if (!game) return null;
 
   if (game.status === 'LOBBY') {
     return <GameLobby game={game} onGameChange={setGame} />;
@@ -32,4 +44,12 @@ export default function GameView({ gameId }: { gameId: string }) {
   }
 
   return null;
+}
+
+function GoToGames() {
+  return (
+    <Button render={<Link href="/games" />} nativeButton={false}>
+      Go to games
+    </Button>
+  );
 }
