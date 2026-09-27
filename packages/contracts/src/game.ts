@@ -27,6 +27,12 @@ export const diceRollSchema = z.tuple([
 
 export const categorySchema = z.enum(CATEGORIES);
 
+// Every category present: a number once scored, null while still free.
+export const scoreCardSchema = z.record(
+  categorySchema,
+  z.number().int().min(0).nullable(),
+) satisfies z.ZodType<ScoreCard>;
+
 export const createGameSchema = z.strictObject({
   players: z.array(playerNameSchema).min(1).max(MAX_PLAYERS),
 });

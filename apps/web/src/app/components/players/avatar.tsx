@@ -1,5 +1,3 @@
-'use client';
-
 import { Blobatar } from '@blobatar/react';
 import { useGaze } from '@blobatar/react/gaze';
 import 'blobatar/motion.css';

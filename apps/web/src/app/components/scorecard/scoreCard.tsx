@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Category, DiceRoll, ParticipantView, ScoreCard as Card } from '@dice-app/contracts';
 import {

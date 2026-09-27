@@ -3,6 +3,8 @@ export { CATEGORIES } from './types.js';
 
 export type { Player, GameState, Action } from './reducer.js';
 
+export { GameRuleError } from './errors.js';
+
 export {
   createEmptyScoreCard,
   createInitialState,

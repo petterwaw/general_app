@@ -1,5 +1,6 @@
 import type { Category, DiceRoll, ScoreCard } from './types.js'
 import { dispatchPoints } from './scoring.js'
+import { GameRuleError } from './errors.js'
 import { isCategoryFree, isForcedZero, isLowerSectionCategory, isLowerSectionUnlocked } from './validation.js'
 
 export type Player = { id: string, name: string }
@@ -59,19 +60,19 @@ function findPlayer(gameState: GameState, playerId: Player['id']): Player & { ca
 
 function applySaveCategory(gameState: GameState, action: Action): GameState {
     if (!isPlayerTurn(gameState, action.playerId)) {
-        throw new Error(`To nie jest tura gracza ${action.playerId}`)
+        throw new GameRuleError(`It is not player ${action.playerId}'s turn`)
     }
 
     const player = findPlayer(gameState, action.playerId)
 
     if (!isCategoryFree(player.card, action.category)) {
-        throw new Error(`Kategoria ${action.category} jest już zajęta`)
+        throw new GameRuleError(`Category ${action.category} is already taken`)
     }
 
     const lowerLocked = isLowerSectionCategory(action.category) && !isLowerSectionUnlocked(player.card)
 
     if (lowerLocked && !isForcedZero(action.dice, player.card)) {
-        throw new Error(`Kategoria ${action.category} jest zablokowana`)
+        throw new GameRuleError(`Category ${action.category} is locked`)
     }
 
     const score = lowerLocked ? 0 : dispatchPoints(action.category, action.dice)

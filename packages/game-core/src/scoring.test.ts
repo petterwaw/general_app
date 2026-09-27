@@ -72,6 +72,10 @@ describe('countTwoPairs', () => {
         expect(countTwoPairs([2, 2, 2, 4, 4])).toBe(12)
     })
 
+    it('should count a three of a kind and a pair when the three is the higher value', () => {
+        expect(countTwoPairs([5, 5, 5, 2, 2])).toBe(14)
+    })
+
     it('should return 0 when there is no pair', () => {
         expect(countTwoPairs([1, 2, 3, 4, 5])).toBe(0)
     })

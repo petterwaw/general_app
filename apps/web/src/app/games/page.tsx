@@ -71,7 +71,7 @@ export default function GamesPage() {
                   <h2 className="text-xl font-bold">New game</h2>
                 </div>
 
-                <CreateGameForm />
+                <CreateGameForm onHostedGame={setGame} />
               </>
             )}
           </Card>

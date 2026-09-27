@@ -5,10 +5,19 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import { createEmptyScoreCard, reducer, isGameOver, totalScore, upperBonus } from '@dice-app/game-core';
-import type { DiceRoll, ScoreCard } from '@dice-app/game-core';
+import {
+  createEmptyScoreCard,
+  reducer,
+  isGameOver,
+  totalScore,
+  upperBonus,
+  GameRuleError,
+  type GameState,
+} from '@dice-app/game-core';
 import {
   MAX_PLAYERS,
+  diceRollSchema,
+  scoreCardSchema,
   type CreateGameInput,
   type GameEventView,
   type GameEventsQuery,
@@ -226,27 +235,38 @@ export class GameService {
         throw new BadRequestException('There is no dice roll to score');
       }
 
-      const newState = reducer(
-        {
-          players: game.participants.map((player) => ({
-            id: player.id,
-            name: player.name,
-            card: player.scoreCard as ScoreCard,
-          })),
-          currentPlayerId: input.playerId,
-        },
-        {
-          type: 'saveCategory',
-          playerId: input.playerId,
-          category: input.category,
-          dice: game.currentDice as DiceRoll,
-        },
-      );
+      let newState: GameState;
+      try {
+        newState = reducer(
+          {
+            players: game.participants.map((player) => ({
+              id: player.id,
+              name: player.name,
+              card: scoreCardSchema.parse(player.scoreCard),
+            })),
+            currentPlayerId: input.playerId,
+          },
+          {
+            type: 'saveCategory',
+            playerId: input.playerId,
+            category: input.category,
+            dice: diceRollSchema.parse(game.currentDice),
+          },
+        );
+      } catch (error) {
+        // a move against the rules is the client's mistake; anything else stays a 500
+        if (error instanceof GameRuleError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
+      }
 
       const gameOver = isGameOver(newState);
       // points as the reducer computed them — never taken from the client
       const points = newState.players.find((player) => player.id === input.playerId)!.card[input.category];
 
+      // Persist the reducer's whole result, not just the scoring player's card: the reducer
+      // decides what a move changes, so the service does not second-guess it.
       await Promise.all(
         newState.players.map((player) =>
           tx.participant.update({

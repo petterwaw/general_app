@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import type { DiceRoll, DieFace } from '@dice-app/contracts';
 
