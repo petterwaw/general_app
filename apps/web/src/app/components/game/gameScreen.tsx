@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { CATEGORIES, type Category, type DiceRoll, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
+import { ConfirmLeave } from '../ui/confirmLeave';
 import { Card } from '../ui/card';
 import { LeaveIcon } from '../ui/icons';
 import { Drawer } from '../ui/drawer';
@@ -148,18 +149,18 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     }
   }
 
-  const leaveButton = (
-    <Button
-      variant="secondary"
-      size="top"
-      onClick={leaveGameSubmit}
-      loading={leaving}
-      aria-label={leaveLabel}
-    >
-      <LeaveIcon />
-      <span className="max-[560px]:hidden">{leaveLabel}</span>
-    </Button>
-  );
+  // only the host leaving a game still going abandons it for everyone, so only that asks first;
+  // a watcher, or anyone after the end, just goes back
+  const leaveButton =
+    watching || finished ? (
+      <TopLeaveButton label={leaveLabel} onClick={leaveGameSubmit} />
+    ) : (
+      <ConfirmLeave
+        trigger={(ask) => <TopLeaveButton label={leaveLabel} onClick={ask} />}
+        onConfirm={leaveGameSubmit}
+        loading={leaving}
+      />
+    );
 
   return (
     <>
@@ -263,5 +264,15 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
 
       {finished && <GameOver participants={participants} onLeave={leaveGameSubmit} leaveLabel={leaveLabel} />}
     </>
+  );
+}
+
+// "Leave game" in the corner of the game screen; below 560px only its icon
+function TopLeaveButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button variant="secondary" size="top" onClick={onClick} aria-label={label}>
+      <LeaveIcon />
+      <span className="max-[560px]:hidden">{label}</span>
+    </Button>
   );
 }

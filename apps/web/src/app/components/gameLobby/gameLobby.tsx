@@ -3,8 +3,8 @@ import { useRouter } from 'next/navigation';
 import { MAX_PLAYERS, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
+import { ConfirmLeave } from '../ui/confirmLeave';
 import { Card } from '../ui/card';
-import { ThreeBodySpinner } from '../ui/threeBodySpinner';
 import PlayerRow from '../players/playerRow';
 import PlayerNameRow from '../players/playerNameRow';
 import LogItem from '../gameLog/logItem';
@@ -277,22 +277,26 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             >
               Start game
             </Button>
-            {/* a quiet text action, so leaving does not compete with starting */}
-            <button
-              type="button"
-              onClick={leave}
-              disabled={closingAction === 'leave'}
-              inert={closingAction === 'start'}
-              aria-busy={closingAction === 'leave' || undefined}
-              className={[
-                'relative grid flex-1 cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
-                'transition-colors duration-150 enabled:hover:text-danger disabled:cursor-default',
-              ].join(' ')}
-            >
-              {/* the label stays, hidden, so the button keeps its size */}
-              <span className={closingAction === 'leave' ? 'invisible' : undefined}>Leave game</span>
-              {closingAction === 'leave' && <ThreeBodySpinner className="absolute" />}
-            </button>
+            {/* a quiet text action, so leaving does not compete with starting; it asks first,
+                since the host leaving abandons the game */}
+            <div className="grid flex-1" inert={closingAction === 'start'}>
+              <ConfirmLeave
+                onConfirm={leave}
+                loading={closingAction === 'leave'}
+                trigger={(ask) => (
+                  <button
+                    type="button"
+                    onClick={ask}
+                    className={[
+                      'grid cursor-pointer place-items-center rounded-full px-2 py-3 font-bold text-ink-muted',
+                      'transition-colors duration-150 hover:text-danger',
+                    ].join(' ')}
+                  >
+                    Leave game
+                  </button>
+                )}
+              />
+            </div>
           </div>
         )}
       </Card>
