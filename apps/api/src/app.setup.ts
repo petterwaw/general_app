@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import { TransfromInterceptor } from './utils/transfrom.interceptor';
 import { HttpExceptionFilter } from './utils/http-exception.filter';
 import { refreshHostCookie } from './utils/host-cookie';
+import { CorsIoAdapter } from './utils/cors-io.adapter';
 
 // Shared by main.ts and the e2e test app, so tests run the same HTTP pipeline as production.
 // frontendUrls is an explicit allowlist — never reflect arbitrary origins while credentials are on.
@@ -15,4 +16,5 @@ export function configureApp(app: INestApplication, frontendUrls: string[]) {
     origin: frontendUrls,
     credentials: true,
   });
+  app.useWebSocketAdapter(new CorsIoAdapter(app, frontendUrls));
 }

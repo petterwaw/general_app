@@ -6,7 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // Dev convenience: with a localhost API URL, a page opened by LAN IP (e.g. from a phone) calls
 // the API on that same IP. Front and API must share the host, or the host cookie is not sent.
 // A non-localhost API URL (production) is used as-is.
-function resolveApiUrl(): string | undefined {
+export function resolveApiUrl(): string | undefined {
   if (!API_URL || typeof window === 'undefined') {
     return API_URL;
   }

@@ -40,10 +40,10 @@ export class GameGateway {
     }
 
     handleConnection(client: Socket){
-        this.logger.log(`\Connected: ${client.id}`)
+        this.logger.log(`Connected: ${client.id}`)
     }
     handleDisconnect(client: Socket){
-        this.logger.log(`\Disconnected: ${client.id}`)
+        this.logger.log(`Disconnected: ${client.id}`)
     }
 
     @SubscribeMessage('subscribe')
