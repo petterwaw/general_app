@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
     isCategoryFree,
     isLowerSectionUnlocked,
-    isRollScoringInCategory,
-    isForcedZero,
     canWriteChance,
     isLowerSectionCategory
 } from './validation.js'
@@ -40,41 +38,22 @@ describe('isLowerSectionUnlocked', () => {
     it('should return true when the lower section is unlocked', () => {
         expect(isLowerSectionUnlocked(createEmptyScoreCard({'one': 3, 'two': 6, 'four': 16}))).toBe(true)
     })
-})
 
-describe('isRollScoringInCategory', () => {
-    it('should return false when the category scores no points', () => {
-        expect(isRollScoringInCategory([1, 2, 3, 4, 5], 'one')).toBe(false)
+    it('should return false with only two upper categories filled', () => {
+        expect(isLowerSectionUnlocked(createEmptyScoreCard({'one': 3, 'two': 6}))).toBe(false)
     })
 
-    it('should return true when the category scores points', () => {
-        expect(isRollScoringInCategory([1, 1, 3, 1, 5], 'one')).toBe(true)
+    it('should not count upper categories filled with zeros', () => {
+        expect(isLowerSectionUnlocked(createEmptyScoreCard({'one': 0, 'two': 0, 'three': 0}))).toBe(false)
     })
 
-    it('should return true for a scoring lower section category', () => {
-        expect(isRollScoringInCategory([4, 4, 4, 2, 5], 'threeOfKind')).toBe(true)
-    })
-})
-
-describe('isForcedZero', () => {
-    it('should return true when no category can be scored', () => {
-        expect(isForcedZero([1, 2, 3, 4, 5], createEmptyScoreCard({'one': 3, 'two': 6, 'four': 16, 'smallStraight': 25, 'largeStraight': 40}))).toBe(true)
+    it('should need three upper categories with points, whatever zeros sit beside them', () => {
+        expect(isLowerSectionUnlocked(createEmptyScoreCard({'one': 0, 'two': 6, 'three': 0, 'four': 12}))).toBe(false)
+        expect(isLowerSectionUnlocked(createEmptyScoreCard({'one': 0, 'two': 6, 'three': 9, 'four': 12}))).toBe(true)
     })
 
-    it('should return false when at least one category can be scored', () => {
-        expect(isForcedZero([1, 2, 3, 4, 5], createEmptyScoreCard({'one': 3, 'two': 6, 'four': 16, 'smallStraight': 25}))).toBe(false)
-    })
-
-    it('should return true when no category can be scored', () => {
-        expect(isForcedZero([1, 2, 3, 4, 5], createEmptyScoreCard({'one': 3, 'four': 16, 'smallStraight': 25}))).toBe(true)
-    })
-
-    it('should return true even when only chance is free and would score points', () => {
-        expect(isForcedZero([3, 3, 3, 3, 3], createEmptyScoreCard({
-            one: 3, two: 6, three: 9, four: 16, five: 15, six: 18,
-            pair: 0, twoPairs: 0, threeOfKind: 0, fourOfKind: 0,
-            full: 0, smallStraight: 0, largeStraight: 0, general: 0,
-        }))).toBe(true)
+    it('should not count lower section categories or chance', () => {
+        expect(isLowerSectionUnlocked(createEmptyScoreCard({'one': 3, 'two': 6, 'pair': 0, 'twoPairs': 0, 'chance': 15}))).toBe(false)
     })
 })
 

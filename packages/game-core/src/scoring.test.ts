@@ -83,6 +83,15 @@ describe('countTwoPairs', () => {
     it('should count four of a kind as two pairs', () => {
         expect(countTwoPairs([1, 1, 1, 1, 5])).toBe(4)
     })
+
+    // examples straight from ZASADY-GRY.md (two pairs of the same value)
+    it('should count a general as two pairs of the same value', () => {
+        expect(countTwoPairs([1, 1, 1, 1, 1])).toBe(4)
+    })
+
+    it('should count four fives as two pairs of fives', () => {
+        expect(countTwoPairs([5, 5, 5, 5, 2])).toBe(20)
+    })
 })
 
 describe('countThreeOfKind', () => {
@@ -125,6 +134,14 @@ describe('countFull', () => {
     it('should return 0 for four of a kind with an extra die', () => {
         expect(countFull([6, 6, 6, 6, 3])).toBe(0)
     })
+
+    it('should return 0 for a three of a kind without a pair', () => {
+        expect(countFull([2, 2, 2, 3, 4])).toBe(0)
+    })
+
+    it('should return 0 for two pairs', () => {
+        expect(countFull([2, 2, 4, 4, 6])).toBe(0)
+    })
 })
 
 describe('countSmallStraight', () => {
@@ -133,7 +150,15 @@ describe('countSmallStraight', () => {
     })
 
     it('should return 25 for a 2-3-4-5 straight', () => {
-        expect(countSmallStraight([2, 3, 4, 5, 1])).toBe(25)
+        expect(countSmallStraight([2, 3, 4, 5, 5])).toBe(25)
+    })
+
+    it('should return 25 for a large straight, which holds four values in a row', () => {
+        expect(countSmallStraight([1, 2, 3, 4, 5])).toBe(25)
+    })
+
+    it('should return 0 when the run of values is broken', () => {
+        expect(countSmallStraight([1, 2, 3, 5, 6])).toBe(0)
     })
 
     it('should return 25 for a 3-4-5-6 straight', () => {

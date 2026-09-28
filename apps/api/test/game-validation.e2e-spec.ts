@@ -279,14 +279,14 @@ describe('Games API validation', () => {
         expect(secondScoreResponse.body).toMatchObject({ statusCode: 400, data: null });
     });
 
-    it('should reject scoring a locked lower section category with a 400', async () => {
+    it('should save a zero in a locked lower section category even when the dice would score', async () => {
         const { agent, game } = await createGame(app, ['Piotr'], 'test-create-locked-category');
         const gameId = game.id;
         const playerId = game.participants[0].id;
 
         await agent.post(`/games/${gameId}/start`).set('Idempotency-Key', 'test-start-locked-category').send();
 
-        // three sixes score in the upper section, so no forced zero into the locked lower section
+        // three sixes would score in Sixes, yet a zero may still go into the locked lower section
         await agent
             .post(`/games/${gameId}/roll`)
             .set('Idempotency-Key', 'test-roll-locked-category')
@@ -296,7 +296,7 @@ describe('Games API validation', () => {
             .set('Idempotency-Key', 'test-score-locked-category')
             .send({ playerId, category: 'pair' });
 
-        expect(scoreResponse.status).toBe(400);
-        expect(scoreResponse.body).toMatchObject({ statusCode: 400, data: null });
+        expect(scoreResponse.status).toBe(201);
+        expect(scoreResponse.body.data.participants[0].scoreCard.pair).toBe(0);
     });
 });

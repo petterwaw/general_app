@@ -4,7 +4,6 @@ import {
   UPPER_BONUS_THRESHOLD,
   UPPER_BONUS_VALUE,
   dispatchPoints,
-  isForcedZero,
   isLowerSectionCategory,
   isLowerSectionUnlocked,
   upperSectionSum,
@@ -58,8 +57,8 @@ function cellState(
 
   const locked = isLowerSectionCategory(category) && !isLowerSectionUnlocked(card);
 
-  // a locked lower category is still open for the forced zero (docs/ZASADY-GRY.md)
-  if (isCurrent && turnDice && (!locked || isForcedZero(turnDice, card))) {
+  // a zero goes into any free category, a locked lower one included (docs/ZASADY-GRY.md)
+  if (isCurrent && turnDice) {
     const points = locked ? 0 : dispatchPoints(category, turnDice);
     return category === selected
       ? { kind: 'selected', points, onSave: () => onSave(category) }

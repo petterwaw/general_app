@@ -21,7 +21,6 @@ export {
   isCategoryFree,
   isLowerSectionUnlocked,
   isLowerSectionCategory,
-  isForcedZero,
 } from './validation.js';
 
 export {
