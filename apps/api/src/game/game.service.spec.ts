@@ -8,13 +8,14 @@ jest.mock('@dice-app/game-core', () => ({
 jest.mock('../prisma/prisma.service', () => ({ PrismaService: class PrismaService {} }));
 import { GameService } from './game.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { GameUpdates } from './game-updates';
 
 describe('GameService', () => {
   let service: GameService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GameService, { provide: PrismaService, useValue: {} }],
+      providers: [GameService, GameUpdates, { provide: PrismaService, useValue: {} }],
     }).compile();
 
     service = module.get<GameService>(GameService);
