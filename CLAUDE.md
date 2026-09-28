@@ -97,9 +97,12 @@ Webowa aplikacja do gry w kości w wariancie Yatzy (5 kości, 3 rzuty na turę, 
 Dwa tryby:
 
 - **Tryb lokalny** — jedno urządzenie (host) prowadzi grę dla ludzi siedzących przy stole.
-  Kości mogą być fizyczne (host wpisuje wyniki ręcznie) albo wirtualne (losuje serwer).
-  Inni mogą dołączyć przez kod QR na własnych telefonach, ale **tylko do podglądu**.
-- **Tryb online** — każdy gra u siebie, kości wyłącznie wirtualne. **POZA MVP.**
+  Kości wyłącznie fizyczne (host wpisuje wyniki ręcznie). Inni mogą oglądać grę na własnych
+  telefonach, ale **tylko do podglądu**.
+- **Tryb online** — każdy gra u siebie, kości wyłącznie wirtualne, dołączanie przez zaproszenie
+  (link / kod), bez kont. Matchmaking poza zakresem.
+
+Kierunek od 2026-09-28: online dla gości przed kontami — kolejność etapów w `docs/STAN.md`.
 
 Konto jest opcjonalne. Bez konta też można grać (jako gość), ale statystyki globalne
 zapisują się tylko zalogowanym.

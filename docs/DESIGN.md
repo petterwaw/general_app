@@ -219,7 +219,7 @@ wierszy graczy (`rounded-panel`, `bg-white/60`):
   kość podskakuje z przechyłem (`animate-hop`); przy otwarciu formularza — nie.
 - Opis trybu pod kafelkami: oba opisy leżą w jednej komórce siatki, widoczny jest wybrany
   (przenikanie), więc karta ma wysokość dłuższego i **nie skacze** przy zmianie trybu.
-- Online jest zablokowane (`soon`, dymek „Coming soon”) — tryb online jest POZA MVP. Dymek
+- Online jest zablokowane (`soon`, dymek „Coming soon”) — tryb online jeszcze nie powstał (etap 9). Dymek
   (`ComingSoon`) otwiera się po najechaniu **i po tapnięciu** — to `Popover` z `openOnHover`,
   bo tooltip na dotyk się nie otwiera; zamyka tapnięcie obok.
 

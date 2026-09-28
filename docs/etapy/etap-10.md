@@ -1,4 +1,8 @@
-# Etap 10 — Utwardzanie
+# Etap 10 — Utwardzanie i produkcja
+
+Od 2026-09-28 to etap wdrożenia na produkcję (hosting: prawdopodobnie AWS). Przed wdrożeniem
+muszą być ustalone: nazwa aplikacji, hosting, `maxAge` ciasteczka urządzenia
+(`DO-USTALENIA.md`).
 
 Rate limity, Sentry, kasowanie porzuconych gier, PWA.
 

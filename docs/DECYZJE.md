@@ -14,16 +14,20 @@ Rozróżniamy dwie niezależne osie. Nie myl ich ze sobą.
 | Tryb | Opis | Status |
 |---|---|---|
 | Lokalny | Jedno urządzenie (host) prowadzi grę dla wszystkich uczestników przy stole | MVP |
-| Online | Każdy gracz na swoim urządzeniu, dobierani przez matchmaking | POZA MVP |
+| Online | Każdy gracz na swoim urządzeniu, dołącza przez zaproszenie (link / kod) | w zakresie (od 2026-09-28) |
 
 **Oś B — skąd biorą się kości:**
 
 | Źródło | Opis | Dostępne w |
 |---|---|---|
 | Fizyczne | Prawdziwe kości na stole, host wpisuje wyniki ręcznie | tylko tryb lokalny |
-| Wirtualne | Losuje serwer | tryb lokalny i online |
+| Wirtualne | Losuje serwer | tylko tryb online (ustalone 2026-09-28) |
 
-W trybie online kości fizyczne **nie istnieją**.
+W trybie online kości fizyczne **nie istnieją**, a w lokalnym — wirtualne.
+
+**Online bez kont** (ustalone 2026-09-28): każdy gracz online jest gościem rozpoznawanym po
+sekrecie w ciasteczku urządzenia, tak jak dziś host. Dołączanie przez link / kod zaproszenia;
+matchmaking może dojść później.
 
 **Liczba graczy w grze lokalnej: od 1 do 8** (ustalone 2026-09-24). Limit egzekwuje serwer —
 zarówno przy tworzeniu gry, jak i przy dołączaniu (`MAX_PLAYERS` w `packages/contracts`).
@@ -115,9 +119,10 @@ zapis daje 0, decyduje reducer, nie klient.
 
 ## 5. Host wychodzi z gry (tryb lokalny)
 
-- Host może wrócić do gry po zamknięciu przeglądarki — dopóki gra nie wygasła.
-- Gra bez aktywności wygasa po określonym czasie i znika. Uzasadnienie: to gra przy stole między
-  znajomymi; jeśli host skończył, to zwykle wszyscy skończyli. Nie ma sensu ciągnąć takiej partii.
+- Host może wrócić do gry po zamknięciu przeglądarki.
+- **Gra lokalna nie wygasa** (zmienione 2026-09-28) — trwa, dopóki host jej nie opuści albo nie
+  dogra. Status `EXPIRED` zostaje w bazie, ale nic go nie ustawia. Gra online skończy się sama,
+  gdy dojdą limity na ruch (§7).
 - **Przekazanie hosta innemu urządzeniu przed wyjściem — POZA MVP.** Ale rola ma być polem na
   uczestniku już teraz, żeby dodanie tego później było zmianą jednej wartości, a nie przepisaniem
   logiki uprawnień.
@@ -144,6 +149,9 @@ zapis daje 0, decyduje reducer, nie klient.
 
 ## 6. Jedno konto = jedna aktywna gra
 
+**Konta są odłożone** (2026-09-28). Do tego czasu tożsamością jest urządzenie (ciasteczko),
+a zasady z tej sekcji obowiązują dopiero z kontami.
+
 - Zalogowany użytkownik nie może być jednocześnie w dwóch grach. Żeby dołączyć do nowej, musi
   opuścić poprzednią.
 - Po wejściu na stronę użytkownik z aktywną grą jest przenoszony do jej pokoju.
@@ -157,6 +165,10 @@ zapis daje 0, decyduje reducer, nie klient.
 ---
 
 ## 7. Limit czasu na turę (tryb online)
+
+**Odłożone** (2026-09-28): online startuje bez limitu na turę; limit i wyrzucanie dojdą, gdy
+gra online będzie działać. Do tego czasu nieaktywny gracz blokuje partię, dopóki pozostali
+nie wyjdą.
 
 - **90 sekund na całą turę**, nie na pojedynczy rzut. Ktoś zastanawiający się nad odłożeniem
   kości nie może wypaść w środku ruchu.
