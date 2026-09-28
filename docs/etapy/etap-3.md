@@ -8,9 +8,8 @@ Obowiązkowo: `revision`, log zdarzeń, klucz idempotencji, `status` gry, `ostat
 > Sprawdzenie „restart serwera w połowie partii niczego nie psuje” przeniesione do etapu 4
 > (decyzja właściciela 2026-09-25) — do przećwiczenia na działającym UI.
 
-**Postęp: KRYTERIUM SPEŁNIONE (stan na 2026-09-25 — wpis na końcu pliku).** Otwarte zostaje
-`maxAge` ciasteczka hosta — czeka na decyzję (`DO-USTALENIA.md`), razem z czasem wygasania
-gry z etapu 6. Wszystkie endpointy z opisu etapu istnieją
+**Postęp: KRYTERIUM SPEŁNIONE (stan na 2026-09-25 — wpis na końcu pliku).** `maxAge`
+ciasteczka hosta domknięte 2026-09-28 (wpis na końcu pliku). Wszystkie endpointy z opisu etapu istnieją
 i działają: `POST /games` (tworzy grę z listą graczy, zakłada `Identity` hosta i odsyła
 sekret w cookie), `POST /games/:id/join`, `POST /games/:id/start`, `POST /games/:id/roll`
 (wpisanie kości fizycznych), `POST /games/:id/score`, `GET /games/:id`, `GET /games`.
@@ -466,3 +465,17 @@ Dług, który zostaje z tej sesji:
 - `hostLeft` i `playerRemoved` nie wychodzą w publicznym logu gry (§13 wystawia trzy typy).
 - Ciasteczko nadal sesyjne — po zamknięciu przeglądarki host traci tożsamość, a jego gra
   wisi w `LOBBY` / `IN_PROGRESS` do czasu wygasania (etap 6).
+
+## `maxAge` ciasteczka hosta — 2026-09-28
+
+Gałąź `feat/host-cookie-max-age`.
+
+- Ciasteczko `host_secret` żyje 90 dni (`DECYZJE.md` §5). Każdy `GET` z ciasteczkiem wysyła je
+  ponownie z pełnym `maxAge`, więc wygasa dopiero po 90 dniach bez wizyty. `POST` go nie
+  odnawia — utworzenie gry może wydać nowy sekret.
+- Testy e2e: nowe ciasteczko ma 90 dni, wizyta odnawia to samo ciasteczko, wizyta bez
+  ciasteczka żadnego nie dostaje.
+
+Sprawdzone: `api` jednostkowe 4/4, e2e 77/77, typecheck zielony.
+
+Dług: `secure: false` na sztywno — do zmiany przy wdrożeniu (etap 10).

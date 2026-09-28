@@ -119,7 +119,9 @@ zapis daje 0, decyduje reducer, nie klient.
 
 ## 5. Host wychodzi z gry (tryb lokalny)
 
-- Host może wrócić do gry po zamknięciu przeglądarki.
+- Host może wrócić do gry po zamknięciu przeglądarki. **Ciasteczko urządzenia żyje 90 dni
+  i przedłuża się przy każdym wejściu na stronę** (ustalone 2026-09-28) — wygasa dopiero po
+  90 dniach bez wizyty. Dotyczy też graczy online.
 - **Gra lokalna nie wygasa** (zmienione 2026-09-28) — trwa, dopóki host jej nie opuści albo nie
   dogra. Status `EXPIRED` zostaje w bazie, ale nic go nie ustawia. Gra online skończy się sama,
   gdy dojdą limity na ruch (§7).

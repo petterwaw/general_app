@@ -169,6 +169,49 @@ describe('Host rules', () => {
     });
   });
 
+  describe('host cookie lifetime', () => {
+    const NINETY_DAYS_IN_SECONDS = 90 * 24 * 60 * 60;
+
+    function hostCookieFrom(setCookie: string[] | undefined): string | undefined {
+      return setCookie?.find((cookie) => cookie.startsWith('host_secret='));
+    }
+
+    function secretFrom(cookie: string | undefined): string | undefined {
+      return cookie?.split(';')[0].split('=')[1];
+    }
+
+    it('issues the host cookie for 90 days', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/games')
+        .set('Idempotency-Key', 'cookie-lifetime-create')
+        .send({ players: ['Piotr'] });
+
+      expect(hostCookieFrom(response.get('Set-Cookie'))).toContain(`Max-Age=${NINETY_DAYS_IN_SECONDS}`);
+    });
+
+    it('re-issues the same host cookie for another 90 days on every visit', async () => {
+      const created = await request(app.getHttpServer())
+        .post('/games')
+        .set('Idempotency-Key', 'cookie-lifetime-refresh')
+        .send({ players: ['Piotr'] });
+      const issued = hostCookieFrom(created.get('Set-Cookie'));
+
+      const visit = await request(app.getHttpServer())
+        .get('/games/hosted')
+        .set('Cookie', `host_secret=${secretFrom(issued)}`);
+      const refreshed = hostCookieFrom(visit.get('Set-Cookie'));
+
+      expect(secretFrom(refreshed)).toBe(secretFrom(issued));
+      expect(refreshed).toContain(`Max-Age=${NINETY_DAYS_IN_SECONDS}`);
+    });
+
+    it('issues no cookie on a visit without one', async () => {
+      const response = await request(app.getHttpServer()).get('/games/hosted');
+
+      expect(hostCookieFrom(response.get('Set-Cookie'))).toBeUndefined();
+    });
+  });
+
   describe('host leaves', () => {
     it('abandons a game in progress', async () => {
       const { agent, game } = await createHostedGame(['Piotr', 'Ania'], 'leave-in-progress');

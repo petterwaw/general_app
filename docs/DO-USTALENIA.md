@@ -14,13 +14,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       procesem (nie serverless). Prawdopodobnie AWS (2026-09-28) — decyzja przy wdrożeniu (etap 10).
 - [ ] **Nazwa aplikacji.** Nie może być „Yahtzee". Do czasu wyboru w kodzie: `dice-app`.
 
-## Blokujące domknięcie etapu 3 (wyszło z przeglądu 2026-09-24)
-
-- [ ] **Jak długo ma żyć ciasteczko urządzenia?** `DECYZJE.md` §5 mówi, że host wraca do gry po
-      zamknięciu przeglądarki — to wymaga konkretnego `maxAge`, a dziś ciasteczko jest sesyjne.
-      Gra lokalna nie wygasa (2026-09-28), więc nie ma od czego tego uzależnić. Dotyczy też
-      graczy online (etap 9).
-
 ## Blokujące etap 5 (konta)
 
 - [ ] **Czym się logujemy?** E-mail + hasło, logowanie przez Google/Discord, magic link?
