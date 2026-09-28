@@ -31,6 +31,7 @@ import { Prisma } from '../../generated/prisma/client';
 import { randomBytes, createHash } from 'crypto';
 import { gameInclude, toGameView, type GameWithParticipants } from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
+import { GameUpdates } from './game-updates';
 
 type GameAction = {
   actionType: string;
@@ -42,7 +43,10 @@ type ActionAccess = { hostOnly: false } | { hostOnly: true; hostSecret: string |
 
 @Injectable()
 export class GameService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly updates: GameUpdates,
+  ) { }
 
   /**
    * Creates a game hosted by this device. A device that already has a host cookie keeps its
@@ -126,6 +130,10 @@ export class GameService {
   async findOne(id: string, hostSecret: string | undefined): Promise<GameView> {
     const game = await loadGame(this.prisma, id);
     return toGameView(game, (await this.findHost(id, hostSecret)) !== null);
+  }
+
+  async isHost(gameId: string, hostSecret: string | undefined): Promise<boolean> {
+    return (await this.findHost(gameId, hostSecret)) !== null;
   }
 
   async events(id: string, query: GameEventsQuery): Promise<GameEventView[]> {
@@ -380,9 +388,11 @@ export class GameService {
     }
 
     const key = requireIdempotencyKey(idempotencyKey);
+    // Set only when an action really ran (not on a key replay), published after the commit.
+    let updatedGameToSend: GameWithParticipants | undefined;
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const view = await this.prisma.$transaction(async (tx) => {
         if (await findEvent(tx, id, key)) {
           return toGameView(await loadGame(tx, id), access.hostOnly);
         }
@@ -417,9 +427,15 @@ export class GameService {
             idempotencyKey: key,
           },
         });
-
+        updatedGameToSend = updatedGame;
         return toGameView(updatedGame, access.hostOnly);
       });
+
+      // The transaction has committed: only now may other clients see the new state.
+      if (updatedGameToSend) {
+        this.updates.publish(updatedGameToSend);
+      }
+      return view;
     } catch (error) {
       // A concurrent request with the same key won the race — return its result.
       if (isUniqueViolation(error) && (await findEvent(this.prisma, id, key))) {

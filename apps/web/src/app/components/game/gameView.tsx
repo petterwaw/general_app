@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { ApiError } from '../../api/client';
 import useGame from '../../hooks/useGame';
+import useGameSocket from '../../hooks/useGameSocket';
 import { ErrorScreen } from '../errors/errorScreen';
 import { Button } from '../ui/button';
 import GameLobby from '../gameLobby/gameLobby';
@@ -11,6 +12,7 @@ import GameScreen from './gameScreen';
 
 export default function GameView({ gameId }: { gameId: string }) {
   const { game, loading, error, setGame, retry } = useGame(gameId);
+  useGameSocket(gameId, game, setGame);
 
   if (loading) return <div>Loading...</div>;
   if (error instanceof ApiError && error.statusCode === 404) {
