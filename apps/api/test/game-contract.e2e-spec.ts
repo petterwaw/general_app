@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { scoreCardSchema } from '@dice-app/contracts';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { cleanDatabase, createGame as createGameFor, createTestApp } from './test-app';
 
@@ -215,6 +216,31 @@ describe('Games API contract', () => {
                 .send({ playerId, category: 'yahtzee' });
 
             expect(response.status).toBe(400);
+        });
+
+        // DECYZJE.md §4: an action never carries its result; the server computes the points itself
+        it('rejects a score that carries its own points', async () => {
+            const { agent, game } = await createGame(['Piotr'], 'contract-score-points');
+            const playerId = game.participants[0].id;
+
+            await agent
+                .post(`/games/${game.id}/start`)
+                .set('Idempotency-Key', 'contract-score-points-start')
+                .send();
+            await agent
+                .post(`/games/${game.id}/roll`)
+                .set('Idempotency-Key', 'contract-score-points-roll')
+                .send({ playerId, dice: [1, 2, 3, 4, 5] });
+
+            const response = await agent
+                .post(`/games/${game.id}/score`)
+                .set('Idempotency-Key', 'contract-score-points-score')
+                .send({ playerId, category: 'chance', points: 30 });
+
+            expect(response.status).toBe(400);
+
+            const player = await prisma.participant.findUniqueOrThrow({ where: { id: playerId } });
+            expect(scoreCardSchema.parse(player.scoreCard).chance).toBeNull();
         });
     });
 });
