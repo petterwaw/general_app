@@ -51,10 +51,16 @@ export const scoreSchema = z.strictObject({
   category: categorySchema,
 });
 
+export const subscribeSchema = z.strictObject({
+  gameId: z.string().min(1),
+  revision: z.number().int().min(0)
+})
+
 export type CreateGameInput = z.infer<typeof createGameSchema>;
 export type JoinGameInput = z.infer<typeof joinGameSchema>;
 export type RollInput = z.infer<typeof rollSchema>;
 export type ScoreInput = z.infer<typeof scoreSchema>;
+export type SubscribeInput = z.infer<typeof subscribeSchema>
 
 // GET /games/:id/events?after=<revision> — only events newer than the revision the client already has.
 export const gameEventsQuerySchema = z.strictObject({

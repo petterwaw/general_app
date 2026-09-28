@@ -245,7 +245,7 @@ zdarzenia albo cały stan.
 | Baza | PostgreSQL | ustalone |
 | Monorepo | pnpm workspaces (ew. Turborepo) | ustalone |
 | Walidacja | Zod, schematy współdzielone przez web i api (`packages/contracts`) | ustalone (potwierdzone 2026-09-24) |
-| Realtime | Socket.IO (ma gotowy reconnect, backoff, heartbeat) | rekomendacja |
+| Realtime | Socket.IO (ma gotowy reconnect, backoff, heartbeat) | ustalone (2026-09-28) |
 | ORM | Prisma | ustalone |
 | Auth | — | **DO USTALENIA** |
 | Testy | Vitest (jednostkowe) + Playwright (e2e) | rekomendacja |
