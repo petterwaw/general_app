@@ -14,6 +14,7 @@ import {
 } from '@dice-app/contracts';
 import { GameService } from './game.service';
 import { ZodValidationPipe } from '../utils/zod-validation.pipe';
+import { hostCookieOptions } from '../utils/host-cookie';
 
 @Controller('games')
 export class GameController {
@@ -29,11 +30,7 @@ export class GameController {
     const result = await this.gameService.create(input, idempotencyKey, hostSecretFrom(request));
 
     if (result.hostSecret) {
-      response.cookie('host_secret', result.hostSecret, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-      });
+      response.cookie('host_secret', result.hostSecret, hostCookieOptions);
     }
 
     return result.game;
