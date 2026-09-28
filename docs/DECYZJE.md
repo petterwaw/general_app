@@ -81,6 +81,10 @@ Dopóki gracz nie zapisze kategorii, wszystko w jego turze jest szkicem: wykonan
 kości, wpisane wartości kości fizycznych. Poprawki w obrębie szkicu są dozwolone i darmowe —
 zakładamy, że host mógł się pomylić przy przepisywaniu.
 
+**Wyjątek przy kościach fizycznych** (ustalone 2026-09-28): wpisane kości można poprawiać tylko
+do „Confirm”. Po zatwierdzeniu są zablokowane, a szkicem pozostaje już tylko wybór kategorii.
+Poprawianie kości po „Confirm” może kiedyś dojść — bez terminu.
+
 W momencie zapisania kategorii szkic zamienia się we wpis w logu zdarzeń i **nie da się go
 cofnąć**. Nie implementuj zdarzeń kompensacyjnych ani cofania całych tur.
 

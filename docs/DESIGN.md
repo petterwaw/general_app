@@ -60,7 +60,7 @@ wartości. Ten plik opisuje, **jak** ich używać.
   polach aktywnego gracza pojawiają się podpowiedzi punktów (obwódka `primary`). Pierwszy klik
   w pole zaznacza kategorię (wypełnienie `primary`) i pokazuje obok okrągły **ptaszek**
   w kolorze `good`; dopiero klik w ptaszek zapisuje. Klik gdziekolwiek indziej albo Esc anuluje
-  zaznaczenie. Poprawienie kości po „Confirm” chowa podpowiedzi do ponownego potwierdzenia.
+  zaznaczenie. Po „Confirm” kości są zablokowane do końca tury (`DECYZJE.md` §4).
   Podpowiedź jest tylko podpowiedzią — punkty zawsze przelicza serwer (`DECYZJE.md` §4).
   Ptaszek **wyskakuje jak bańka** (ta sama animacja co kości), a pod palcem się wciska. Po
   zapisie liczba w komórce wyskakuje, a komórka na chwilę błyska na zielono (`good-soft`)

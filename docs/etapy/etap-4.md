@@ -15,7 +15,7 @@ i podpięty pod API (gałąź `ui/game-screen`); wyjście z gry, ekran `/games` 
 i karta niedokończonej gry hosta (gałąź `ui/wire-api`, PR #8); zakończona gra zostaje na ekranie
 gry z zablokowanymi kośćmi; log gry pod graczami i ekran gry dopasowany do telefonów
 (`f1338c3`); ekran końca gry z wynikami i animacje stołu (gałąź `ux/game-end-and-dice-motion`).
-Poza kryterium zostaje: przestylowanie lobby i poprawianie kości po „Confirm”.
+Poprawianie kości po „Confirm” świadomie odłożone (2026-09-28, `DECYZJE.md` §4).
 
 ## Komponenty UI — 2026-09-25
 
@@ -88,13 +88,13 @@ z nawiasami (`app/games/[gameId]/`) — klasy dopisane tam pojawiają się dopie
 
 Dług / do zrobienia w tym etapie:
 
-- **Poprawienie kości po „Confirm”** — serwer odrzuca drugi `roll` w tej samej turze („Roll
-  was already made”), a `DECYZJE.md` §4 i `DESIGN.md` zakładają, że do zapisu kategorii kości
-  są szkicem. Na razie UI blokuje kości po zatwierdzeniu. Wymaga zmiany w API.
+- ~~**Poprawienie kości po „Confirm”**~~ — świadomie odłożone (2026-09-28): po „Confirm” kości
+  zostają zablokowane, `DECYZJE.md` §4. Gdyby wróciło: serwer odrzuca drugi `roll` w tej samej
+  turze („Roll was already made”), więc wymaga to zmiany w API.
 - Podpięcie API: ~~Game log~~ — zrobione (2026-09-26, wpis niżej); ekran końca gry z `finalScore` (`gameView.tsx` przy `COMPLETED`
   pokazuje na razie zwykły ekran gry z zablokowanymi kośćmi — wpis z 2026-09-26). „Leave game”
   i niedokończona gra hosta — zrobione, wpis niżej.
-- Przestylowanie lobby (tworzenie gry — zrobione, wpis niżej).
+- ~~Przestylowanie lobby~~ — zrobione (tworzenie gry i lobby, wpisy niżej).
 - ~~Ptaszek przy zaznaczonym polu w ostatniej kolumnie wystaje poza komórkę.~~ — w ostatniej
   kolumnie jest po lewej stronie pola (2026-09-26, wpis niżej).
 - Kolory spoza tokenów: `text-[#cfc6ea]` w `TurnPill`, `bg-white/55` / `bg-white/60`.
