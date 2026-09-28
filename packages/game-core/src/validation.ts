@@ -1,5 +1,4 @@
-import type { Category, DiceRoll, ScoreCard } from './types.js'
-import { dispatchPoints } from './scoring.js'
+import type { Category, ScoreCard } from './types.js'
 
 type Section = 'upper' | 'lower' | 'chance'
 
@@ -20,27 +19,13 @@ export function isCategoryFree(scoreCard: ScoreCard, category: Category): boolea
     return false
 }
 
+// Only upper categories with points count; a zero written there does not (docs/ZASADY-GRY.md).
 export function isLowerSectionUnlocked(scoreCard: ScoreCard): boolean {
     const count = UPPER_CATEGORIES
-        .filter((category) => !isCategoryFree(scoreCard, category))
+        .filter((category) => (scoreCard[category] ?? 0) > 0)
         .length
 
     return count >= 3
-}
-
-export function isRollScoringInCategory(dice: DiceRoll, category: Category): boolean { 
-    if (dispatchPoints(category, dice) > 0) return true
-    return false
-}
-
-export function isForcedZero(dice: DiceRoll, scoreCard: ScoreCard): boolean {
-    const categoriesToCheck = isLowerSectionUnlocked(scoreCard) ? [...UPPER_CATEGORIES, ...LOWER_CATEGORIES] : UPPER_CATEGORIES
-
-    const hasScoringOption = categoriesToCheck
-        .filter((category) => isCategoryFree(scoreCard, category))
-        .some((category) => isRollScoringInCategory(dice, category))
-
-    return !hasScoringOption
 }
 
 export function canWriteChance(scoreCard: ScoreCard): boolean {

@@ -44,19 +44,15 @@ Podział: **6 kategorii w sekcji górnej + 9 w sekcji dolnej = 15**. To zgadza s
 Żeby wpisać realny wynik w kategorii górnej sekcji, potrzeba minimum 3 kości o danej wartości
 (np. 3x6 daje 18 pkt). Może wypaść nawet 5 takich kości — wtedy liczymy 5x6, czyli 30 pkt.
 
-Sekcja dolna odblokowuje się do **aktywnego** uzupełniania dopiero, gdy wypełnione są 3
-kategorie w sekcji górnej (obojętnie, realnym wynikiem czy zerem). Jeśli w danej turze gracz
-nie osiąga progu 3 sztuk w żadnej kategorii górnej, a sekcja dolna nie jest jeszcze
-odblokowana, to mimo blokady **musi** wpisać zero w wybraną kategorię w sekcji dolnej —
-blokada dotyczy tylko aktywnego, korzystnego wpisywania wyniku, nie wymuszonego zera.
+Sekcja dolna odblokowuje się do wpisywania **punktów** dopiero, gdy **3 kategorie w sekcji
+górnej mają zdobyte punkty**. Zero wpisane w kategorię górną się do tego nie liczy (ustalone
+2026-09-27). Do zablokowanej kategorii dolnej można wpisać tylko zero.
+
+**Zero można wpisać zawsze** — w dowolną wolną kategorię, górną albo dolną (także
+zablokowaną), nawet gdy inna kategoria by punktowała (ustalone 2026-09-27).
 
 **Wyjątek — Szansa.** Kategoria „Szansa" **nie podlega blokadzie sekcji dolnej**. Można ją
 wpisać zawsze, gdy jest wolna, niezależnie od tego, ile kategorii górnych jest wypełnionych.
-
-Szansa nie liczy się także przy ustalaniu, czy gracz jest zmuszony wpisać zero: to, że Szansa
-jest jeszcze wolna i punktowałaby, **nie znosi** wymuszonego zera w innej kategorii. Wymuszone
-zero sprawdzamy wyłącznie wśród pozostałych 14 kategorii (górnych zawsze, dolnych tylko gdy
-sekcja dolna jest odblokowana).
 
 **Bonus sekcji górnej:** próg — 63, wartość — 35
 

@@ -9,7 +9,8 @@ w połowie partii niczego nie psuje (przeniesione z etapu 3, 2026-09-25).
 > **Tu następuje przerwa.** Właściciel gra kilka partii i zgłasza poprawki, zanim ruszamy dalej.
 
 **Postęp: KRYTERIUM SPEŁNIONE (2026-09-27).** Pełna partia rozegrana przy stole, restart
-serwera w połowie partii sprawdzony ręcznie (wpis na końcu). Ekran gry złożony z komponentów
+serwera w połowie partii sprawdzony ręcznie, od 2026-09-28 także testem e2e (wpisy na końcu).
+Ekran gry złożony z komponentów
 i podpięty pod API (gałąź `ui/game-screen`); wyjście z gry, ekran `/games` w nowym designie
 i karta niedokończonej gry hosta (gałąź `ui/wire-api`, PR #8); zakończona gra zostaje na ekranie
 gry z zablokowanymi kośćmi; log gry pod graczami i ekran gry dopasowany do telefonów
@@ -339,3 +340,38 @@ Poza kryterium etapu, dopisane po partii przy stole.
 Dług: widz nie widzi zmian bez odświeżenia (realtime — etap 6); ekranów gry wygasłej,
 `error.tsx` i `global-error.tsx` nie widziano w przeglądarce; widoku hosta po tej zmianie nie
 sprawdzono w przeglądarce (pokrywają go testy e2e).
+
+## Nowa reguła sekcji dolnej i luki w testach — 2026-09-28
+
+Gałąź `test/coverage-gaps`.
+
+- **Reguła sekcji dolnej** (ustalona 2026-09-27, `ZASADY-GRY.md`) — sekcję dolną odblokowują
+  3 kategorie górne **z punktami**; zero w górnej się nie liczy. Zero można wpisać zawsze,
+  w dowolną wolną kategorię. „Wymuszone zero” przestało istnieć: z `game-core` usunięte
+  `isForcedZero` i `isRollScoringInCategory`, reducer nie rzuca już „category is locked” —
+  zablokowana kategoria dolna przyjmuje zapis i dostaje 0. `scoreCard.tsx` pozwala kliknąć
+  każdą wolną kategorię bieżącego gracza.
+- **Testy `game-core`** wyprowadzone od nowa z nowych zasad (zero w zablokowanej dolnej i w
+  górnej mimo punktującego rzutu, zera w górnej nie odblokowują, niezmienność stanu, gra
+  jednoosobowa, dwie pary z karety/generała). Vitest uruchamia tylko `src/`, nie stare pliki
+  z `dist/`.
+- **Restart serwera ma test automatyczny** — `game-restart.e2e-spec.ts`: partia przerwana
+  w środku tury jest kontynuowana na nowej instancji aplikacji z tym samym ciasteczkiem hosta.
+- **Równoczesne żądania** — `game-concurrency.e2e-spec.ts`: jedna aktywna gra na urządzenie
+  hosta, podwójne utworzenie gry, podwójny zapis kategorii, podwójny rzut, `revision` zgodne
+  z logiem zdarzeń przy równoczesnych `join`.
+- **Kontrakt** — `score` z polem `points` jest odrzucany (400), punkty liczy serwer
+  (`DECYZJE.md` §4).
+- **CI** — build paczek, `typecheck` wszystkich projektów, `web build`; `api` dostało skrypt
+  `typecheck`.
+
+Sprawdzone: `game-core` 114/114, `api` jednostkowe 4/4, `api` e2e 74/74, typecheck
+`game-core` / `contracts` / `api` / `web` zielony.
+
+Dług:
+
+- `web build` nie był uruchomiony lokalnie — pierwszy raz pójdzie w CI.
+- `web` nie ma skryptu `typecheck`, więc `pnpm -r run typecheck` go pomija; typy `web`
+  sprawdza w CI dopiero `web build`.
+- Odblokowanie sekcji dolnej liczone jest z karty przy każdym zapisie, więc w grach trwających
+  w bazie przed zmianą reguła zmienia się w trakcie partii (zera w górnej przestają się liczyć).

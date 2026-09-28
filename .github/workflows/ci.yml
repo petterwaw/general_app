@@ -37,6 +37,13 @@ jobs:
 
       - run: pnpm --filter api exec prisma generate
 
+      # web and api import the workspace packages from their dist/
+      - run: pnpm --filter "./packages/**" build
+
+      - run: pnpm -r run typecheck
+
+      - run: pnpm --filter web build
+
       - run: pnpm --filter @dice-app/game-core test
 
       - run: pnpm --filter api exec prisma migrate deploy
