@@ -11,7 +11,7 @@ import type {
 import { apiRequest } from './client';
 
 export function createGame(players: string[]) {
-  const body: CreateGameInput = { players };
+  const body: CreateGameInput = { mode: 'LOCAL', players };
   return apiRequest<GameView>('/games', { method: 'POST', body });
 }
 

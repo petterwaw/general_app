@@ -18,8 +18,11 @@ export function toGameView(game: GameWithParticipants, isHost: boolean): GameVie
     id: game.id,
     status: game.status,
     revision: game.revision,
+    diceSource: game.diceSource,
     currentPlayerId: game.currentPlayerId,
     currentDice: diceRollSchema.nullable().parse(game.currentDice),
+    rollNumber: game.rollNumber,
+    heldInLastRoll: game.heldInLastRoll,
     participants: game.participants.map((participant) => ({
       id: participant.id,
       name: participant.name,

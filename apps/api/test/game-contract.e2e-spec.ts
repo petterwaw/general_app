@@ -27,7 +27,7 @@ describe('Games API contract', () => {
             const response = await request(app.getHttpServer())
                 .post('/games')
                 .set('Idempotency-Key', 'contract-envelope')
-                .send({ players: ['Piotr'] });
+                .send({ mode: 'LOCAL', players: ['Piotr'] });
 
             expect(response.body).toEqual({
                 statusCode: 201,
@@ -40,7 +40,10 @@ describe('Games API contract', () => {
             const { game } = await createGame(['Piotr', 'Ania'], 'contract-fields');
 
             expect(Object.keys(game).sort()).toEqual(
-                ['createdAt', 'currentDice', 'currentPlayerId', 'id', 'isHost', 'participants', 'revision', 'status'],
+                [
+                    'createdAt', 'currentDice', 'currentPlayerId', 'diceSource', 'heldInLastRoll', 'id',
+                    'isHost', 'participants', 'revision', 'rollNumber', 'status',
+                ],
             );
 
             for (const participant of game.participants) {
@@ -67,12 +70,12 @@ describe('Games API contract', () => {
             const first = await request(app.getHttpServer())
                 .post('/games')
                 .set('Idempotency-Key', 'contract-create-replay')
-                .send({ players: ['Piotr', 'Ania'] });
+                .send({ mode: 'LOCAL', players: ['Piotr', 'Ania'] });
 
             const replay = await request(app.getHttpServer())
                 .post('/games')
                 .set('Idempotency-Key', 'contract-create-replay')
-                .send({ players: ['Piotr', 'Ania'] });
+                .send({ mode: 'LOCAL', players: ['Piotr', 'Ania'] });
 
             expect(first.headers['set-cookie']).toBeDefined();
             expect(replay.status).toBe(201);
@@ -128,7 +131,7 @@ describe('Games API contract', () => {
             const response = await request(app.getHttpServer())
                 .post('/games')
                 .set('Idempotency-Key', 'contract-9-players')
-                .send({ players: names(9) });
+                .send({ mode: 'LOCAL', players: names(9) });
 
             expect(response.status).toBe(400);
         });
@@ -147,11 +150,14 @@ describe('Games API contract', () => {
 
     describe('input validation', () => {
         it.each([
-            ['no players', { players: [] }],
-            ['whitespace-only name', { players: ['   '] }],
-            ['name longer than 50 characters', { players: ['x'.repeat(51)] }],
-            ['non-string name', { players: [42] }],
-            ['unknown field', { players: ['Piotr'], admin: true }],
+            ['no players', { mode: 'LOCAL', players: [] }],
+            ['whitespace-only name', { mode: 'LOCAL', players: ['   '] }],
+            ['name longer than 50 characters', { mode: 'LOCAL', players: ['x'.repeat(51)] }],
+            ['non-string name', { mode: 'LOCAL', players: [42] }],
+            ['unknown field', { mode: 'LOCAL', players: ['Piotr'], admin: true }],
+            ['no mode', { players: ['Piotr'] }],
+            ['unknown mode', { mode: 'REMOTE', players: ['Piotr'] }],
+            ['players list in an online game', { mode: 'ONLINE', players: ['Piotr'] }],
         ])('rejects create with %s', async (label, body) => {
             const response = await request(app.getHttpServer())
                 .post('/games')
@@ -171,7 +177,7 @@ describe('Games API contract', () => {
         it('requires the Idempotency-Key header', async () => {
             const response = await request(app.getHttpServer())
                 .post('/games')
-                .send({ players: ['Piotr'] });
+                .send({ mode: 'LOCAL', players: ['Piotr'] });
 
             expect(response.status).toBe(400);
         });

@@ -135,6 +135,19 @@ describe('Game results', () => {
     return eventsFrom(response.body);
   }
 
+  describe('active game slot', () => {
+    it('lets the device start a new game once the previous one is completed', async () => {
+      const { agent, gameId, playerId } = await startSoloGame('slot');
+      await playAll(agent, gameId, playerId, [...UPPER_AT_THRESHOLD, ...LOWER_SECTION], 'slot');
+
+      await agent
+        .post('/games')
+        .set('Idempotency-Key', 'slot-new')
+        .send({ mode: 'LOCAL', players: ['Piotr'] })
+        .expect(201);
+    });
+  });
+
   describe('final score', () => {
     it('stores the total with the upper bonus when the game ends', async () => {
       const { agent, gameId, playerId } = await startSoloGame('bonus');

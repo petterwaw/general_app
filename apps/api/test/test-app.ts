@@ -34,7 +34,7 @@ export async function createGame(app: INestApplication, players: string[], idemp
     const response = await agent
         .post('/games')
         .set('Idempotency-Key', idempotencyKey)
-        .send({ players });
+        .send({ mode: 'LOCAL', players });
 
     expect(response.status).toBe(201);
 

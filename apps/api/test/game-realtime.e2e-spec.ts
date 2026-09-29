@@ -74,7 +74,7 @@ describe('Realtime', () => {
     const created = await request(server)
       .post('/games')
       .set('Idempotency-Key', 'realtime-create')
-      .send({ players: ['Piotr', 'Ania'] })
+      .send({ mode: 'LOCAL', players: ['Piotr', 'Ania'] })
       .expect(201);
     const setCookie = created.get('Set-Cookie');
     if (!setCookie) {

@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  NotImplementedException,
 } from '@nestjs/common';
 import {
   createEmptyScoreCard,
@@ -50,7 +51,7 @@ export class GameService {
 
   /**
    * Creates a game hosted by this device. A device that already has a host cookie keeps its
-   * identity (no new secret), so the one-active-game-per-host index applies to it.
+   * identity (no new secret), so the one-active-game-per-device index applies to it.
    */
   async create(
     input: CreateGameInput,
@@ -58,6 +59,10 @@ export class GameService {
     currentHostSecret: string | undefined,
   ) {
     const key = requireIdempotencyKey(idempotencyKey);
+
+    if (input.mode. === 'ONLINE') {
+      
+    }
 
     // Replayed Idempotency-Key: return the game created by the first request, without its secret.
     const replayed = await this.findCreatedGame(key);
@@ -289,6 +294,7 @@ export class GameService {
               ...(gameOver && {
                 finalScore: totalScore(player.card),
                 upperBonus: upperBonus(player.card),
+                active: false,
               }),
             },
           }),
@@ -310,10 +316,12 @@ export class GameService {
   // Host leaves: the game is abandoned, which frees the host's active-game slot; abandoned games
   // never count towards statistics. Players leaving on their own comes with accounts.
   leave(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, (_tx, game) => {
+    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
       if (game.status !== 'LOBBY' && game.status !== 'IN_PROGRESS') {
         throw new BadRequestException('Game is already over');
       }
+
+      await tx.participant.updateMany({ where: { gameId: id }, data: { active: false } });
 
       return {
         actionType: 'hostLeft',

@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { CATEGORIES } from '@dice-app/game-core';
-import type { Category, DiceRoll, ScoreCard } from '@dice-app/game-core';
+import type { Category, DiceRoll, DiceSource, ScoreCard } from '@dice-app/game-core';
 
 export const MAX_PLAYERS = 8;
+export const MAX_ONLINE_PLAYERS = 5;
 export const PLAYER_NAME_MAX_LENGTH = 50;
 
 export { CATEGORIES };
@@ -33,9 +34,19 @@ export const scoreCardSchema = z.record(
   z.number().int().min(0).nullable(),
 ) satisfies z.ZodType<ScoreCard>;
 
-export const createGameSchema = z.strictObject({
-  players: z.array(playerNameSchema).min(1).max(MAX_PLAYERS),
-});
+// The client picks the mode; the server derives the dice source from it (DECYZJE.md §1).
+export const createGameSchema = z.discriminatedUnion('mode', [
+  // the host types in everyone at the table
+  z.strictObject({
+    mode: z.literal('LOCAL'),
+    players: z.array(playerNameSchema).min(1).max(MAX_PLAYERS),
+  }),
+  // the creator joins as the first player; the others join from their own devices
+  z.strictObject({
+    mode: z.literal('ONLINE'),
+    name: playerNameSchema,
+  }),
+]);
 
 export const joinGameSchema = z.strictObject({
   name: playerNameSchema,
@@ -44,6 +55,14 @@ export const joinGameSchema = z.strictObject({
 export const rollSchema = z.strictObject({
   playerId: z.string().min(1),
   dice: diceRollSchema,
+});
+
+// Virtual dice: the player is known from the device, so only the positions to keep are sent.
+export const rerollSchema = z.strictObject({
+  held: z
+    .array(z.number().int().min(0).max(4))
+    .max(5)
+    .refine((held) => new Set(held).size === held.length, 'Held positions must be distinct'),
 });
 
 export const scoreSchema = z.strictObject({
@@ -59,6 +78,7 @@ export const subscribeSchema = z.strictObject({
 export type CreateGameInput = z.infer<typeof createGameSchema>;
 export type JoinGameInput = z.infer<typeof joinGameSchema>;
 export type RollInput = z.infer<typeof rollSchema>;
+export type RerollInput = z.infer<typeof rerollSchema>;
 export type ScoreInput = z.infer<typeof scoreSchema>;
 export type SubscribeInput = z.infer<typeof subscribeSchema>
 
@@ -89,8 +109,14 @@ export type GameView = {
   id: string;
   status: GameStatus;
   revision: number;
+  // PHYSICAL for local games, VIRTUAL for online ones
+  diceSource: DiceSource;
   currentPlayerId: string | null;
   currentDice: DiceRoll | null;
+  // Virtual dice only: rolls made this turn (1–3; null outside a turn and for physical dice) and
+  // the positions that stayed on the table in the last roll, so viewers animate only the rest.
+  rollNumber: number | null;
+  heldInLastRoll: number[];
   participants: ParticipantView[];
   // ISO timestamp
   createdAt: string;

@@ -57,7 +57,7 @@ describe('Host rules', () => {
       const response = await agent
         .post('/games')
         .set('Idempotency-Key', 'one-game-second')
-        .send({ players: ['Piotr'] });
+        .send({ mode: 'LOCAL', players: ['Piotr'] });
 
       expect(response.status).toBe(409);
     });
@@ -68,7 +68,7 @@ describe('Host rules', () => {
       const response = await agent
         .post('/games')
         .set('Idempotency-Key', 'one-game-replay')
-        .send({ players: ['Piotr'] });
+        .send({ mode: 'LOCAL', players: ['Piotr'] });
 
       expect(response.status).toBe(201);
       expect(gameFrom(response.body).id).toBe(game.id);
@@ -86,7 +86,7 @@ describe('Host rules', () => {
       const response = await agent
         .post('/games')
         .set('Idempotency-Key', 'one-game-after-leave-new')
-        .send({ players: ['Piotr'] });
+        .send({ mode: 'LOCAL', players: ['Piotr'] });
 
       expect(response.status).toBe(201);
       // the device keeps its identity, so no new host cookie is issued
@@ -184,7 +184,7 @@ describe('Host rules', () => {
       const response = await request(app.getHttpServer())
         .post('/games')
         .set('Idempotency-Key', 'cookie-lifetime-create')
-        .send({ players: ['Piotr'] });
+        .send({ mode: 'LOCAL', players: ['Piotr'] });
 
       expect(hostCookieFrom(response.get('Set-Cookie'))).toContain(`Max-Age=${NINETY_DAYS_IN_SECONDS}`);
     });
@@ -193,7 +193,7 @@ describe('Host rules', () => {
       const created = await request(app.getHttpServer())
         .post('/games')
         .set('Idempotency-Key', 'cookie-lifetime-refresh')
-        .send({ players: ['Piotr'] });
+        .send({ mode: 'LOCAL', players: ['Piotr'] });
       const issued = hostCookieFrom(created.get('Set-Cookie'));
 
       const visit = await request(app.getHttpServer())
