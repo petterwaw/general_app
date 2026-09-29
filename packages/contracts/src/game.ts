@@ -135,6 +135,8 @@ type GameEventBase = {
 export type GameEventView =
   | (GameEventBase & { type: 'gameStarted' })
   | (GameEventBase & { type: 'diceConfirmed'; playerId: string; dice: DiceRoll })
+  // virtual dice: the dice after the roll and the positions that stayed on the table
+  | (GameEventBase & { type: 'diceRolled'; playerId: string; dice: DiceRoll; held: number[] })
   | (GameEventBase & {
       type: 'categorySaved';
       playerId: string;

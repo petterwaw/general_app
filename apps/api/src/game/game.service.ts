@@ -13,6 +13,8 @@ import {
   totalScore,
   upperBonus,
   GameRuleError,
+  type DiceRoll,
+  type DieFace,
   type GameState,
 } from '@dice-app/game-core';
 import {
@@ -30,7 +32,7 @@ import {
 } from '@dice-app/contracts';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, randomInt, createHash } from 'crypto';
 import { gameInclude, toGameView, type GameWithParticipants } from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
 import { GameUpdates } from './game-updates';
@@ -39,6 +41,9 @@ type GameAction = {
   actionType: string;
   payload: Prisma.InputJsonValue;
   update?: Prisma.GameUncheckedUpdateInput;
+  // The next turn's first roll, made by the server in the same transaction and logged as its
+  // own event right after this one.
+  autoRoll?: Prisma.InputJsonValue;
 };
 
 type ActionAccess = { hostOnly: false } | { hostOnly: true; hostSecret: string | undefined };
@@ -212,20 +217,57 @@ export class GameService {
         throw new BadRequestException('Game has already started');
       }
 
+      if (game.participants.length < 2 && game.diceSource === 'VIRTUAL') {
+        throw new BadRequestException('Needs atleast 2 players to start');
+      }
+
       const firstPlayer = game.participants[0];
 
       if (!firstPlayer) {
         throw new BadRequestException('Game needs at least one player');
       }
 
-      return {
-        actionType: 'gameStarted',
-        payload: { firstPlayerId: firstPlayer.id },
-        update: {
-          status: 'IN_PROGRESS',
-          currentPlayerId: firstPlayer.id,
-        },
+      if (game.diceSource === 'PHYSICAL') {
+        return {
+          actionType: 'gameStarted',
+          payload: { firstPlayerId: firstPlayer.id },
+          update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id },
+        };
+      }
+
+      const players = game.participants.map((player) => ({
+        id: player.id,
+        name: player.name,
+        card: scoreCardSchema.parse(player.scoreCard),
+      }))
+
+      const state: GameState = {
+        diceSource: 'VIRTUAL',
+        players: players,                 
+        currentPlayerId: players[0].id,
+        turn: { rollNumber: 0 },                    
       };
+
+      const rolled = reducer(state, {
+        type: 'roll',
+        playerId: state.currentPlayerId,
+        held: [],                   
+        rolled: drawDice(),
+      });
+
+
+      if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
+        throw new Error('The first roll did not happen');
+      }
+      const { dice, rollNumber, heldInLastRoll } = rolled.turn;
+
+      return {
+          actionType: 'gameStarted',
+          payload: { firstPlayerId: firstPlayer.id },
+          update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id, currentDice: dice, rollNumber: rollNumber, heldInLastRoll: heldInLastRoll},
+          autoRoll: {playerId: firstPlayer.id, roll: dice, held: heldInLastRoll}
+        };
+
     });
   }
 
@@ -419,7 +461,7 @@ export class GameService {
         }
 
         const game = await loadGame(tx, id);
-        const { actionType, payload, update } = await apply(tx, game);
+        const { actionType, payload, update, autoRoll } = await apply(tx, game);
 
         // Optimistic lock: the update matches nothing (P2025) if another action bumped the revision.
         const updatedGame = await tx.game
@@ -427,7 +469,7 @@ export class GameService {
             where: { id, revision: game.revision },
             data: {
               ...update,
-              revision: { increment: 1 },
+              revision: { increment: autoRoll ? 2 : 1 },
               lastActivity: new Date(),
             },
             include: gameInclude,
@@ -444,10 +486,22 @@ export class GameService {
             gameId: id,
             actionType,
             payload,
-            revisionAfter: updatedGame.revision,
+            revisionAfter: autoRoll ? updatedGame.revision - 1 : updatedGame.revision,
             idempotencyKey: key,
           },
         });
+
+        if (autoRoll) {
+          await tx.eventLog.create({
+            data: {
+              gameId: id,
+              actionType: 'diceRolled',
+              payload: autoRoll,
+              revisionAfter: updatedGame.revision,
+              idempotencyKey: `${key}:roll`,
+            },
+          });
+        }
         updatedGameToSend = updatedGame;
         return toGameView(updatedGame, access.hostOnly);
       });
@@ -566,6 +620,13 @@ function requireIdempotencyKey(idempotencyKey: string | undefined): string {
   }
 
   return idempotencyKey;
+}
+
+const DIE_FACES: DieFace[] = [1, 2, 3, 4, 5, 6];
+
+function drawDice(): DiceRoll {
+  const face = () => DIE_FACES[randomInt(DIE_FACES.length)];
+  return [face(), face(), face(), face(), face()];
 }
 
 function hashSecret(secret: string) {

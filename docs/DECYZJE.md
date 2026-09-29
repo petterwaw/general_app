@@ -324,6 +324,8 @@ przyjęte od klienta.
 
 - start gry,
 - kości wpisane w turze (wszystkie 5),
+- każdy rzut kośćmi wirtualnymi — z kośćmi po rzucie i tym, które zostały zatrzymane
+  (ustalone 2026-09-29),
 - zapisaną kategorię z punktami.
 
 Pozostałe zdarzenia (np. dołączenie gracza) zostają w bazie, ale nie wychodzą na zewnątrz.

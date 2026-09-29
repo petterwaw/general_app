@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import type { ApiResponse, GameView } from '@dice-app/contracts';
+import type { ApiResponse, GameEventView, GameView } from '@dice-app/contracts';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { cleanDatabase, createGame, createTestApp } from './test-app';
 
@@ -12,6 +12,10 @@ type Agent = ReturnType<typeof request.agent>;
 // supertest types every body as `any`; responses are read through the shared contract instead.
 function gameFrom(body: unknown): GameView {
   return (body as ApiResponse<GameView>).data;
+}
+
+function eventsFrom(body: unknown): GameEventView[] {
+  return (body as ApiResponse<GameEventView[]>).data;
 }
 
 describe('Online games', () => {
@@ -46,6 +50,20 @@ describe('Online games', () => {
 
   function join(player: Agent, gameId: string, name: string, key: string) {
     return player.post(`/games/${gameId}/join`).set('Idempotency-Key', key).send({ name });
+  }
+
+  function start(agent: Agent, gameId: string, key: string) {
+    return agent.post(`/games/${gameId}/start`).set('Idempotency-Key', key).send();
+  }
+
+  // A lobby with the creator and one more player, each on their own device.
+  async function createLobbyOfTwo(key: string) {
+    const creator = device();
+    const player = device();
+    const game = await createOnlineGame(creator, 'Piotr', `${key}-create`);
+    await join(player, game.id, 'Ania', `${key}-join`).expect(201);
+
+    return { creator, player, game };
   }
 
   describe('creating', () => {
@@ -143,6 +161,71 @@ describe('Online games', () => {
       const response = await join(device(), 'missing-game', 'Ania', 'online-join-missing');
 
       expect(response.status).toBe(404);
+    });
+  });
+
+  describe('starting', () => {
+    it('lets the creator start with two players and rolls for the first player', async () => {
+      const { creator, game } = await createLobbyOfTwo('online-start');
+
+      const response = await start(creator, game.id, 'online-start');
+
+      expect(response.status).toBe(201);
+      const started = gameFrom(response.body);
+      expect(started.status).toBe('IN_PROGRESS');
+      expect(started.currentPlayerId).toBe(game.participants[0].id);
+      expect(started.rollNumber).toBe(1);
+      expect(started.heldInLastRoll).toEqual([]);
+      expect(started.currentDice).toHaveLength(5);
+      for (const die of started.currentDice!) {
+        expect(die).toBeGreaterThanOrEqual(1);
+        expect(die).toBeLessThanOrEqual(6);
+      }
+    });
+
+    it('logs the start and then the first roll with its player and dice', async () => {
+      const { creator, game } = await createLobbyOfTwo('online-start-log');
+      const started = gameFrom((await start(creator, game.id, 'online-start-log')).body);
+
+      const response = await creator.get(`/games/${game.id}/events`).expect(200);
+
+      expect(eventsFrom(response.body)).toEqual([
+        expect.objectContaining({ type: 'gameStarted', revision: started.revision - 1 }),
+        expect.objectContaining({
+          type: 'diceRolled',
+          playerId: game.participants[0].id,
+          dice: started.currentDice,
+          held: [],
+          revision: started.revision,
+        }),
+      ]);
+    });
+
+    it('rejects a start by a player who did not create the game with 403', async () => {
+      const { player, game } = await createLobbyOfTwo('online-start-player');
+
+      const response = await start(player, game.id, 'online-start-player');
+
+      expect(response.status).toBe(403);
+    });
+
+    it('rejects a start with the creator alone with 400', async () => {
+      const creator = device();
+      const game = await createOnlineGame(creator, 'Piotr', 'online-start-alone-create');
+
+      const response = await start(creator, game.id, 'online-start-alone');
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns the same roll when the start is replayed', async () => {
+      const { creator, game } = await createLobbyOfTwo('online-start-replay');
+      const first = gameFrom((await start(creator, game.id, 'online-start-replay')).body);
+
+      const replayed = gameFrom((await start(creator, game.id, 'online-start-replay')).body);
+
+      expect(replayed.revision).toBe(first.revision);
+      expect(replayed.currentDice).toEqual(first.currentDice);
     });
   });
 });
