@@ -31,7 +31,7 @@ import {
   type ScoreInput,
 } from '@dice-app/contracts';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '../../generated/prisma/client';
+import { Prisma, type Participant } from '../../generated/prisma/client';
 import { randomBytes, randomInt, createHash } from 'crypto';
 import { gameInclude, toGameView, type GameWithParticipants } from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
@@ -46,7 +46,10 @@ type GameAction = {
   autoRoll?: Prisma.InputJsonValue;
 };
 
-type ActionAccess = { hostOnly: false } | { hostOnly: true; hostSecret: string | undefined };
+type ActionAccess =
+  | { kind: 'anyone' }
+  | { kind: 'host'; secret: string | undefined }
+  | { kind: 'player'; secret: string | undefined };
 
 @Injectable()
 export class GameService {
@@ -181,7 +184,7 @@ export class GameService {
       const game = await this.runAction(
         id,
         idempotencyKey,
-        { hostOnly: true, hostSecret: secret },
+        { kind: 'host', secret },
         (tx, game) => addPlayer(tx, game, input.name, MAX_PLAYERS, null),
       );
       return { game, newSecret: null };
@@ -197,7 +200,7 @@ export class GameService {
       : identity!.id;
 
     try {
-      const game = await this.runAction(id, idempotencyKey, { hostOnly: false }, (tx, game) =>
+      const game = await this.runAction(id, idempotencyKey, { kind: 'anyone' }, (tx, game) =>
         addPlayer(tx, game, input.name, MAX_ONLINE_PLAYERS, identityId),
       );
       return { game, newSecret };
@@ -212,7 +215,7 @@ export class GameService {
   }
 
   start(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, (_tx, game) => {
+    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, (_tx, game) => {
       if (game.status !== 'LOBBY') {
         throw new BadRequestException('Game has already started');
       }
@@ -243,15 +246,15 @@ export class GameService {
 
       const state: GameState = {
         diceSource: 'VIRTUAL',
-        players: players,                 
+        players: players,
         currentPlayerId: players[0].id,
-        turn: { rollNumber: 0 },                    
+        turn: { rollNumber: 0 },
       };
 
       const rolled = reducer(state, {
         type: 'roll',
         playerId: state.currentPlayerId,
-        held: [],                   
+        held: [],
         rolled: drawDice(),
       });
 
@@ -262,11 +265,11 @@ export class GameService {
       const { dice, rollNumber, heldInLastRoll } = rolled.turn;
 
       return {
-          actionType: 'gameStarted',
-          payload: { firstPlayerId: firstPlayer.id },
-          update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id, currentDice: dice, rollNumber: rollNumber, heldInLastRoll: heldInLastRoll},
-          autoRoll: {playerId: firstPlayer.id, roll: dice, held: heldInLastRoll}
-        };
+        actionType: 'gameStarted',
+        payload: { firstPlayerId: firstPlayer.id },
+        update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id, currentDice: dice, rollNumber: rollNumber, heldInLastRoll: heldInLastRoll },
+        autoRoll: { playerId: firstPlayer.id, roll: dice, held: heldInLastRoll }
+      };
 
     });
   }
@@ -277,7 +280,7 @@ export class GameService {
     idempotencyKey: string | undefined,
     hostSecret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, (_tx, game) => {
+    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, (_tx, game) => {
       assertPlayersTurn(game, input.playerId);
 
       if (game.currentDice) {
@@ -298,7 +301,7 @@ export class GameService {
     idempotencyKey: string | undefined,
     hostSecret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
+    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, async (tx, game) => {
       assertPlayersTurn(game, input.playerId);
 
       if (!game.currentDice) {
@@ -370,7 +373,7 @@ export class GameService {
   // Host leaves: the game is abandoned, which frees the host's active-game slot; abandoned games
   // never count towards statistics. Players leaving on their own comes with accounts.
   leave(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
+    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, async (tx, game) => {
       if (game.status !== 'LOBBY' && game.status !== 'IN_PROGRESS') {
         throw new BadRequestException('Game is already over');
       }
@@ -396,7 +399,7 @@ export class GameService {
     idempotencyKey: string | undefined,
     hostSecret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
+    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, async (tx, game) => {
       if (game.status !== 'LOBBY') {
         throw new BadRequestException('Players can only be removed in the lobby');
       }
@@ -444,10 +447,24 @@ export class GameService {
     apply: (
       tx: Prisma.TransactionClient,
       game: GameWithParticipants,
+      asking: Participant | null,
     ) => GameAction | Promise<GameAction>,
   ): Promise<GameView> {
-    if (access.hostOnly) {
-      await this.verifyHost(id, access.hostSecret);
+
+    let asking: Participant | null;
+    switch (access.kind) {
+      case 'host':
+        asking = await this.verifyHost(id, access.secret);
+        break;
+      case 'player':
+        asking = await this.findParticipant(id, access.secret);
+        if (!asking) {
+          throw new ForbiddenException('This device does not play in this game');
+        }
+        break;
+      case 'anyone':
+        asking = null;
+        break;
     }
 
     const key = requireIdempotencyKey(idempotencyKey);
@@ -457,11 +474,11 @@ export class GameService {
     try {
       const view = await this.prisma.$transaction(async (tx) => {
         if (await findEvent(tx, id, key)) {
-          return toGameView(await loadGame(tx, id), access.hostOnly);
+          return toGameView(await loadGame(tx, id), asking?.role === 'HOST');
         }
 
         const game = await loadGame(tx, id);
-        const { actionType, payload, update, autoRoll } = await apply(tx, game);
+        const { actionType, payload, update, autoRoll } = await apply(tx, game, asking);
 
         // Optimistic lock: the update matches nothing (P2025) if another action bumped the revision.
         const updatedGame = await tx.game
@@ -503,7 +520,7 @@ export class GameService {
           });
         }
         updatedGameToSend = updatedGame;
-        return toGameView(updatedGame, access.hostOnly);
+        return toGameView(updatedGame, asking?.role === 'HOST');
       });
 
       // The transaction has committed: only now may other clients see the new state.
@@ -514,7 +531,7 @@ export class GameService {
     } catch (error) {
       // A concurrent request with the same key won the race — return its result.
       if (isUniqueViolation(error) && (await findEvent(this.prisma, id, key))) {
-        return toGameView(await loadGame(this.prisma, id), access.hostOnly);
+        return toGameView(await loadGame(this.prisma, id), asking?.role === 'HOST');
       }
 
       throw error;
@@ -542,6 +559,19 @@ export class GameService {
         gameId,
         role: 'HOST',
         identity: { secretHash: hashSecret(hostSecret) },
+      },
+    });
+  }
+
+  private async findParticipant(gameId: string, secret: string | undefined) {
+    if (!secret) {
+      return null;
+    }
+
+    return this.prisma.participant.findFirst({
+      where: {
+        gameId,
+        identity: { secretHash: hashSecret(secret) },
       },
     });
   }
