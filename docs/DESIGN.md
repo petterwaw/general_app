@@ -71,6 +71,11 @@ wartości. Ten plik opisuje, **jak** ich używać.
   koniec tury — po zapisie kategorii i na końcu gry — kości **pękają po kolei od lewej**
   (`bubble-out`, co 70 ms), a pod nimi są już puste pola następnej tury. Kości widoczne przy
   wejściu na ekran stoją w miejscu.
+- **Kości wirtualne** (ustalone 2026-09-29, do zbudowania z trybem online). Zamiast „Confirm”
+  przycisk **„Reroll”**, obok licznik wykonanych rzutów. Klik w kość zaznacza ją do
+  zatrzymania (ramka) — tylko na urządzeniu rzucającego. Przy rzucie przelosowane kości
+  schodzą i wchodzą **po kolei od lewej, z lekkim opóźnieniem** między kolejnymi; zatrzymane
+  stoją w miejscu. Inni gracze widzą tę samą animację na podstawie zatrzymanych kości z rzutu.
 - **Rozmiar kości liczony od szerokości kolumny z tacą** (container query, `cqi`), nie od okna —
   inaczej taca wychodzi poza swoją kolumnę.
 - **Pasek tury** („Kuba's turn · round 7 of 15”) na dolnej krawędzi tacy, z awatarem gracza.

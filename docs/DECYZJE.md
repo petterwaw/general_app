@@ -95,6 +95,18 @@ cofnąć**. Nie implementuj zdarzeń kompensacyjnych ani cofania całych tur.
 **W trybie online nie ma czego cofać** — gracz nigdy nie wpisuje wartości kości, dostaje je
 z serwera. Edytowalne jest wyłącznie to, które kości odkłada przed kolejnym rzutem.
 
+**Tura na kościach wirtualnych** (ustalone 2026-09-29):
+
+- Każdy rusza tylko swoimi kośćmi — rzuca i zapisuje wyłącznie gracz, którego jest tura.
+- **Pierwszy rzut wykonuje się sam** na starcie tury, w tej samej transakcji co zapis kategorii
+  poprzedniego gracza (albo start gry). Nie ma stanu „tura bez kości” widocznego dla graczy.
+- Po każdym rzucie gracz może zapisać kategorię albo rzucić jeszcze raz — **najwyżej 3 rzuty**.
+- Przed rzutem 2 i 3 gracz wybiera kości do zatrzymania; przelosowują się tylko pozostałe.
+  Wybór jest dowolny przy każdym rzucie — kość zatrzymaną wcześniej można odblokować.
+- Wybór zatrzymanych kości przed rzutem jest szkicem na urządzeniu gracza; inni widzą dopiero
+  wynik rzutu, a w nim, które kości zostały zatrzymane.
+- Punkty liczą się z kości na stole znanych serwerowi — akcja zapisu kategorii nie niesie kości.
+
 Krok potwierdzenia przed zapisem kategorii to decyzja frontendowa — ustalona 2026-09-25: dwa
 kliknięcia (zaznaczenie pola, potem ptaszek), szczegóły w `DESIGN.md`. Silnik gry dostaje gotową
 akcję „zapisz kategorię X" i nie musi o tym nic wiedzieć.
