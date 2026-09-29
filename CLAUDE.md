@@ -43,6 +43,15 @@ kwestia gustu" i mów wprost, które jest które. Wskaż też, co jest zrobione 
 
 Kod, nazwy zmiennych, commity i komentarze w kodzie — po angielsku.
 
+### Komentarze w kodzie — bez historii
+
+Komentarz opisuje kod taki, jaki jest teraz, i dlaczego jest taki. Nie piszesz w nim, jak było
+wcześniej, co próbowaliśmy i porzuciliśmy, jaki błąd poprawiła zmiana ani słów typu „now”,
+„still”, „used to”, „instead of the old…”. Historia jest w gicie i w `docs/etapy/`. Przy każdej
+edycji pliku nie dopisuj takich komentarzy, a te, które dotykasz, przepisz na stan bieżący.
+Nie komentuj też tego, co widać z samego kodu (np. po co `useRef`, że `connect` odpala się po
+reconnect) — komentarz zostaje tylko tam, gdzie bez niego nie da się zrozumieć decyzji.
+
 ### Agenci i skille
 
 - **`/commit`** — commit zgodny z konwencją tego repo (status/diff/log → wiadomość po
