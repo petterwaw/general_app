@@ -64,13 +64,11 @@ export default function ScoreReveal({ participants, startDelayMs, onLastStart, o
     if (last) onDone?.();
   }
 
-  // the first tile, once the screen behind it is ready
   useEffect(() => {
     const timer = setTimeout(() => showTile(0), startDelayMs);
     return () => clearTimeout(timer);
   }, [startDelayMs]);
 
-  // each counted score stays in the spotlight for a moment, then the next tile comes
   useEffect(() => {
     if (!counted || last) return;
     const timer = setTimeout(() => showTile(step + 1), PAUSE_MS);

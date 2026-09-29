@@ -69,7 +69,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selected, setSelected] = useState<Category | null>(null);
   const [pending, setPending] = useState(false);
-  // only the leave request disables "Leave game": tied to pending, it greyed out on every roll
+  // only the leave request disables "Leave game", not every pending action
   const [leaving, setLeaving] = useState(false);
   const showError = useErrorToast();
   const router = useRouter()
@@ -92,7 +92,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const leaveLabel = watching ? 'Leave spectating' : 'Leave game';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
-  // the panel has its own column now; the drawer must not pop back open when the window narrows
+  // the panel has its own column; the drawer must not pop back open when the window narrows
   if (layout === 'three' && drawerOpen) setDrawerOpen(false);
 
   const seat = participants.findIndex((participant) => participant.id === currentPlayerId);
@@ -255,7 +255,7 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           label="Players and game log"
           closeLabel="Close players and game log"
         >
-          {/* room for the close button, which used to sit beside the heading */}
+          {/* room for the close button */}
           <div className="flex h-full flex-col pt-12">
             <PlayersPanel participants={participants} log={log} />
           </div>

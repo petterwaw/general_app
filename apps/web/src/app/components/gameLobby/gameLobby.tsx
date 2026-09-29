@@ -179,7 +179,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             </span>
           </h2>
 
-          {/* plain text action, same as on the create form */}
           {!watching && (
             <button
               type="button"
@@ -201,7 +200,6 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             // the host always stays in their own game (the server refuses it too)
             const removable = !watching && participant.role !== 'HOST' && !isRemoving && !closing;
             return (
-              // faded while its removal is on the way
               <div
                 key={participant.id}
                 className={['motion-safe:animate-rise', isRemoving ? 'opacity-60' : ''].join(' ')}

@@ -66,7 +66,6 @@ export default function GamesPage() {
                 <Button size="lg" onClick={() => setView("create")}>
                   Create game
                 </Button>
-                {/* joining by code comes with stage 6 (QR and realtime) */}
                 <ComingSoon>
                   <Button size="lg" variant="ghost" disabled>
                     Join game

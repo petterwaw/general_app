@@ -58,7 +58,6 @@ export default function DiceEntry({
   function pick(value: DieFace) {
     if (active === -1) return;
     setRoll((current) => current.map((die, index) => (index === active ? value : die)) as LocalRoll);
-    // always jump to the next slot; past the last one entry is done
     setActive((current) => (current < 4 ? current + 1 : -1));
   }
 

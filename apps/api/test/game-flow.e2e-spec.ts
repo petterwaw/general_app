@@ -37,7 +37,6 @@ describe('Games full flow', () => {
         const gameId = createResponse.body.data.id;
         const hostId = createResponse.body.data.participants[0].id;
 
-        // 2. Join second player
         const joinResponse = await agent
             .post(`/games/${gameId}/join`)
             .set('Idempotency-Key', 'test-full-game-join')
@@ -50,7 +49,6 @@ describe('Games full flow', () => {
 
         const playerId = joinResponse.body.data.participants[1].id;
 
-        // 3. Start game
         const startResponse = await agent
             .post(`/games/${gameId}/start`)
             .set('Idempotency-Key', 'test-full-game-start')
@@ -80,7 +78,6 @@ describe('Games full flow', () => {
 
         const players = [hostId, playerId];
 
-        // 4. Play all 30 turns
         for (let turn = 0; turn < categories.length * players.length; turn++) {
             const currentPlayerId = players[turn % players.length];
             const category = categories[Math.floor(turn / players.length)];
@@ -117,7 +114,6 @@ describe('Games full flow', () => {
             }
         }
 
-        // 5. Verify final state in database
         const game = await prisma.game.findUnique({
             where: {
                 id: gameId,

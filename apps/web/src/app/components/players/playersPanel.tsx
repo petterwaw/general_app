@@ -56,7 +56,6 @@ export default function PlayersPanel({ participants, log }: PlayersPanelProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-6">
-      {/* no headings: the players and the log speak for themselves */}
       <div
         ref={listRef}
         style={fadeMask(fade.above, fade.below)}

@@ -21,7 +21,6 @@ export function ComingSoon({ children, className = "" }: ComingSoonProps) {
         {children}
       </Popover.Trigger>
       <Popover.Portal>
-        {/* above, as the tooltip was: a popover opens below by default */}
         <Popover.Positioner side="top" sideOffset={8}>
           <Popover.Popup
             // nothing to act on inside, so the focus stays on the trigger

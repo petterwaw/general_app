@@ -9,7 +9,6 @@ const DISC: Record<1 | 2 | 3, string> = {
 export default function Medal({ place }: { place: 1 | 2 | 3 }) {
   return (
     <svg width="32" height="36" viewBox="0 0 32 36" role="img" aria-label={`Place ${place}`}>
-      {/* ribbon */}
       <path d="M8 0h7l4 12h-7z" className="fill-primary" />
       <path d="M24 0h-7l-4 12h7z" className="fill-secondary" />
       <circle cx="16" cy="23" r="12" className={DISC[place]} />

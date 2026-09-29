@@ -54,15 +54,12 @@ function categorySaved(name: string, category: Category, points: number | null) 
 // Newest on top, right under the players. Entries that do not fit are simply cut off, no
 // scrolling; the bottom fades out, so the oldest entries seem to sink into the background and a
 // cut row is already transparent (a mask, not an overlay: the drawer has a different background).
-// Not flex-wrap: with no room left (many players in the drawer) every entry became its own
-// clipped column, thousands of pixels wide.
 export default function GameLog({ entries, participants }: GameLogProps) {
   const items = useRef(new Map<number, HTMLDivElement>());
   const lastTops = useRef(new Map<number, number>());
 
   // FLIP: the new entries take their room at once, and every older entry is drawn back where it
-  // was and slides down from there with a transform only. Animating the height instead made the
-  // browser redo the layout (and the fade mask) every frame, which stuttered.
+  // was and slides down from there with a transform only.
   useLayoutEffect(() => {
     const tops = new Map<number, number>();
     items.current.forEach((element, revision) => tops.set(revision, element.offsetTop));

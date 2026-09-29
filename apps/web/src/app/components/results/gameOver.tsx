@@ -208,7 +208,6 @@ export default function GameOver({ participants, onLeave, leaveLabel }: GameOver
             </div>
           </PixelCover>
 
-          {/* from the moment the winner starts counting: fireworks over everything */}
           {fireworks && <Fireworks />}
         </Dialog.Popup>
       </Dialog.Portal>

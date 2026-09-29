@@ -31,7 +31,6 @@ export default function useGame(gameId: string) {
     loading,
     error,
     setGame,
-    // asks the API again, e.g. after it could not be reached
     retry: () => setAttempt((count) => count + 1),
   };
 }

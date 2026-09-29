@@ -48,7 +48,6 @@ export default function GameView({ gameId }: { gameId: string }) {
     );
   }
 
-  // nothing expires a game yet: that comes with stage 6
   if (game.status === 'EXPIRED') {
     return (
       <ErrorScreen title="This game sat idle so long it fell asleep">
