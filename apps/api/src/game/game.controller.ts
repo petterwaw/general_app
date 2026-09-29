@@ -61,13 +61,20 @@ export class GameController {
   }
 
   @Post(':id/join')
-  join(
+  async join(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(joinGameSchema)) input: JoinGameInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.gameService.join(id, input, idempotencyKey, hostSecretFrom(request));
+    const result = await this.gameService.join(id, input, idempotencyKey, hostSecretFrom(request));
+
+    if (result.newSecret) {
+      response.cookie('host_secret', result.newSecret, hostCookieOptions);
+    }
+
+    return result.game;
   }
 
   @Post(':id/leave')

@@ -16,6 +16,7 @@ import {
   type GameState,
 } from '@dice-app/game-core';
 import {
+  MAX_ONLINE_PLAYERS,
   MAX_PLAYERS,
   diceRollSchema,
   scoreCardSchema,
@@ -50,8 +51,9 @@ export class GameService {
   ) { }
 
   /**
-   * Creates a game hosted by this device. A device that already has a host cookie keeps its
-   * identity (no new secret), so the one-active-game-per-device index applies to it.
+   * Creates a game with this device's participant as its host: the host of a local game plays for
+   * the whole table, the creator of an online game is its first player. A device that already has
+   * a cookie keeps its identity (no new secret), so the one-active-game-per-device index applies.
    */
   async create(
     input: CreateGameInput,
@@ -60,10 +62,6 @@ export class GameService {
   ) {
     const key = requireIdempotencyKey(idempotencyKey);
 
-    if (input.mode. === 'ONLINE') {
-      
-    }
-
     // Replayed Idempotency-Key: return the game created by the first request, without its secret.
     const replayed = await this.findCreatedGame(key);
     if (replayed) {
@@ -71,11 +69,12 @@ export class GameService {
     }
 
     const identity = await this.findIdentity(currentHostSecret);
-    if (identity && (await this.findActiveHostedGame(identity.id))) {
-      throw new ConflictException('This device is already hosting a game');
+    if (identity && (await this.findActiveParticipation(identity.id))) {
+      throw new ConflictException('This device is already in a game');
     }
 
     const newHostSecret = identity ? null : randomBytes(32).toString('hex');
+    const names = input.mode === 'LOCAL' ? input.players : [input.name];
 
     try {
       const game = await this.prisma.$transaction(async (tx) => {
@@ -87,8 +86,9 @@ export class GameService {
           data: {
             creationKey: key,
             hostIdentityId,
+            diceSource: input.mode === 'LOCAL' ? 'PHYSICAL' : 'VIRTUAL',
             participants: {
-              create: input.players.map((name, index) => ({
+              create: names.map((name, index) => ({
                 name,
                 scoreCard: createEmptyScoreCard(),
                 turnOrder: index + 1,
@@ -104,13 +104,13 @@ export class GameService {
       return { game: toGameView(game, true), hostSecret: newHostSecret };
     } catch (error) {
       if (isUniqueViolation(error)) {
-        // Lost a race: either to the same Idempotency-Key, or to another game of this host.
+        // Lost a race: either to the same Idempotency-Key, or to another game of this device.
         const existingGame = await this.findCreatedGame(key);
         if (existingGame) {
           return { game: existingGame, hostSecret: null };
         }
 
-        throw new ConflictException('This device is already hosting a game');
+        throw new ConflictException('This device is already in a game');
       }
 
       throw error;
@@ -160,38 +160,50 @@ export class GameService {
     return events.map(toGameEventView);
   }
 
-  join(
+  /**
+   * Local game: only the host adds players, who have no device of their own (DECYZJE.md §3).
+   * Online game: players join from their own device, which gets a cookie if it has none yet.
+   */
+  async join(
     id: string,
     input: JoinGameInput,
     idempotencyKey: string | undefined,
-    hostSecret: string | undefined,
-  ) {
-    // Local mode: only the host adds players (DECYZJE.md §3).
-    return this.runAction(id, idempotencyKey, { hostOnly: true, hostSecret }, async (tx, game) => {
-      if (game.status !== 'LOBBY') {
-        throw new BadRequestException('Players can only join a lobby');
+    secret: string | undefined,
+  ): Promise<{ game: GameView; newSecret: string | null }> {
+    const { diceSource } = await findGameOrThrow(this.prisma, id);
+
+    if (diceSource === 'PHYSICAL') {
+      const game = await this.runAction(
+        id,
+        idempotencyKey,
+        { hostOnly: true, hostSecret: secret },
+        (tx, game) => addPlayer(tx, game, input.name, MAX_PLAYERS, null),
+      );
+      return { game, newSecret: null };
+    }
+
+    const identity = await this.findIdentity(secret);
+
+    // Created before the action so the cookie always points at a stored identity, even if the
+    // action is replayed or loses a race; an identity without a participant only watches.
+    const newSecret = identity ? null : randomBytes(32).toString('hex');
+    const identityId = newSecret
+      ? (await this.prisma.identity.create({ data: { secretHash: hashSecret(newSecret) } })).id
+      : identity!.id;
+
+    try {
+      const game = await this.runAction(id, idempotencyKey, { hostOnly: false }, (tx, game) =>
+        addPlayer(tx, game, input.name, MAX_ONLINE_PLAYERS, identityId),
+      );
+      return { game, newSecret };
+    } catch (error) {
+      // The one-active-game-per-device index. Checked here rather than up front, so that a
+      // replayed join returns its game instead of finding the device already in it.
+      if (isUniqueViolation(error)) {
+        throw new ConflictException('This device is already in a game');
       }
-
-      if (game.participants.length >= MAX_PLAYERS) {
-        throw new BadRequestException(`A game can have at most ${MAX_PLAYERS} players`);
-      }
-
-      const lastTurnOrder = game.participants.at(-1)?.turnOrder ?? 0;
-
-      const player = await tx.participant.create({
-        data: {
-          name: input.name,
-          scoreCard: createEmptyScoreCard(),
-          turnOrder: lastTurnOrder + 1,
-          gameId: id,
-        },
-      });
-
-      return {
-        actionType: 'playerJoined',
-        payload: { playerId: player.id },
-      };
-    });
+      throw error;
+    }
   }
 
   start(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
@@ -488,6 +500,10 @@ export class GameService {
     return this.prisma.identity.findFirst({ where: { secretHash: hashSecret(secret) } });
   }
 
+  private findActiveParticipation(identityId: string) {
+    return this.prisma.participant.findFirst({ where: { identityId, active: true } });
+  }
+
   private findActiveHostedGame(identityId: string) {
     return this.prisma.game.findFirst({
       where: { hostIdentityId: identityId, status: { in: ['LOBBY', 'IN_PROGRESS'] } },
@@ -503,6 +519,45 @@ export class GameService {
 
     return game && toGameView(game, true);
   }
+}
+
+async function findGameOrThrow(client: Prisma.TransactionClient, id: string) {
+  const game = await client.game.findUnique({ where: { id }, select: { diceSource: true } });
+
+  if (!game) {
+    throw new NotFoundException('Game not found');
+  }
+
+  return game;
+}
+
+async function addPlayer(
+  tx: Prisma.TransactionClient,
+  game: GameWithParticipants,
+  name: string,
+  maxPlayers: number,
+  identityId: string | null,
+): Promise<GameAction> {
+  if (game.status !== 'LOBBY') {
+    throw new BadRequestException('Players can only join a lobby');
+  }
+
+  if (game.participants.length >= maxPlayers) {
+    throw new BadRequestException(`A game can have at most ${maxPlayers} players`);
+  }
+
+  const lastTurnOrder = game.participants.at(-1)?.turnOrder ?? 0;
+  const player = await tx.participant.create({
+    data: {
+      name,
+      scoreCard: createEmptyScoreCard(),
+      turnOrder: lastTurnOrder + 1,
+      gameId: game.id,
+      identityId,
+    },
+  });
+
+  return { actionType: 'playerJoined', payload: { playerId: player.id } };
 }
 
 function requireIdempotencyKey(idempotencyKey: string | undefined): string {
