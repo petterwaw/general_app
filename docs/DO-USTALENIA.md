@@ -24,13 +24,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 - [ ] **Co dokładnie pokazuje ranking globalny?** Najwyższy pojedynczy wynik, średnia, liczba
       wygranych, coś jeszcze?
 
-## Blokujące etap 9 (online przez zaproszenie)
-
-- [ ] **Kto może wystartować grę online?** Tylko zakładający czy każdy w lobby? (`DECYZJE.md` §2:
-      online nie ma hosta.)
-- [ ] **Ile gier naraz na jedno urządzenie?** Czy urządzenie może być jednocześnie w grze
-      lokalnej i online, czy obowiązuje jedna aktywna gra na urządzenie?
-
 ## Odłożone razem z limitem na turę i matchmakingiem
 
 - [ ] **Co robi serwer po przekroczeniu 90 sekund?** Ustalono tylko, że drugie przekroczenie

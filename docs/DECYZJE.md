@@ -54,8 +54,10 @@ Rola jest polem na rekordzie uczestnika, nie wynika z kolejności na liście. Ho
 tokenem zapisanym na urządzeniu (sekret w cookie), sprawdzanym przy każdej akcji. Samo ID gry nie
 może wystarczać do bycia hostem.
 
-**W trybie online nie ma hosta** — wszyscy mają ten sam poziom dostępu i nikt nie może nikogo
-wyrzucić.
+**W trybie online host tylko startuje grę** (zmienione 2026-09-29). Zakładający dołącza do
+swojej gry jako zwykły gracz z rolą `HOST`, która daje jedno uprawnienie: start gry z lobby.
+Poza tym wszyscy mają ten sam poziom dostępu — każdy rusza tylko swoimi kośćmi i nikt nie może
+nikogo wyrzucić.
 
 ---
 
@@ -142,8 +144,10 @@ zapis daje 0, decyduje reducer, nie klient.
   logiki uprawnień.
 - **Host prowadzi jedną grę naraz** (ustalone 2026-09-25). Żeby założyć nową, musi najpierw
   opuścić poprzednią. Skoro gra jest jedna, jedno ciasteczko `host_secret` na urządzenie wystarcza.
-  Pilnuje tego baza: częściowy indeks unikalny na `Game.hostIdentityId` dla gier w `LOBBY` /
-  `IN_PROGRESS`. **Do czasu kont „host” = urządzenie** (ciasteczko) — z innego urządzenia
+  **Zasada obejmuje oba tryby** (rozszerzone 2026-09-29): urządzenie jest naraz w jednej
+  aktywnej grze (`LOBBY` / `IN_PROGRESS`), lokalnej albo online, jako host albo gracz. Pilnuje
+  tego baza — częściowy indeks unikalny na aktywnych uczestnictwach urządzenia, nie tylko
+  sprawdzenie w serwisie. **Do czasu kont „host” = urządzenie** (ciasteczko) — z innego urządzenia
   serwer nie wie, że to ta sama osoba; „jedna gra na osobę” daje dopiero indeks na `userId`
   z §6. **UI na `/games`** (zmienione 2026-09-25): gdy host ma grę w `LOBBY` / `IN_PROGRESS`,
   zamiast przycisków „Create game” / „Join game” widzi jedną kartę z graczami tej gry,

@@ -7,8 +7,15 @@ Tylko dla trybu online (ustalone 2026-09-28) — tryb lokalny zostaje na kościa
 Serwer pilnuje maks. 3 rzutów i kości odkładanych między rzutami; reducer ma dla kości
 wirtualnych osobny zestaw walidacji (`DECYZJE.md` §4).
 
-**Gotowe gdy:** partię na kościach wirtualnych da się rozegrać do końca przez API, a zasady
-rzutów mają testy w `game-core` wyprowadzone z `ZASADY-GRY.md`.
+Rozszerzone 2026-09-29: etap obejmuje backend gry online z etapu 9 — zakładanie gry bez
+pełnego hosta (zakładający tylko startuje), dołączanie z własnego urządzenia, jedna aktywna gra
+na urządzenie w obu trybach, uprawnienia po urządzeniu gracza (`DECYZJE.md` §2, §5). Kości
+wirtualne istnieją tylko w grze online, więc bez tego nie da się rozegrać partii przez API.
+Front gry online zostaje w etapie 9.
+
+**Gotowe gdy:** partię na kościach wirtualnych 2+ graczy na osobnych urządzeniach da się
+rozegrać do końca przez API, a zasady rzutów mają testy w `game-core` wyprowadzone
+z `ZASADY-GRY.md`.
 
 **Postęp: W TOKU.** Logika rzutów w `game-core` gotowa i przetestowana; zostaje baza, API
 i partia rozegrana przez API.

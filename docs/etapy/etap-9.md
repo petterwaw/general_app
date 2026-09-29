@@ -8,6 +8,11 @@ Zakres zawężony 2026-09-28 — online dla gości, bez kont:
 - wyjście gracza: jego tury są pomijane; gdy zostanie jedna osoba, gra kończy się jako
   `ABANDONED` bez zwycięzcy (`DECYZJE.md` §8).
 
+**Backend przeniesiony do etapu 7** (2026-09-29): zakładanie gry online, dołączanie, start
+i uprawnienia po urządzeniu gracza powstają razem z kośćmi wirtualnymi. Tu zostaje front:
+lobby online, link / kod zaproszenia, ekran gry z rzutami, oraz wyjście gracza z pomijaniem
+jego tur.
+
 Poza zakresem na teraz: matchmaking, limit 90 s na turę i wyrzucanie za przekroczenia.
 Redis (pub/sub) dopiero przy więcej niż jednej instancji API.
 
