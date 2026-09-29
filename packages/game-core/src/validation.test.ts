@@ -3,7 +3,8 @@ import {
     isCategoryFree,
     isLowerSectionUnlocked,
     canWriteChance,
-    isLowerSectionCategory
+    isLowerSectionCategory,
+    canRoll
 } from './validation.js'
 import type { ScoreCard } from './types.js'
 
@@ -86,5 +87,19 @@ describe('isLowerSectionCategory', () => {
 
     it('should return false for chance (exception to the lower section)', () => {
         expect(isLowerSectionCategory('chance')).toBe(false)
+    })
+})
+
+describe('canRoll', () => {
+    it('should allow the first roll of a turn', () => {
+        expect(canRoll({ rollNumber: 0 })).toBe(true)
+    })
+
+    it.each([1, 2] as const)('should allow another roll after roll %i', (rollNumber) => {
+        expect(canRoll({ rollNumber, dice: [1, 2, 3, 4, 5], heldInLastRoll: [] })).toBe(true)
+    })
+
+    it('should not allow a fourth roll', () => {
+        expect(canRoll({ rollNumber: 3, dice: [1, 2, 3, 4, 5], heldInLastRoll: [] })).toBe(false)
     })
 })

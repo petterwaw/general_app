@@ -250,6 +250,7 @@ export class GameService {
       try {
         newState = reducer(
           {
+            diceSource: 'PHYSICAL',
             players: game.participants.map((player) => ({
               id: player.id,
               name: player.name,

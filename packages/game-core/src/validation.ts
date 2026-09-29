@@ -1,4 +1,4 @@
-import type { Category, ScoreCard } from './types.js'
+import type { Category, ScoreCard, TurnState } from './types.js'
 
 type Section = 'upper' | 'lower' | 'chance'
 
@@ -34,4 +34,8 @@ export function canWriteChance(scoreCard: ScoreCard): boolean {
 
 export function isLowerSectionCategory(category: Category): boolean {
     return LOWER_CATEGORIES.includes(category)
+}
+
+export function canRoll(turn: TurnState): boolean {
+    return turn.rollNumber < 3
 }
