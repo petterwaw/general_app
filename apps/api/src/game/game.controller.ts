@@ -5,11 +5,13 @@ import {
   gameEventsQuerySchema,
   joinGameSchema,
   rollSchema,
+  rerollSchema,
   scoreSchema,
   type CreateGameInput,
   type GameEventsQuery,
   type JoinGameInput,
   type RollInput,
+  type RerollInput,
   type ScoreInput,
 } from '@dice-app/contracts';
 import { GameService } from './game.service';
@@ -113,6 +115,16 @@ export class GameController {
     @Req() request: Request,
   ) {
     return this.gameService.roll(id, input, idempotencyKey, hostSecretFrom(request));
+  }
+
+  @Post(':id/reroll')
+  reRoll(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(rerollSchema)) input: RerollInput,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request,
+  ) {
+    return this.gameService.reroll(id, input, idempotencyKey, hostSecretFrom(request));
   }
 
   @Post(':id/score')

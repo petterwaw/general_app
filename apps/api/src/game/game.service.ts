@@ -28,6 +28,7 @@ import {
   type GameView,
   type JoinGameInput,
   type RollInput,
+  type RerollInput,
   type ScoreInput,
 } from '@dice-app/contracts';
 import { PrismaService } from '../prisma/prisma.service';
@@ -293,6 +294,77 @@ export class GameService {
         update: { currentDice: input.dice },
       };
     });
+  }
+
+  reroll(
+    id: string,
+    input: RerollInput,
+    idempotencyKey: string | undefined,
+    secret: string | undefined,
+  ) {
+    return this.runAction(id, idempotencyKey, { kind: 'player', secret }, (_tx, game, asking) => {
+      if (game.diceSource !== 'VIRTUAL') {
+        throw new BadRequestException('Dice must be virtual');
+      }
+      if (game.status !== 'IN_PROGRESS') {
+        throw new BadRequestException('Game must be in progress');
+      }
+      if (!game.currentPlayerId) {
+        throw new Error('Game in progress has no current player')
+      }
+
+      const players = game.participants.map((player) => ({
+        id: player.id,
+        name: player.name,
+        card: scoreCardSchema.parse(player.scoreCard),
+      }))
+
+      const rollNumber = game.rollNumber;
+      if (rollNumber !== 1 && rollNumber !== 2 && rollNumber !== 3) {
+        throw new Error('Stored turn has no valid roll number');
+      }
+
+      const state: GameState = {
+        diceSource: 'VIRTUAL',
+        players,
+        currentPlayerId: game.currentPlayerId,
+        turn: {
+          rollNumber,
+          dice: diceRollSchema.parse(game.currentDice),
+          heldInLastRoll: game.heldInLastRoll,
+        },
+      };
+
+      let rolled: GameState;
+      try {
+        rolled = reducer(state, {
+          type: 'roll',
+          playerId: asking!.id,
+          held: input.held,
+          rolled: drawDice(),
+        });
+      } catch (error) {
+        if (error instanceof GameRuleError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
+      }
+
+      if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
+        throw new Error('The roll did not happen');
+      }
+      const turn = rolled.turn;
+
+      return {
+        actionType: 'diceRolled',
+        payload: { playerId: asking!.id, roll: turn.dice, held: turn.heldInLastRoll },
+        update: {
+          currentDice: turn.dice,
+          rollNumber: turn.rollNumber,
+          heldInLastRoll: turn.heldInLastRoll,
+        },
+      };
+    })
   }
 
   score(

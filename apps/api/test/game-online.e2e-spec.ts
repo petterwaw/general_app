@@ -56,6 +56,10 @@ describe('Online games', () => {
     return agent.post(`/games/${gameId}/start`).set('Idempotency-Key', key).send();
   }
 
+  function reroll(agent: Agent, gameId: string, held: number[], key: string) {
+    return agent.post(`/games/${gameId}/reroll`).set('Idempotency-Key', key).send({ held });
+  }
+
   // A lobby with the creator and one more player, each on their own device.
   async function createLobbyOfTwo(key: string) {
     const creator = device();
@@ -64,6 +68,14 @@ describe('Online games', () => {
     await join(player, game.id, 'Ania', `${key}-join`).expect(201);
 
     return { creator, player, game };
+  }
+
+  // A started game of two; the creator joined first, so the first turn is theirs.
+  async function startGameOfTwo(key: string) {
+    const { creator, player, game } = await createLobbyOfTwo(key);
+    const started = gameFrom((await start(creator, game.id, `${key}-start`).expect(201)).body);
+
+    return { creator, player, game: started };
   }
 
   describe('creating', () => {
@@ -223,6 +235,90 @@ describe('Online games', () => {
       const first = gameFrom((await start(creator, game.id, 'online-start-replay')).body);
 
       const replayed = gameFrom((await start(creator, game.id, 'online-start-replay')).body);
+
+      expect(replayed.revision).toBe(first.revision);
+      expect(replayed.currentDice).toEqual(first.currentDice);
+    });
+  });
+
+  describe('rerolling', () => {
+    it('keeps the held dice in place and counts the second roll', async () => {
+      const { creator, game } = await startGameOfTwo('reroll-held');
+
+      const response = await reroll(creator, game.id, [0, 2], 'reroll-held');
+
+      expect(response.status).toBe(201);
+      const rerolled = gameFrom(response.body);
+      expect(rerolled.rollNumber).toBe(2);
+      expect(rerolled.heldInLastRoll).toEqual([0, 2]);
+      expect(rerolled.currentDice![0]).toBe(game.currentDice![0]);
+      expect(rerolled.currentDice![2]).toBe(game.currentDice![2]);
+      for (const die of rerolled.currentDice!) {
+        expect(die).toBeGreaterThanOrEqual(1);
+        expect(die).toBeLessThanOrEqual(6);
+      }
+    });
+
+    it('allows the third roll and rejects the fourth with 400', async () => {
+      const { creator, game } = await startGameOfTwo('reroll-limit');
+      await reroll(creator, game.id, [], 'reroll-limit-2').expect(201);
+      const third = gameFrom((await reroll(creator, game.id, [], 'reroll-limit-3').expect(201)).body);
+      expect(third.rollNumber).toBe(3);
+
+      const response = await reroll(creator, game.id, [], 'reroll-limit-4');
+
+      expect(response.status).toBe(400);
+    });
+
+    it("rejects a roll on another player's turn with 400", async () => {
+      const { player, game } = await startGameOfTwo('reroll-not-turn');
+
+      const response = await reroll(player, game.id, [], 'reroll-not-turn');
+
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects a roll from a device outside the game with 403', async () => {
+      const { game } = await startGameOfTwo('reroll-outsider');
+
+      const response = await reroll(device(), game.id, [], 'reroll-outsider');
+
+      expect(response.status).toBe(403);
+    });
+
+    it('rejects a roll in a local game with 400', async () => {
+      const { agent, game } = await createGame(app, ['Piotr', 'Ania'], 'reroll-local-create');
+      await start(agent, game.id, 'reroll-local-start').expect(201);
+
+      const response = await reroll(agent, game.id, [], 'reroll-local');
+
+      expect(response.status).toBe(400);
+    });
+
+    it('logs the roll with its player, dice and held positions', async () => {
+      const { creator, game } = await startGameOfTwo('reroll-log');
+      const rerolled = gameFrom((await reroll(creator, game.id, [1, 4], 'reroll-log')).body);
+
+      const response = await creator.get(`/games/${game.id}/events`).expect(200);
+
+      const events = eventsFrom(response.body);
+      expect(events).toHaveLength(3);
+      expect(events[2]).toEqual(
+        expect.objectContaining({
+          type: 'diceRolled',
+          playerId: game.currentPlayerId,
+          dice: rerolled.currentDice,
+          held: [1, 4],
+          revision: rerolled.revision,
+        }),
+      );
+    });
+
+    it('returns the same roll when the reroll is replayed', async () => {
+      const { creator, game } = await startGameOfTwo('reroll-replay');
+      const first = gameFrom((await reroll(creator, game.id, [], 'reroll-replay')).body);
+
+      const replayed = gameFrom((await reroll(creator, game.id, [], 'reroll-replay')).body);
 
       expect(replayed.revision).toBe(first.revision);
       expect(replayed.currentDice).toEqual(first.currentDice);
