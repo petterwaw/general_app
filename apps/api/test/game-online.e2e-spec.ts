@@ -60,6 +60,17 @@ describe('Online games', () => {
     return agent.post(`/games/${gameId}/reroll`).set('Idempotency-Key', key).send({ held });
   }
 
+  function score(agent: Agent, gameId: string, playerId: string, category: string, key: string) {
+    return agent
+      .post(`/games/${gameId}/score`)
+      .set('Idempotency-Key', key)
+      .send({ playerId, category });
+  }
+
+  function sum(dice: number[]) {
+    return dice.reduce((total, die) => total + die, 0);
+  }
+
   // A lobby with the creator and one more player, each on their own device.
   async function createLobbyOfTwo(key: string) {
     const creator = device();
@@ -322,6 +333,105 @@ describe('Online games', () => {
 
       expect(replayed.revision).toBe(first.revision);
       expect(replayed.currentDice).toEqual(first.currentDice);
+    });
+  });
+
+  describe('scoring', () => {
+    it('scores the dice on the table and opens the next turn with its first roll', async () => {
+      const { creator, game } = await startGameOfTwo('score-turn');
+      const [first, second] = game.participants;
+
+      const response = await score(creator, game.id, first.id, 'chance', 'score-turn');
+
+      expect(response.status).toBe(201);
+      const scored = gameFrom(response.body);
+      expect(scored.participants[0].scoreCard.chance).toBe(sum(game.currentDice!));
+      expect(scored.status).toBe('IN_PROGRESS');
+      expect(scored.currentPlayerId).toBe(second.id);
+      expect(scored.rollNumber).toBe(1);
+      expect(scored.heldInLastRoll).toEqual([]);
+      expect(scored.currentDice).toHaveLength(5);
+    });
+
+    it('scores the dice left by the last reroll', async () => {
+      const { creator, game } = await startGameOfTwo('score-after-reroll');
+      const rerolled = gameFrom(
+        (await reroll(creator, game.id, [], 'score-after-reroll-roll').expect(201)).body,
+      );
+
+      const response = await score(
+        creator,
+        game.id,
+        game.participants[0].id,
+        'chance',
+        'score-after-reroll',
+      );
+
+      expect(response.status).toBe(201);
+      expect(gameFrom(response.body).participants[0].scoreCard.chance).toBe(
+        sum(rerolled.currentDice!),
+      );
+    });
+
+    it("logs the saved category and then the next player's first roll", async () => {
+      const { creator, game } = await startGameOfTwo('score-log');
+      const scored = gameFrom(
+        (await score(creator, game.id, game.participants[0].id, 'chance', 'score-log')).body,
+      );
+
+      const response = await creator.get(`/games/${game.id}/events`).expect(200);
+
+      const events = eventsFrom(response.body);
+      expect(events).toHaveLength(4);
+      expect(events.slice(2)).toEqual([
+        expect.objectContaining({
+          type: 'categorySaved',
+          playerId: game.participants[0].id,
+          category: 'chance',
+          points: sum(game.currentDice!),
+          revision: scored.revision - 1,
+        }),
+        expect.objectContaining({
+          type: 'diceRolled',
+          playerId: game.participants[1].id,
+          dice: scored.currentDice,
+          held: [],
+          revision: scored.revision,
+        }),
+      ]);
+    });
+
+    it("lets the next player reroll their turn's dice", async () => {
+      const { creator, player, game } = await startGameOfTwo('score-next-reroll');
+      await score(creator, game.id, game.participants[0].id, 'chance', 'score-next-reroll-score')
+        .expect(201);
+
+      const response = await reroll(player, game.id, [0], 'score-next-reroll');
+
+      expect(response.status).toBe(201);
+      expect(gameFrom(response.body).rollNumber).toBe(2);
+    });
+
+    it("rejects a score on another player's turn with 400", async () => {
+      const { player, game } = await startGameOfTwo('score-not-turn');
+
+      const response = await score(player, game.id, game.participants[1].id, 'chance', 'score-not-turn');
+
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects a score from a device outside the game with 403', async () => {
+      const { game } = await startGameOfTwo('score-outsider');
+
+      const response = await score(
+        device(),
+        game.id,
+        game.participants[0].id,
+        'chance',
+        'score-outsider',
+      );
+
+      expect(response.status).toBe(403);
     });
   });
 });

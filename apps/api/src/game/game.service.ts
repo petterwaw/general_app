@@ -367,36 +367,64 @@ export class GameService {
     })
   }
 
-  score(
+  async score(
     id: string,
     input: ScoreInput,
     idempotencyKey: string | undefined,
-    hostSecret: string | undefined,
+    secret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, async (tx, game) => {
-      assertPlayersTurn(game, input.playerId);
+    const { diceSource } = await findGameOrThrow(this.prisma, id);
+    const access: ActionAccess =
+      diceSource === 'PHYSICAL' ? { kind: 'host', secret } : { kind: 'player', secret };
+
+    return this.runAction(id, idempotencyKey, access, async (tx, game, asking) => {
+      const playerId = diceSource === 'VIRTUAL' ? asking!.id : input.playerId;
+      assertPlayersTurn(game, playerId);
 
       if (!game.currentDice) {
         throw new BadRequestException('There is no dice roll to score');
       }
+      const currentPlayerId = game.currentPlayerId;
+      if (!currentPlayerId) {
+        throw new Error('Game in progress has no current player');
+      }
 
       let newState: GameState;
       try {
+        const base = {
+          players: game.participants.map((player) => ({
+            id: player.id,
+            name: player.name,
+            card: scoreCardSchema.parse(player.scoreCard),
+          })),
+          currentPlayerId: currentPlayerId,
+        };
+
+        let state: GameState;
+        if (diceSource === 'VIRTUAL') {
+          const rollNumber = game.rollNumber;
+          if (rollNumber !== 1 && rollNumber !== 2 && rollNumber !== 3) {
+            throw new Error('Stored turn has no valid roll number');
+          }
+          state = {
+            ...base,
+            diceSource: 'VIRTUAL',
+            turn: {
+              rollNumber,
+              dice: diceRollSchema.parse(game.currentDice),
+              heldInLastRoll: game.heldInLastRoll,
+            },
+          };
+        } else {
+          state = { ...base, diceSource: 'PHYSICAL' };
+        }
         newState = reducer(
-          {
-            diceSource: 'PHYSICAL',
-            players: game.participants.map((player) => ({
-              id: player.id,
-              name: player.name,
-              card: scoreCardSchema.parse(player.scoreCard),
-            })),
-            currentPlayerId: input.playerId,
-          },
+          state,
           {
             type: 'saveCategory',
-            playerId: input.playerId,
+            playerId: playerId,
             category: input.category,
-            dice: diceRollSchema.parse(game.currentDice),
+            ...(diceSource === 'PHYSICAL' && { dice: diceRollSchema.parse(game.currentDice) }),
           },
         );
       } catch (error) {
@@ -409,7 +437,7 @@ export class GameService {
 
       const gameOver = isGameOver(newState);
       // points as the reducer computed them — never taken from the client
-      const points = newState.players.find((player) => player.id === input.playerId)!.card[input.category];
+      const points = newState.players.find((player) => player.id === playerId)!.card[input.category];
 
       // Persist the reducer's whole result, not just the scoring player's card: the reducer
       // decides what a move changes, so the service does not second-guess it.
@@ -430,11 +458,42 @@ export class GameService {
         ),
       );
 
-      return {
+      const saved = {
         actionType: 'saveCategory',
-        payload: { playerId: input.playerId, category: input.category, points },
+        payload: { playerId, category: input.category, points },
+      };
+
+      // The next player's turn opens with its first roll already made (docs/DECYZJE.md §4).
+      if (diceSource === 'VIRTUAL' && !gameOver) {
+        const rolled = reducer(newState, {
+          type: 'roll',
+          playerId: newState.currentPlayerId,
+          held: [],
+          rolled: drawDice(),
+        });
+        if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
+          throw new Error("The next player's first roll did not happen");
+        }
+        const { dice, rollNumber, heldInLastRoll } = rolled.turn;
+
+        return {
+          ...saved,
+          update: {
+            currentPlayerId: rolled.currentPlayerId,
+            currentDice: dice,
+            rollNumber,
+            heldInLastRoll,
+          },
+          autoRoll: { playerId: rolled.currentPlayerId, roll: dice, held: heldInLastRoll },
+        };
+      }
+
+      return {
+        ...saved,
         update: {
           currentDice: Prisma.DbNull,
+          rollNumber: null,
+          heldInLastRoll: [],
           status: gameOver ? 'COMPLETED' : 'IN_PROGRESS',
           currentPlayerId: gameOver ? null : newState.currentPlayerId,
         },
