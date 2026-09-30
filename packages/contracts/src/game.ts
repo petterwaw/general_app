@@ -125,6 +125,7 @@ export type GameView = {
   // whether the device asking is this game's host (its host cookie); everyone else only watches.
   // Worked out per request from the cookie and never stored.
   isHost: boolean;
+  myParticipantId: string | null
 };
 
 // Public shape of a game-log entry. Only the events worth showing are exposed:

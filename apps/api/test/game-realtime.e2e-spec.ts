@@ -113,8 +113,8 @@ describe('Realtime', () => {
     const rolled = await act('roll', 'realtime-roll', { playerId: piotr.id, dice: [6, 6, 6, 2, 3] });
 
     const [forHost, forViewer] = await Promise.all([hostUpdate, viewerUpdate]);
-    expect(forHost).toEqual({ ...rolled, isHost: true });
-    expect(forViewer).toEqual({ ...rolled, isHost: false });
+    expect(forHost).toEqual({ ...rolled, isHost: true, myParticipantId: piotr.id });
+    expect(forViewer).toEqual({ ...rolled, isHost: false, myParticipantId: null });
   });
 
   it('catches a reconnecting viewer up on the actions it missed', async () => {
@@ -134,7 +134,7 @@ describe('Realtime', () => {
     back.emit('subscribe', { gameId: game.id, revision: seen.revision });
 
     expect(latest.revision).toBe(seen.revision + 2);
-    expect(await caughtUp).toEqual({ ...latest, isHost: false });
+    expect(await caughtUp).toEqual({ ...latest, isHost: false, myParticipantId: null });
   });
 
   it('does not push a replayed action again', async () => {

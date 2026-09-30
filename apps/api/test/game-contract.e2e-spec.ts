@@ -42,7 +42,7 @@ describe('Games API contract', () => {
             expect(Object.keys(game).sort()).toEqual(
                 [
                     'createdAt', 'currentDice', 'currentPlayerId', 'diceSource', 'heldInLastRoll', 'id',
-                    'isHost', 'participants', 'revision', 'rollNumber', 'status',
+                    'isHost', 'myParticipantId', 'participants', 'revision', 'rollNumber', 'status',
                 ],
             );
 

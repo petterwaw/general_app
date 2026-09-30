@@ -34,7 +34,12 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, type Participant } from '../../generated/prisma/client';
 import { randomBytes, randomInt, createHash } from 'crypto';
-import { gameInclude, toGameView, type GameWithParticipants } from './game.view';
+import {
+  gameInclude,
+  hostParticipantId,
+  toGameView,
+  type GameWithParticipants,
+} from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
 import { GameUpdates } from './game-updates';
 
@@ -81,7 +86,6 @@ export class GameService {
     if (identity && (await this.findActiveParticipation(identity.id))) {
       throw new ConflictException('This device is already in a game');
     }
-
     const newHostSecret = identity ? null : randomBytes(32).toString('hex');
     const names = input.mode === 'LOCAL' ? input.players : [input.name];
 
@@ -110,7 +114,7 @@ export class GameService {
         });
       });
 
-      return { game: toGameView(game, true), hostSecret: newHostSecret };
+      return { game: toGameView(game, true, hostParticipantId(game)), hostSecret: newHostSecret };
     } catch (error) {
       if (isUniqueViolation(error)) {
         // Lost a race: either to the same Idempotency-Key, or to another game of this device.
@@ -131,19 +135,19 @@ export class GameService {
     const identity = await this.findIdentity(hostSecret);
     const game = identity && (await this.findActiveHostedGame(identity.id));
 
-    return game ? toGameView(game, true) : null;
+    return game ? toGameView(game, true, hostParticipantId(game)) : null;
   }
 
   async findAll(): Promise<GameView[]> {
     const games = await this.prisma.game.findMany({ include: gameInclude });
     // a list, not a game this device opened: nobody is treated as the host here
-    return games.map((game) => toGameView(game, false));
+    return games.map((game) => toGameView(game, false, null));
   }
 
   // Anyone with the ID may look at a game; only the host's device gets isHost. Nothing is written.
   async findOne(id: string, hostSecret: string | undefined): Promise<GameView> {
     const game = await loadGame(this.prisma, id);
-    return toGameView(game, (await this.findHost(id, hostSecret)) !== null);
+    return toGameView(game, (await this.findHost(id, hostSecret)) !== null, null);
   }
 
   async isHost(gameId: string, hostSecret: string | undefined): Promise<boolean> {
@@ -610,7 +614,7 @@ export class GameService {
     try {
       const view = await this.prisma.$transaction(async (tx) => {
         if (await findEvent(tx, id, key)) {
-          return toGameView(await loadGame(tx, id), asking?.role === 'HOST');
+          return toGameView(await loadGame(tx, id), asking?.role === 'HOST', asking?.id ?? null);
         }
 
         const game = await loadGame(tx, id);
@@ -656,7 +660,7 @@ export class GameService {
           });
         }
         updatedGameToSend = updatedGame;
-        return toGameView(updatedGame, asking?.role === 'HOST');
+        return toGameView(updatedGame, asking?.role === 'HOST', asking?.id ?? null);
       });
 
       // The transaction has committed: only now may other clients see the new state.
@@ -667,7 +671,7 @@ export class GameService {
     } catch (error) {
       // A concurrent request with the same key won the race — return its result.
       if (isUniqueViolation(error) && (await findEvent(this.prisma, id, key))) {
-        return toGameView(await loadGame(this.prisma, id), asking?.role === 'HOST');
+        return toGameView(await loadGame(this.prisma, id), asking?.role === 'HOST', asking?.id ?? null);
       }
 
       throw error;
@@ -737,7 +741,7 @@ export class GameService {
       include: gameInclude,
     });
 
-    return game && toGameView(game, true);
+    return game && toGameView(game, true, hostParticipantId(game));
   }
 }
 

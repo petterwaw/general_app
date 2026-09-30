@@ -13,7 +13,7 @@ import { subscribeSchema, type SubscribeInput } from '@dice-app/contracts';
 import { WsExceptionFilter } from '../utils/ws-exception.filter'
 import { hostSecretFromCookieHeader } from '../utils/host-cookie';
 import { GameUpdates } from './game-updates';
-import { toGameView } from './game.view'
+import { hostParticipantId, toGameView } from './game.view'
 
 @UseFilters(new WsExceptionFilter)
 @WebSocketGateway()
@@ -34,8 +34,8 @@ export class GameGateway {
     afterInit() {
         this.updates.changes$.subscribe((game) => {
 
-            this.server.to(`game:${game.id}:host`).emit('game', toGameView(game, true))
-            this.server.to(`game:${game.id}:viewer`).emit('game', toGameView(game, false))
+            this.server.to(`game:${game.id}:host`).emit('game', toGameView(game, true, hostParticipantId(game)))
+            this.server.to(`game:${game.id}:viewer`).emit('game', toGameView(game, false, null))
         })
     }
 
