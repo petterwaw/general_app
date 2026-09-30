@@ -151,10 +151,6 @@ export class GameService {
     return toGameView(game, participant?.role === 'HOST', participant?.id ?? null);
   }
 
-  async isHost(gameId: string, hostSecret: string | undefined): Promise<boolean> {
-    return (await this.findHost(gameId, hostSecret)) !== null;
-  }
-
   async events(id: string, query: GameEventsQuery): Promise<GameEventView[]> {
     const game = await this.prisma.game.findUnique({ where: { id }, select: { id: true } });
 
@@ -710,7 +706,7 @@ export class GameService {
     });
   }
 
-  private async findParticipant(gameId: string, secret: string | undefined) {
+  async findParticipant(gameId: string, secret: string | undefined) {
     if (!secret) {
       return null;
     }

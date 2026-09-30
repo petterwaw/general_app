@@ -168,4 +168,110 @@ describe('Realtime', () => {
 
     expect(await error).toEqual({ statusCode: 404, message: 'Game not found', data: null });
   });
+  describe('online game', () => {
+    function cookieFrom(response: request.Response) {
+      const setCookie = response.get('Set-Cookie');
+      if (!setCookie) {
+        throw new Error('The device cookie was not set');
+      }
+      return setCookie.map((cookie) => cookie.split(';')[0]);
+    }
+
+    // A started online game of two, each player on their own device (its own cookie).
+    async function startOnlineGame() {
+      const created = await request(server)
+        .post('/games')
+        .set('Idempotency-Key', 'realtime-online-create')
+        .send({ mode: 'ONLINE', name: 'Piotr' })
+        .expect(201);
+      const creatorCookie = cookieFrom(created);
+      const gameId = gameFrom(created.body).id;
+
+      const joined = await request(server)
+        .post(`/games/${gameId}/join`)
+        .set('Idempotency-Key', 'realtime-online-join')
+        .send({ name: 'Ania' })
+        .expect(201);
+      const playerCookie = cookieFrom(joined);
+
+      const started = gameFrom(
+        (
+          await request(server)
+            .post(`/games/${gameId}/start`)
+            .set('Cookie', creatorCookie)
+            .set('Idempotency-Key', 'realtime-online-start')
+            .expect(201)
+        ).body,
+      );
+      const [creator, player] = started.participants;
+
+      const act = async (cookie: string[], path: string, key: string, body: object) =>
+        gameFrom(
+          (
+            await request(server)
+              .post(`/games/${gameId}/${path}`)
+              .set('Cookie', cookie)
+              .set('Idempotency-Key', key)
+              .send(body)
+              .expect(201)
+          ).body,
+        );
+
+      return { gameId, creator, player, creatorCookie, playerCookie, act };
+    }
+
+    it("pushes to every player their own view after another player's move", async () => {
+      const { gameId, creator, player, creatorCookie, playerCookie, act } = await startOnlineGame();
+      const forCreator = connect(creatorCookie);
+      const forPlayer = connect(playerCookie);
+      await subscribe(forCreator, gameId);
+      await subscribe(forPlayer, gameId);
+
+      const creatorUpdate = next<GameView>(forCreator, 'game');
+      const playerUpdate = next<GameView>(forPlayer, 'game');
+      const rerolled = await act(creatorCookie, 'reroll', 'realtime-online-reroll', { held: [] });
+
+      const [toCreator, toPlayer] = await Promise.all([creatorUpdate, playerUpdate]);
+      expect(toCreator).toEqual({ ...rerolled, isHost: true, myParticipantId: creator.id });
+      expect(toPlayer).toEqual({ ...rerolled, isHost: false, myParticipantId: player.id });
+    });
+
+    it('pushes the same view to every connection of one player', async () => {
+      const { gameId, player, creatorCookie, playerCookie, act } = await startOnlineGame();
+      const firstTab = connect(playerCookie);
+      const secondTab = connect(playerCookie);
+      await subscribe(firstTab, gameId);
+      await subscribe(secondTab, gameId);
+
+      const updates = Promise.all([next<GameView>(firstTab, 'game'), next<GameView>(secondTab, 'game')]);
+      await act(creatorCookie, 'score', 'realtime-online-score', { category: 'chance' });
+
+      const [inFirst, inSecond] = await updates;
+      expect(inFirst).toEqual(inSecond);
+      expect(inFirst.myParticipantId).toBe(player.id);
+      expect(inFirst.currentPlayerId).toBe(player.id);
+    });
+
+    it('pushes a view of nobody to a device outside the game', async () => {
+      const { gameId, creatorCookie, act } = await startOnlineGame();
+      const viewer = connect();
+      await subscribe(viewer, gameId);
+
+      const update = next<GameView>(viewer, 'game');
+      await act(creatorCookie, 'reroll', 'realtime-online-viewer', { held: [] });
+
+      expect(await update).toEqual(
+        expect.objectContaining({ isHost: false, myParticipantId: null }),
+      );
+    });
+
+    it('tells a player who they are when they subscribe', async () => {
+      const { gameId, player, playerCookie } = await startOnlineGame();
+
+      const state = await subscribe(connect(playerCookie), gameId);
+
+      expect(state.myParticipantId).toBe(player.id);
+      expect(state.isHost).toBe(false);
+    });
+  });
 });
