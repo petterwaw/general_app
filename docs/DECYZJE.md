@@ -54,10 +54,11 @@ Rola jest polem na rekordzie uczestnika, nie wynika z kolejności na liście. Ho
 tokenem zapisanym na urządzeniu (sekret w cookie), sprawdzanym przy każdej akcji. Samo ID gry nie
 może wystarczać do bycia hostem.
 
-**W trybie online host tylko startuje grę** (zmienione 2026-09-29). Zakładający dołącza do
-swojej gry jako zwykły gracz z rolą `HOST`, która daje jedno uprawnienie: start gry z lobby.
-Poza tym wszyscy mają ten sam poziom dostępu — każdy rusza tylko swoimi kośćmi i nikt nie może
-nikogo wyrzucić.
+**W trybie online host tylko startuje grę i zarządza lobby** (zmienione 2026-09-30).
+Zakładający dołącza do swojej gry jako zwykły gracz z rolą `HOST`, która daje dwa uprawnienia:
+start gry z lobby i usuwanie graczy — **tylko w lobby, przed startem**, tak jak w trybie
+lokalnym. W trakcie gry wszyscy mają ten sam poziom dostępu — każdy rusza tylko swoimi kośćmi
+i nikt nie może nikogo wyrzucić. Usuwanie gracza w trakcie gry może dojść później.
 
 ---
 
@@ -108,6 +109,8 @@ z serwera. Edytowalne jest wyłącznie to, które kości odkłada przed kolejnym
 - Wybór zatrzymanych kości przed rzutem jest szkicem na urządzeniu gracza; inni widzą dopiero
   wynik rzutu, a w nim, które kości zostały zatrzymane.
 - Punkty liczą się z kości na stole znanych serwerowi — akcja zapisu kategorii nie niesie kości.
+- Akcja zapisu kategorii online nie niesie też gracza (ustalone 2026-09-30) — zapisuje ten,
+  czyje jest urządzenie. Przysłany gracz jest odrzucany, a nie pomijany po cichu.
 
 Krok potwierdzenia przed zapisem kategorii to decyzja frontendowa — ustalona 2026-09-25: dwa
 kliknięcia (zaznaczenie pola, potem ptaszek), szczegóły w `DESIGN.md`. Silnik gry dostaje gotową

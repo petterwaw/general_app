@@ -282,6 +282,11 @@ export class GameService {
     hostSecret: string | undefined,
   ) {
     return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, (_tx, game) => {
+
+      if (game.diceSource === 'VIRTUAL') {
+        throw new BadRequestException('Dice are entered by hand only in local games')
+      }
+
       assertPlayersTurn(game, input.playerId);
 
       if (game.currentDice) {

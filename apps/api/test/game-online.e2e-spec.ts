@@ -72,8 +72,8 @@ describe('Online games', () => {
   async function createLobbyOfTwo(key: string) {
     const creator = device();
     const player = device();
-    const game = await createOnlineGame(creator, 'Piotr', `${key}-create`);
-    await join(player, game.id, 'Ania', `${key}-join`).expect(201);
+    const created = await createOnlineGame(creator, 'Piotr', `${key}-create`);
+    const game = gameFrom((await join(player, created.id, 'Ania', `${key}-join`).expect(201)).body);
 
     return { creator, player, game };
   }
@@ -330,6 +330,53 @@ describe('Online games', () => {
 
       expect(replayed.revision).toBe(first.revision);
       expect(replayed.currentDice).toEqual(first.currentDice);
+    });
+  });
+
+  describe('host-only actions', () => {
+    it('rejects dice entered by hand in an online game with 400', async () => {
+      const { creator, game } = await startGameOfTwo('online-hand-roll');
+
+      const response = await creator
+        .post(`/games/${game.id}/roll`)
+        .set('Idempotency-Key', 'online-hand-roll')
+        .send({ playerId: game.participants[0].id, dice: [6, 6, 6, 6, 6] });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('lets the creator remove a player in the lobby', async () => {
+      const { creator, game } = await createLobbyOfTwo('online-remove');
+
+      const response = await creator
+        .delete(`/games/${game.id}/participants/${game.participants[1].id}`)
+        .set('Idempotency-Key', 'online-remove');
+
+      expect(response.status).toBe(200);
+      expect(gameFrom(response.body).participants).toHaveLength(1);
+    });
+
+    it('rejects a removal by a player who did not create the game with 403', async () => {
+      const { player, game } = await createLobbyOfTwo('online-remove-player');
+
+      const response = await player
+        .delete(`/games/${game.id}/participants/${game.participants[0].id}`)
+        .set('Idempotency-Key', 'online-remove-player');
+
+      expect(response.status).toBe(403);
+    });
+
+    it('lets a removed player join another game', async () => {
+      const { creator, player, game } = await createLobbyOfTwo('online-remove-rejoin');
+      await creator
+        .delete(`/games/${game.id}/participants/${game.participants[1].id}`)
+        .set('Idempotency-Key', 'online-remove-rejoin-remove')
+        .expect(200);
+      const other = await createOnlineGame(device(), 'Kasia', 'online-remove-rejoin-other');
+
+      const response = await join(player, other.id, 'Ania', 'online-remove-rejoin');
+
+      expect(response.status).toBe(201);
     });
   });
 
