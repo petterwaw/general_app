@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import type { ApiResponse, GameEventView, GameView } from '@dice-app/contracts';
+import { CATEGORIES, type ApiResponse, type GameEventView, type GameView } from '@dice-app/contracts';
+import { totalScore, upperBonus } from '@dice-app/game-core';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { cleanDatabase, createGame, createTestApp } from './test-app';
 
@@ -488,6 +489,73 @@ describe('Online games', () => {
       const response = await score(agent, game.id, 'chance', 'score-local');
 
       expect(response.status).toBe(400);
+    });
+  });
+  describe('full game', () => {
+    it('plays two devices through every category to a completed game', async () => {
+      const { creator, player, game: lobby } = await createLobbyOfTwo('full-online');
+      const devices = new Map([
+        [lobby.participants[0].id, creator],
+        [lobby.participants[1].id, player],
+      ]);
+      let game = gameFrom((await start(creator, lobby.id, 'full-online-start').expect(201)).body);
+      const turns = CATEGORIES.length * devices.size;
+
+      for (let turn = 0; turn < turns; turn++) {
+        const category = CATEGORIES[Math.floor(turn / devices.size)];
+        const agent = devices.get(game.currentPlayerId!)!;
+        expect(game.rollNumber).toBe(1);
+
+        const rerolled = gameFrom(
+          (await reroll(agent, game.id, [0, 1], `full-online-reroll-${turn}`).expect(201)).body,
+        );
+        expect(rerolled.rollNumber).toBe(2);
+        expect(rerolled.currentDice!.slice(0, 2)).toEqual(game.currentDice!.slice(0, 2));
+
+        game = gameFrom(
+          (await score(agent, game.id, category, `full-online-score-${turn}`).expect(201)).body,
+        );
+      }
+
+      expect(game.status).toBe('COMPLETED');
+      expect(game.currentPlayerId).toBeNull();
+      expect(game.currentDice).toBeNull();
+      expect(game.rollNumber).toBeNull();
+      for (const participant of game.participants) {
+        for (const category of CATEGORIES) {
+          expect(participant.scoreCard[category]).not.toBeNull();
+        }
+        expect(participant.finalScore).toBe(totalScore(participant.scoreCard));
+        expect(participant.upperBonus).toBe(upperBonus(participant.scoreCard));
+      }
+
+      const events = eventsFrom((await creator.get(`/games/${game.id}/events`).expect(200)).body);
+      const rolls = events.filter((event) => event.type === 'diceRolled');
+      // one automatic first roll and one reroll per turn
+      expect(rolls).toHaveLength(turns * 2);
+      expect(events.at(-1)).toEqual(expect.objectContaining({ type: 'categorySaved' }));
+    });
+
+    it('frees both devices for a new game once the game is completed', async () => {
+      const { creator, player, game: lobby } = await createLobbyOfTwo('full-online-free');
+      const devices = new Map([
+        [lobby.participants[0].id, creator],
+        [lobby.participants[1].id, player],
+      ]);
+      let game = gameFrom((await start(creator, lobby.id, 'full-online-free-start').expect(201)).body);
+      for (let turn = 0; turn < CATEGORIES.length * devices.size; turn++) {
+        const category = CATEGORIES[Math.floor(turn / devices.size)];
+        const agent = devices.get(game.currentPlayerId!)!;
+        game = gameFrom(
+          (await score(agent, game.id, category, `full-online-free-score-${turn}`).expect(201)).body,
+        );
+      }
+      expect(game.status).toBe('COMPLETED');
+
+      const next = await createOnlineGame(creator, 'Piotr', 'full-online-free-next');
+      const response = await join(player, next.id, 'Ania', 'full-online-free-join');
+
+      expect(response.status).toBe(201);
     });
   });
 });
