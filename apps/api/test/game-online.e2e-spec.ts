@@ -60,11 +60,8 @@ describe('Online games', () => {
     return agent.post(`/games/${gameId}/reroll`).set('Idempotency-Key', key).send({ held });
   }
 
-  function score(agent: Agent, gameId: string, playerId: string, category: string, key: string) {
-    return agent
-      .post(`/games/${gameId}/score`)
-      .set('Idempotency-Key', key)
-      .send({ playerId, category });
+  function score(agent: Agent, gameId: string, category: string, key: string) {
+    return agent.post(`/games/${gameId}/score`).set('Idempotency-Key', key).send({ category });
   }
 
   function sum(dice: number[]) {
@@ -339,9 +336,9 @@ describe('Online games', () => {
   describe('scoring', () => {
     it('scores the dice on the table and opens the next turn with its first roll', async () => {
       const { creator, game } = await startGameOfTwo('score-turn');
-      const [first, second] = game.participants;
+      const second = game.participants[1];
 
-      const response = await score(creator, game.id, first.id, 'chance', 'score-turn');
+      const response = await score(creator, game.id, 'chance', 'score-turn');
 
       expect(response.status).toBe(201);
       const scored = gameFrom(response.body);
@@ -359,13 +356,7 @@ describe('Online games', () => {
         (await reroll(creator, game.id, [], 'score-after-reroll-roll').expect(201)).body,
       );
 
-      const response = await score(
-        creator,
-        game.id,
-        game.participants[0].id,
-        'chance',
-        'score-after-reroll',
-      );
+      const response = await score(creator, game.id, 'chance', 'score-after-reroll');
 
       expect(response.status).toBe(201);
       expect(gameFrom(response.body).participants[0].scoreCard.chance).toBe(
@@ -376,7 +367,7 @@ describe('Online games', () => {
     it("logs the saved category and then the next player's first roll", async () => {
       const { creator, game } = await startGameOfTwo('score-log');
       const scored = gameFrom(
-        (await score(creator, game.id, game.participants[0].id, 'chance', 'score-log')).body,
+        (await score(creator, game.id, 'chance', 'score-log')).body,
       );
 
       const response = await creator.get(`/games/${game.id}/events`).expect(200);
@@ -403,8 +394,7 @@ describe('Online games', () => {
 
     it("lets the next player reroll their turn's dice", async () => {
       const { creator, player, game } = await startGameOfTwo('score-next-reroll');
-      await score(creator, game.id, game.participants[0].id, 'chance', 'score-next-reroll-score')
-        .expect(201);
+      await score(creator, game.id, 'chance', 'score-next-reroll-score').expect(201);
 
       const response = await reroll(player, game.id, [0], 'score-next-reroll');
 
@@ -415,7 +405,7 @@ describe('Online games', () => {
     it("rejects a score on another player's turn with 400", async () => {
       const { player, game } = await startGameOfTwo('score-not-turn');
 
-      const response = await score(player, game.id, game.participants[1].id, 'chance', 'score-not-turn');
+      const response = await score(player, game.id, 'chance', 'score-not-turn');
 
       expect(response.status).toBe(400);
     });
@@ -423,15 +413,34 @@ describe('Online games', () => {
     it('rejects a score from a device outside the game with 403', async () => {
       const { game } = await startGameOfTwo('score-outsider');
 
-      const response = await score(
-        device(),
-        game.id,
-        game.participants[0].id,
-        'chance',
-        'score-outsider',
-      );
+      const response = await score(device(), game.id, 'chance', 'score-outsider');
 
       expect(response.status).toBe(403);
+    });
+
+    it('rejects a player id sent by an online player with 400', async () => {
+      const { creator, game } = await startGameOfTwo('score-player-id');
+
+      const response = await creator
+        .post(`/games/${game.id}/score`)
+        .set('Idempotency-Key', 'score-player-id')
+        .send({ playerId: game.participants[0].id, category: 'chance' });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects a local score without the player to score for with 400', async () => {
+      const { agent, game } = await createGame(app, ['Piotr', 'Ania'], 'score-local-create');
+      await start(agent, game.id, 'score-local-start').expect(201);
+      await agent
+        .post(`/games/${game.id}/roll`)
+        .set('Idempotency-Key', 'score-local-roll')
+        .send({ playerId: game.participants[0].id, dice: [1, 2, 3, 4, 5] })
+        .expect(201);
+
+      const response = await score(agent, game.id, 'chance', 'score-local');
+
+      expect(response.status).toBe(400);
     });
   });
 });

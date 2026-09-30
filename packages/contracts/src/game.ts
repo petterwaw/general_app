@@ -65,8 +65,10 @@ export const rerollSchema = z.strictObject({
     .refine((held) => new Set(held).size === held.length, 'Held positions must be distinct'),
 });
 
+// playerId names the player the host scores for in a local game; an online player is known from
+// the device and sends only the category.
 export const scoreSchema = z.strictObject({
-  playerId: z.string().min(1),
+  playerId: z.string().min(1).optional(),
   category: categorySchema,
 });
 

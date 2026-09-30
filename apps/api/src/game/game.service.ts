@@ -378,7 +378,7 @@ export class GameService {
       diceSource === 'PHYSICAL' ? { kind: 'host', secret } : { kind: 'player', secret };
 
     return this.runAction(id, idempotencyKey, access, async (tx, game, asking) => {
-      const playerId = diceSource === 'VIRTUAL' ? asking!.id : input.playerId;
+      const playerId = scoringPlayerId(diceSource, input, asking!);
       assertPlayersTurn(game, playerId);
 
       if (!game.currentDice) {
@@ -816,6 +816,24 @@ function findEvent(client: Prisma.TransactionClient, gameId: string, idempotency
   return client.eventLog.findUnique({
     where: { gameId_idempotencyKey: { gameId, idempotencyKey } },
   });
+}
+
+function scoringPlayerId(
+  diceSource: GameWithParticipants['diceSource'],
+  input: ScoreInput,
+  asking: Participant,
+): string {
+  if (diceSource === 'VIRTUAL') {
+    if (input.playerId !== undefined) {
+      throw new BadRequestException('An online player scores only for themselves');
+    }
+    return asking.id;
+  }
+
+  if (input.playerId === undefined) {
+    throw new BadRequestException('A local game needs the player to score for');
+  }
+  return input.playerId;
 }
 
 function assertPlayersTurn(game: GameWithParticipants, playerId: string) {
