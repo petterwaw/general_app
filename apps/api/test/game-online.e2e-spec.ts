@@ -334,6 +334,63 @@ describe('Online games', () => {
     });
   });
 
+  describe('my participant', () => {
+    it('tells the creator which participant they play as', async () => {
+      const game = await createOnlineGame(device(), 'Piotr', 'mine-create');
+
+      expect(game.myParticipantId).toBe(game.participants[0].id);
+    });
+
+    it('tells a joining player which participant they play as', async () => {
+      const game = await createOnlineGame(device(), 'Piotr', 'mine-join-create');
+
+      const response = await join(device(), game.id, 'Ania', 'mine-join');
+
+      expect(response.status).toBe(201);
+      const joined = gameFrom(response.body);
+      expect(joined.myParticipantId).toBe(joined.participants[1].id);
+    });
+
+    it('tells the same participant on a replayed join', async () => {
+      const player = device();
+      const game = await createOnlineGame(device(), 'Piotr', 'mine-replay-create');
+      const first = gameFrom((await join(player, game.id, 'Ania', 'mine-replay')).body);
+
+      const replayed = gameFrom((await join(player, game.id, 'Ania', 'mine-replay')).body);
+
+      expect(replayed.myParticipantId).toBe(first.myParticipantId);
+    });
+
+    it('tells each device its own participant when it opens the game', async () => {
+      const { creator, player, game } = await startGameOfTwo('mine-open');
+
+      const forCreator = gameFrom((await creator.get(`/games/${game.id}`).expect(200)).body);
+      const forPlayer = gameFrom((await player.get(`/games/${game.id}`).expect(200)).body);
+
+      expect(forCreator.myParticipantId).toBe(game.participants[0].id);
+      expect(forCreator.isHost).toBe(true);
+      expect(forPlayer.myParticipantId).toBe(game.participants[1].id);
+      expect(forPlayer.isHost).toBe(false);
+    });
+
+    it('tells a device outside the game that it plays as nobody', async () => {
+      const { game } = await startGameOfTwo('mine-outsider');
+
+      const response = await device().get(`/games/${game.id}`).expect(200);
+
+      expect(gameFrom(response.body).myParticipantId).toBeNull();
+    });
+
+    it('tells the player after their own action', async () => {
+      const { player, creator, game } = await startGameOfTwo('mine-action');
+      await score(creator, game.id, 'chance', 'mine-action-score').expect(201);
+
+      const response = await reroll(player, game.id, [], 'mine-action');
+
+      expect(gameFrom(response.body).myParticipantId).toBe(game.participants[1].id);
+    });
+  });
+
   describe('host-only actions', () => {
     it('rejects dice entered by hand in an online game with 400', async () => {
       const { creator, game } = await startGameOfTwo('online-hand-roll');

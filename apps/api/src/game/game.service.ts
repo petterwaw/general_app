@@ -147,7 +147,8 @@ export class GameService {
   // Anyone with the ID may look at a game; only the host's device gets isHost. Nothing is written.
   async findOne(id: string, hostSecret: string | undefined): Promise<GameView> {
     const game = await loadGame(this.prisma, id);
-    return toGameView(game, (await this.findHost(id, hostSecret)) !== null, null);
+    const participant = await this.findParticipant(id, hostSecret);
+    return toGameView(game, participant?.role === 'HOST', participant?.id ?? null);
   }
 
   async isHost(gameId: string, hostSecret: string | undefined): Promise<boolean> {
@@ -208,7 +209,13 @@ export class GameService {
       const game = await this.runAction(id, idempotencyKey, { kind: 'anyone' }, (tx, game) =>
         addPlayer(tx, game, input.name, MAX_ONLINE_PLAYERS, identityId),
       );
-      return { game, newSecret };
+      // The device became a participant only inside the action, so runAction could not know it
+      // as the one asking. Looked up afterwards, it is found on a replayed join as well.
+      const joined = await this.prisma.participant.findFirst({
+        where: { gameId: id, identityId },
+        select: { id: true },
+      });
+      return { game: { ...game, myParticipantId: joined?.id ?? null }, newSecret };
     } catch (error) {
       // The one-active-game-per-device index. Checked here rather than up front, so that a
       // replayed join returns its game instead of finding the device already in it.
