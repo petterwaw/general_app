@@ -21,3 +21,8 @@ zaproszenia, bez odświeżania strony.
 
 Znany dług od startu: bez limitu na turę nieaktywny gracz blokuje partię, dopóki pozostali
 nie wyjdą.
+
+**Kod zaproszenia — po froncie gry online** (ustalone 2026-10-01): krótki kod do wpisania
+zamiast otwierania linku; link ma wtedy postać `/join/<kod>`, a „Join game” na `/games` to pole
+na kod. Do tego czasu zaprasza link do gry, a „Join game” zostaje jako „coming soon”.
+Szczegóły kodu — `DO-USTALENIA.md`.
