@@ -3,10 +3,10 @@
 Zakres zawężony 2026-09-28 — online dla gości, bez kont:
 
 - gość zakłada grę online i dostaje link / kod zaproszenia,
-- dołączanie z imieniem, 2–5 graczy, lobby i start,
+- dołączanie z imieniem, 1–5 graczy (zmienione 2026-10-01 z 2–5), lobby i start,
 - tożsamość gracza = sekret w ciasteczku urządzenia (jak dziś host),
-- wyjście gracza: jego tury są pomijane; gdy zostanie jedna osoba, gra kończy się jako
-  `ABANDONED` bez zwycięzcy (`DECYZJE.md` §8).
+- wyjście gracza: jego tury są pomijane; kto zostanie sam, dogrywa do końca, a gra, z której
+  wyszli wszyscy, kończy się jako `ABANDONED` (`DECYZJE.md` §8, zmienione 2026-10-01).
 
 **Backend przeniesiony do etapu 7** (2026-09-29): zakładanie gry online, dołączanie, start
 i uprawnienia po urządzeniu gracza powstają razem z kośćmi wirtualnymi. Tu zostaje front:

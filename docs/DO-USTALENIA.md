@@ -23,6 +23,8 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 - [ ] **Co dokładnie pokazuje ranking globalny?** Najwyższy pojedynczy wynik, średnia, liczba
       wygranych, coś jeszcze?
+- [ ] **Czy do statystyk wchodzi gra online dograna przez osobę, która została sama?** Od
+      2026-10-01 taka gra kończy się normalnie, z wynikami i zwycięzcą (`DECYZJE.md` §8).
 
 ## Odłożone razem z limitem na turę i matchmakingiem
 
@@ -49,5 +51,4 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 - Przenoszenie statystyk gościa na konto po rejestracji — **nie ma czego przenosić**, gość
   z założenia nie ma statystyk globalnych.
 - Statystyki gościa po tokenie urządzenia — odrzucone dla MVP.
-- Zaliczanie wygranej ostatniej osobie w porzuconej grze online — odrzucone dla MVP.
 - Cofanie zatwierdzonej tury — odrzucone całkowicie, nie tylko dla MVP.

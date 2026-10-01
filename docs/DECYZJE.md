@@ -31,7 +31,7 @@ matchmaking może dojść później.
 
 **Liczba graczy w grze lokalnej: od 1 do 8** (ustalone 2026-09-24). Limit egzekwuje serwer —
 zarówno przy tworzeniu gry, jak i przy dołączaniu (`MAX_PLAYERS` w `packages/contracts`).
-Dla trybu online obowiązuje osobno ustalone 2–5.
+Dla trybu online obowiązuje osobno 1–5 (zmienione 2026-10-01 z 2–5) — można zacząć grę samemu.
 
 ---
 
@@ -165,6 +165,12 @@ zapis daje 0, decyduje reducer, nie klient.
   zaimplementowania razem z kontami — dziś poza hostem nikt nie ma urządzenia). Jego zapisane
   punkty zostają, wolne kategorie dostają 0, jego kolumna w tabeli jest przyciemniona, a jego
   tury są pomijane.
+- **Wyjście z gry online** (ustalone 2026-10-01):
+  - W trakcie gry każdy, także host, wychodzi jak gracz wyżej — zera w wolnych kategoriach,
+    gra trwa dalej. Kto zostanie sam, dogrywa do końca; porzucona jest dopiero gra, z której
+    wyszli wszyscy (§8).
+  - W lobby zwykły gracz po wyjściu znika z gry. Wyjście hosta z lobby porzuca całą grę, bo
+    tylko on może ją wystartować.
 
 ---
 
@@ -207,12 +213,10 @@ nie wyjdą.
 **Tryb lokalny:** do statystyk wchodzą **wyłącznie partie dograne do końca**. Gra wygasła albo
 porzucona nie liczy się w ogóle.
 
-**Tryb online:** gra kończy się, gdy zostanie w niej jedna osoba. Taka gra ma status
-`PORZUCONA` i **nie wchodzi do statystyk**. Ostatnia osoba **nie dostaje wygranej** — nie ma
-zwycięzcy.
-
-Wyjątek POZA MVP: jeżeli w momencie porzucenia rozegrano już co najmniej **10 z 15 kategorii**,
-grę można zaliczyć osobie, która została. Nie implementuj tego bez wyraźnej decyzji.
+**Tryb online** (zmienione 2026-10-01): gra trwa, dopóki zostaje w niej choć jedna osoba —
+kto zostanie sam, dogrywa do końca i gra kończy się normalnie, z wynikami. Gra, z której
+wyszli wszyscy, ma status `PORZUCONA` i **nie wchodzi do statystyk**. Czy do statystyk wchodzi
+gra dograna przez osobę, która została sama — `DO-USTALENIA.md`.
 
 ---
 
@@ -329,7 +333,8 @@ przyjęte od klienta.
 - kości wpisane w turze (wszystkie 5),
 - każdy rzut kośćmi wirtualnymi — z kośćmi po rzucie i tym, które zostały zatrzymane
   (ustalone 2026-09-29),
-- zapisaną kategorię z punktami.
+- zapisaną kategorię z punktami,
+- wyjście gracza z gry w trakcie partii (ustalone 2026-10-01).
 
 Pozostałe zdarzenia (np. dołączenie gracza) zostają w bazie, ale nie wychodzą na zewnątrz.
 Parametr `after` służy też do dosyłania brakujących zdarzeń po ponownym połączeniu (§10).
