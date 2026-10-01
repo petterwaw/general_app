@@ -13,13 +13,16 @@ export type GameWithParticipants = Prisma.GameGetPayload<{
 
 // The only place that decides which game fields leave the server. isHost describes the device
 // asking, not the game, so the caller works it out.
-export function toGameView(game: GameWithParticipants, isHost: boolean): GameView {
+export function toGameView(game: GameWithParticipants, isHost: boolean, myParticipantId: string | null): GameView {
   return {
     id: game.id,
     status: game.status,
     revision: game.revision,
+    diceSource: game.diceSource,
     currentPlayerId: game.currentPlayerId,
     currentDice: diceRollSchema.nullable().parse(game.currentDice),
+    rollNumber: game.rollNumber,
+    heldInLastRoll: game.heldInLastRoll,
     participants: game.participants.map((participant) => ({
       id: participant.id,
       name: participant.name,
@@ -32,5 +35,11 @@ export function toGameView(game: GameWithParticipants, isHost: boolean): GameVie
     })),
     createdAt: game.createdAt.toISOString(),
     isHost,
+    myParticipantId
   };
+}
+
+// The participant that the device creating or hosting the game plays as.
+export function hostParticipantId(game: GameWithParticipants): string | null {
+  return game.participants.find((participant) => participant.role === 'HOST')?.id ?? null;
 }

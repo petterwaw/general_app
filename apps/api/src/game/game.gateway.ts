@@ -33,37 +33,38 @@ export class GameGateway {
     // state goes out to the game's rooms.
     afterInit() {
         this.updates.changes$.subscribe((game) => {
-
-            this.server.to(`game:${game.id}:host`).emit('game', toGameView(game, true))
-            this.server.to(`game:${game.id}:viewer`).emit('game', toGameView(game, false))
+            for (const participant of game.participants) {
+                this.server
+                    .to(`game:${game.id}:participant:${participant.id}`)
+                    .emit('game', toGameView(game, participant.role === 'HOST', participant.id))
+            }
+            this.server.to(`game:${game.id}:viewer`).emit('game', toGameView(game, false, null))
         })
     }
 
-    handleConnection(client: Socket){
+    handleConnection(client: Socket) {
         this.logger.log(`Connected: ${client.id}`)
     }
-    handleDisconnect(client: Socket){
+    handleDisconnect(client: Socket) {
         this.logger.log(`Disconnected: ${client.id}`)
     }
 
     @SubscribeMessage('subscribe')
     async SubscribeGame(
-        @MessageBody(new ZodValidationPipe(subscribeSchema)) {gameId, revision}: SubscribeInput,
+        @MessageBody(new ZodValidationPipe(subscribeSchema)) { gameId, revision }: SubscribeInput,
         @ConnectedSocket() client: Socket
     ) {
-        const hostSecret = hostSecretFromCookieHeader(client.handshake.headers.cookie)
-        // The role is settled before joining: a room is picked once, and the host never changes.
-        const isHost = await this.gameService.isHost(gameId, hostSecret)
+        const secret = hostSecretFromCookieHeader(client.handshake.headers.cookie)
+        const participant = await this.gameService.findParticipant(gameId, secret)
 
         // Exactly one room per socket; joined before findOne, so no update can slip in between.
-        if (isHost) {
-            await client.join(`game:${gameId}:host`)
+        if (participant) {
+            await client.join(`game:${gameId}:participant:${participant.id}`)
         } else {
             await client.join(`game:${gameId}:viewer`)
         }
-        
 
-        const game = await this.gameService.findOne(gameId, hostSecret)
+        const game = await this.gameService.findOne(gameId, secret)
         if (game.revision > revision) {
             client.emit('game', game)
         }

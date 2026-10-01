@@ -1,4 +1,4 @@
-export type { Category, DieFace, DiceRoll, ScoreCard } from './types.js';
+export type { Category, DieFace, DiceRoll, DiceSource, ScoreCard, TurnState } from './types.js';
 export { CATEGORIES } from './types.js';
 
 export type { Player, GameState, Action } from './reducer.js';
@@ -14,13 +14,13 @@ export {
   reducer,
 } from './reducer.js';
 
-// Exposed so the UI can show score suggestions; the server still recomputes every score.
 export { dispatchPoints } from './scoring.js';
 
 export {
   isCategoryFree,
   isLowerSectionUnlocked,
   isLowerSectionCategory,
+  canRoll,
 } from './validation.js';
 
 export {

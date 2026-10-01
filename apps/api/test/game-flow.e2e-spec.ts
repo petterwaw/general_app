@@ -27,6 +27,7 @@ describe('Games full flow', () => {
             .post('/games')
             .set('Idempotency-Key', 'test-full-game-create')
             .send({
+                mode: 'LOCAL',
                 players: ['Piotr'],
             });
 

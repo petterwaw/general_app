@@ -24,6 +24,7 @@ describe('Games API', () => {
             .post('/games')
             .set('Idempotency-Key', 'test-create-game12')
             .send({
+                mode: 'LOCAL',
                 players: ['Piotr'],
             });
 
@@ -38,7 +39,7 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-join23')
-            .send({ players: ['Piotr'] });
+            .send({ mode: 'LOCAL', players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -61,6 +62,7 @@ describe('Games API', () => {
             .post('/games')
             .set('Idempotency-Key', 'test-create-multiple-players')
             .send({
+                mode: 'LOCAL',
                 players: ['Piotr', 'Ania', 'Kuba'],
             });
 
@@ -86,7 +88,7 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-start')
-            .send({ players: ['Piotr'] });
+            .send({ mode: 'LOCAL', players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -109,7 +111,7 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-roll')
-            .send({ players: ['Piotr'] });
+            .send({ mode: 'LOCAL', players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 
@@ -141,7 +143,7 @@ describe('Games API', () => {
         const createResponse = await agent
             .post('/games')
             .set('Idempotency-Key', 'test-create-for-score')
-            .send({ players: ['Piotr'] });
+            .send({ mode: 'LOCAL', players: ['Piotr'] });
 
         expect(createResponse.status).toBe(201);
 

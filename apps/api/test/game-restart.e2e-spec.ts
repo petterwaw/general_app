@@ -19,7 +19,7 @@ describe('Server restart', () => {
     const created = await request(server)
       .post('/games')
       .set('Idempotency-Key', 'restart-create')
-      .send({ players: ['Piotr', 'Ania'] })
+      .send({ mode: 'LOCAL', players: ['Piotr', 'Ania'] })
       .expect(201);
     const setCookie = created.get('Set-Cookie');
     if (!setCookie) {

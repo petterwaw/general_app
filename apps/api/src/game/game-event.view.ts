@@ -6,12 +6,14 @@ import type { EventLog } from '../../generated/prisma/client';
 export const PUBLIC_EVENT_TYPES = [
   'gameStarted',
   'diceConfirmation',
+  'diceRolled',
   'saveCategory',
 ] as const;
 
 type StoredPayload = {
   playerId?: string;
   roll?: DiceRoll;
+  held?: number[];
   category?: Category;
   points?: number;
 };
@@ -34,6 +36,15 @@ export function toGameEventView(event: EventLog): GameEventView {
         type: 'diceConfirmed',
         playerId: payload.playerId!,
         dice: payload.roll!,
+      };
+
+    case 'diceRolled':
+      return {
+        ...base,
+        type: 'diceRolled',
+        playerId: payload.playerId!,
+        dice: payload.roll!,
+        held: payload.held!,
       };
 
     case 'saveCategory':

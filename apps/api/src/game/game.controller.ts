@@ -5,11 +5,13 @@ import {
   gameEventsQuerySchema,
   joinGameSchema,
   rollSchema,
+  rerollSchema,
   scoreSchema,
   type CreateGameInput,
   type GameEventsQuery,
   type JoinGameInput,
   type RollInput,
+  type RerollInput,
   type ScoreInput,
 } from '@dice-app/contracts';
 import { GameService } from './game.service';
@@ -61,13 +63,20 @@ export class GameController {
   }
 
   @Post(':id/join')
-  join(
+  async join(
     @Param('id') id: string,
     @Body(new ZodValidationPipe(joinGameSchema)) input: JoinGameInput,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
   ) {
-    return this.gameService.join(id, input, idempotencyKey, hostSecretFrom(request));
+    const result = await this.gameService.join(id, input, idempotencyKey, hostSecretFrom(request));
+
+    if (result.newSecret) {
+      response.cookie('host_secret', result.newSecret, hostCookieOptions);
+    }
+
+    return result.game;
   }
 
   @Post(':id/leave')
@@ -106,6 +115,16 @@ export class GameController {
     @Req() request: Request,
   ) {
     return this.gameService.roll(id, input, idempotencyKey, hostSecretFrom(request));
+  }
+
+  @Post(':id/reroll')
+  reRoll(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(rerollSchema)) input: RerollInput,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: Request,
+  ) {
+    return this.gameService.reroll(id, input, idempotencyKey, hostSecretFrom(request));
   }
 
   @Post(':id/score')

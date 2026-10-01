@@ -67,7 +67,7 @@ describe('Concurrent requests', () => {
 
     const responses = await Promise.all(
       ['race-host-a', 'race-host-b', 'race-host-c'].map((key) =>
-        agent.post('/games').set('Idempotency-Key', key).send({ players: ['Piotr'] }),
+        agent.post('/games').set('Idempotency-Key', key).send({ mode: 'LOCAL', players: ['Piotr'] }),
       ),
     );
 
@@ -80,7 +80,7 @@ describe('Concurrent requests', () => {
 
     const [first, second] = await Promise.all(
       [1, 2].map(() =>
-        agent.post('/games').set('Idempotency-Key', 'race-create-replay').send({ players: ['Piotr'] }),
+        agent.post('/games').set('Idempotency-Key', 'race-create-replay').send({ mode: 'LOCAL', players: ['Piotr'] }),
       ),
     );
 

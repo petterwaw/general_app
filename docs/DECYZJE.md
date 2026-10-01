@@ -54,8 +54,11 @@ Rola jest polem na rekordzie uczestnika, nie wynika z kolejności na liście. Ho
 tokenem zapisanym na urządzeniu (sekret w cookie), sprawdzanym przy każdej akcji. Samo ID gry nie
 może wystarczać do bycia hostem.
 
-**W trybie online nie ma hosta** — wszyscy mają ten sam poziom dostępu i nikt nie może nikogo
-wyrzucić.
+**W trybie online host tylko startuje grę i zarządza lobby** (zmienione 2026-09-30).
+Zakładający dołącza do swojej gry jako zwykły gracz z rolą `HOST`, która daje dwa uprawnienia:
+start gry z lobby i usuwanie graczy — **tylko w lobby, przed startem**, tak jak w trybie
+lokalnym. W trakcie gry wszyscy mają ten sam poziom dostępu — każdy rusza tylko swoimi kośćmi
+i nikt nie może nikogo wyrzucić. Usuwanie gracza w trakcie gry może dojść później.
 
 ---
 
@@ -95,6 +98,20 @@ cofnąć**. Nie implementuj zdarzeń kompensacyjnych ani cofania całych tur.
 **W trybie online nie ma czego cofać** — gracz nigdy nie wpisuje wartości kości, dostaje je
 z serwera. Edytowalne jest wyłącznie to, które kości odkłada przed kolejnym rzutem.
 
+**Tura na kościach wirtualnych** (ustalone 2026-09-29):
+
+- Każdy rusza tylko swoimi kośćmi — rzuca i zapisuje wyłącznie gracz, którego jest tura.
+- **Pierwszy rzut wykonuje się sam** na starcie tury, w tej samej transakcji co zapis kategorii
+  poprzedniego gracza (albo start gry). Nie ma stanu „tura bez kości” widocznego dla graczy.
+- Po każdym rzucie gracz może zapisać kategorię albo rzucić jeszcze raz — **najwyżej 3 rzuty**.
+- Przed rzutem 2 i 3 gracz wybiera kości do zatrzymania; przelosowują się tylko pozostałe.
+  Wybór jest dowolny przy każdym rzucie — kość zatrzymaną wcześniej można odblokować.
+- Wybór zatrzymanych kości przed rzutem jest szkicem na urządzeniu gracza; inni widzą dopiero
+  wynik rzutu, a w nim, które kości zostały zatrzymane.
+- Punkty liczą się z kości na stole znanych serwerowi — akcja zapisu kategorii nie niesie kości.
+- Akcja zapisu kategorii online nie niesie też gracza (ustalone 2026-09-30) — zapisuje ten,
+  czyje jest urządzenie. Przysłany gracz jest odrzucany, a nie pomijany po cichu.
+
 Krok potwierdzenia przed zapisem kategorii to decyzja frontendowa — ustalona 2026-09-25: dwa
 kliknięcia (zaznaczenie pola, potem ptaszek), szczegóły w `DESIGN.md`. Silnik gry dostaje gotową
 akcję „zapisz kategorię X" i nie musi o tym nic wiedzieć.
@@ -130,8 +147,10 @@ zapis daje 0, decyduje reducer, nie klient.
   logiki uprawnień.
 - **Host prowadzi jedną grę naraz** (ustalone 2026-09-25). Żeby założyć nową, musi najpierw
   opuścić poprzednią. Skoro gra jest jedna, jedno ciasteczko `host_secret` na urządzenie wystarcza.
-  Pilnuje tego baza: częściowy indeks unikalny na `Game.hostIdentityId` dla gier w `LOBBY` /
-  `IN_PROGRESS`. **Do czasu kont „host” = urządzenie** (ciasteczko) — z innego urządzenia
+  **Zasada obejmuje oba tryby** (rozszerzone 2026-09-29): urządzenie jest naraz w jednej
+  aktywnej grze (`LOBBY` / `IN_PROGRESS`), lokalnej albo online, jako host albo gracz. Pilnuje
+  tego baza — częściowy indeks unikalny na aktywnych uczestnictwach urządzenia, nie tylko
+  sprawdzenie w serwisie. **Do czasu kont „host” = urządzenie** (ciasteczko) — z innego urządzenia
   serwer nie wie, że to ta sama osoba; „jedna gra na osobę” daje dopiero indeks na `userId`
   z §6. **UI na `/games`** (zmienione 2026-09-25): gdy host ma grę w `LOBBY` / `IN_PROGRESS`,
   zamiast przycisków „Create game” / „Join game” widzi jedną kartę z graczami tej gry,
@@ -308,6 +327,8 @@ przyjęte od klienta.
 
 - start gry,
 - kości wpisane w turze (wszystkie 5),
+- każdy rzut kośćmi wirtualnymi — z kośćmi po rzucie i tym, które zostały zatrzymane
+  (ustalone 2026-09-29),
 - zapisaną kategorię z punktami.
 
 Pozostałe zdarzenia (np. dołączenie gracza) zostają w bazie, ale nie wychodzą na zewnątrz.

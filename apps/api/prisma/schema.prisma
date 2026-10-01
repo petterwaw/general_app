@@ -16,9 +16,11 @@ model Game {
   createdAt       DateTime     @default(now())
   currentPlayerId String?      @unique
   currentPlayer   Participant? @relation("CurrentPlayerGame", fields: [currentPlayerId], references: [id])
+  diceSource      DiceSource   @default(PHYSICAL)
   currentDice     Json?
-  // The device hosting this game. A partial unique index (hand-written SQL in the migration)
-  // allows one LOBBY/IN_PROGRESS game per host identity.
+  // Virtual dice only: rolls made in the current turn and the positions held in the last one.
+  rollNumber      Int?
+  heldInLastRoll  Int[]        @default([])
   hostIdentityId  String?
   hostIdentity    Identity?    @relation("HostedGames", fields: [hostIdentityId], references: [id])
   events          EventLog[]
@@ -38,6 +40,9 @@ model Participant {
   userId      String?
   identityId  String?
   identity    Identity?       @relation(fields: [identityId], references: [id])
+  // True while the game is LOBBY / IN_PROGRESS. A partial unique index on identityId (hand-written
+  // SQL in the migration) allows one active game per device, local or online.
+  active      Boolean         @default(true)
   currentGame Game?           @relation("CurrentPlayerGame")
   gameId      String
   game        Game             @relation(fields: [gameId], references: [id])
@@ -74,6 +79,11 @@ enum GameStatus {
   COMPLETED
   ABANDONED
   EXPIRED
+}
+
+enum DiceSource {
+  PHYSICAL
+  VIRTUAL
 }
 
 enum ParticipantRole {
