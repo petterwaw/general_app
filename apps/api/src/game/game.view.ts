@@ -29,6 +29,8 @@ export function toGameView(game: GameWithParticipants, isHost: boolean, myPartic
       role: participant.role,
       turnOrder: participant.turnOrder,
       scoreCard: scoreCardSchema.parse(participant.scoreCard),
+      // once the game ends every participant is inactive, so only a game in progress tells who left
+      left: game.status === 'IN_PROGRESS' && !participant.active,
       // the total stays hidden until the last round is scored
       finalScore: game.status === 'COMPLETED' ? participant.finalScore : null,
       upperBonus: game.status === 'COMPLETED' ? participant.upperBonus : null,

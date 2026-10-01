@@ -48,7 +48,7 @@ describe('Games API contract', () => {
 
             for (const participant of game.participants) {
                 expect(Object.keys(participant).sort()).toEqual(
-                    ['finalScore', 'id', 'name', 'role', 'scoreCard', 'turnOrder', 'upperBonus'],
+                    ['finalScore', 'id', 'left', 'name', 'role', 'scoreCard', 'turnOrder', 'upperBonus'],
                 );
             }
         });
@@ -90,7 +90,6 @@ describe('Games API contract', () => {
             roll: (playerId) => ({ playerId, dice: [1, 2, 3, 4, 5] }),
             score: (playerId) => ({ playerId, category: 'one' }),
             join: () => ({ name: 'Jan' }),
-            leave: () => undefined,
         };
 
         it.each(Object.keys(hostActionBodies))('rejects %s without the host cookie with 403', async (action) => {
@@ -103,6 +102,17 @@ describe('Games API contract', () => {
 
             expect(response.status).toBe(403);
             expect(response.body.message).toBe('Invalid host credentials');
+        });
+
+        it('rejects leave without a cookie of a device playing in the game with 403', async () => {
+            const { game } = await createGame(['Piotr'], 'contract-no-cookie-leave');
+
+            const response = await request(app.getHttpServer())
+                .post(`/games/${game.id}/leave`)
+                .set('Idempotency-Key', 'contract-no-cookie-leave-action')
+                .send();
+
+            expect(response.status).toBe(403);
         });
 
         it('rejects a host cookie from another game with 403', async () => {

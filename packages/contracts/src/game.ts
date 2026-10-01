@@ -101,6 +101,8 @@ export type ParticipantView = {
   role: ParticipantRole;
   turnOrder: number;
   scoreCard: ScoreCard;
+  // left an online game in progress: their turns are skipped and their column is dimmed
+  left: boolean;
   // Set only once the game is COMPLETED; null before that, so the total stays hidden during play.
   finalScore: number | null;
   upperBonus: number | null;
@@ -128,8 +130,8 @@ export type GameView = {
   myParticipantId: string | null
 };
 
-// Public shape of a game-log entry. Only the events worth showing are exposed:
-// the game start, the five dice entered for a turn, and the category a player scored.
+// Public shape of a game-log entry. Only the events worth showing are exposed: the game start,
+// the five dice entered or rolled for a turn, the category a player scored and a player leaving.
 type GameEventBase = {
   revision: number;
   createdAt: string;
@@ -146,4 +148,5 @@ export type GameEventView =
       category: Category;
       // points as computed by the server; null for events logged before points were recorded
       points: number | null;
-    });
+    })
+  | (GameEventBase & { type: 'playerLeft'; playerId: string });
