@@ -11,6 +11,14 @@ import { GameRuleError } from './errors.js'
 import { CATEGORIES } from './types.js'
 import type { Category, DiceRoll, TurnState } from './types.js'
 
+const threePlayers = [{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }, { id: 'p3', name: 'Celina' }]
+
+function fillCard(state: GameState, playerId: string): void {
+    const player = state.players.find(p => p.id === playerId)
+    if (!player) throw new Error(`No player ${playerId} in the state`)
+    for (const category of CATEGORIES) player.card[category] = 0
+}
+
 describe('createInitialState', () => {
     it('should throw when the player list is empty', () => {
         expect(() => createInitialState([], 'PHYSICAL')).toThrow()
@@ -64,6 +72,38 @@ describe('nextPlayerId', () => {
     it('should throw when currentPlayerId does not match any player in the state', () => {
         const state = createInitialState([{ id: 'p1', name: 'Ala' }], 'PHYSICAL')
         state.currentPlayerId = 'missing'
+
+        expect(() => nextPlayerId(state)).toThrow()
+    })
+
+    it('should skip a player with a full card', () => {
+        const state = createInitialState(threePlayers, 'PHYSICAL')
+        fillCard(state, 'p2')
+
+        expect(nextPlayerId(state)).toBe('p3')
+    })
+
+    it('should skip a player with a full card when wrapping around', () => {
+        const state = createInitialState(threePlayers, 'PHYSICAL')
+        state.currentPlayerId = 'p3'
+        fillCard(state, 'p1')
+
+        expect(nextPlayerId(state)).toBe('p2')
+    })
+
+    it('should skip several players with full cards in a row', () => {
+        const state = createInitialState([...threePlayers, { id: 'p4', name: 'Dawid' }], 'PHYSICAL')
+        fillCard(state, 'p2')
+        fillCard(state, 'p3')
+
+        expect(nextPlayerId(state)).toBe('p4')
+    })
+
+    it('should throw when every player has a full card', () => {
+        const state = createInitialState(threePlayers, 'PHYSICAL')
+        fillCard(state, 'p1')
+        fillCard(state, 'p2')
+        fillCard(state, 'p3')
 
         expect(() => nextPlayerId(state)).toThrow()
     })
@@ -539,5 +579,97 @@ describe('reducer — full virtual game', () => {
             expect(player.card.general).toBe(50)
             expect(player.card.largeStraight).toBe(40)
         }
+    })
+})
+
+describe('reducer — leave', () => {
+    function createThreePlayerVirtualGame(): GameState {
+        return createInitialState(threePlayers, 'VIRTUAL')
+    }
+
+    function leave(state: GameState, playerId: string): GameState {
+        return reducer(state, { type: 'leave', playerId })
+    }
+
+    it('should put a zero in every free category of the leaving player and keep the saved ones', () => {
+        let state = roll(createThreePlayerVirtualGame(), 'p1', [], [6, 6, 6, 2, 3])
+        state = reducer(state, { type: 'saveCategory', playerId: 'p1', category: 'six' })
+
+        state = leave(state, 'p1')
+
+        const card = state.players[0].card
+        expect(card.six).toBe(18)
+        for (const category of CATEGORIES.filter(c => c !== 'six')) {
+            expect(card[category]).toBe(0)
+        }
+    })
+
+    it('should leave the turn and the dice on the table alone when another player leaves', () => {
+        const before = roll(createThreePlayerVirtualGame(), 'p1', [], [1, 2, 3, 4, 5])
+
+        const state = leave(before, 'p3')
+
+        expect(state.currentPlayerId).toBe('p1')
+        expect(turnOf(state)).toEqual(turnOf(before))
+    })
+
+    it('should leave the other players\' cards untouched', () => {
+        const state = leave(createThreePlayerVirtualGame(), 'p3')
+
+        for (const player of state.players.filter(p => p.id !== 'p3')) {
+            expect(Object.values(player.card).every(value => value === null)).toBe(true)
+        }
+    })
+
+    it('should pass the turn to the next player with no roll yet when the current player leaves', () => {
+        const before = roll(createThreePlayerVirtualGame(), 'p1', [], [1, 2, 3, 4, 5])
+
+        const state = leave(before, 'p1')
+
+        expect(state.currentPlayerId).toBe('p2')
+        expect(turnOf(state)).toEqual({ rollNumber: 0 })
+    })
+
+    it('should skip players who already left when passing the turn', () => {
+        let state = leave(createThreePlayerVirtualGame(), 'p2')
+        state = roll(state, 'p1', [], [1, 2, 3, 4, 5])
+
+        state = leave(state, 'p1')
+
+        expect(state.currentPlayerId).toBe('p3')
+    })
+
+    it('should not throw when the last player with free categories leaves', () => {
+        const before = createInitialState([{ id: 'p1', name: 'Ala' }, { id: 'p2', name: 'Bartek' }], 'VIRTUAL')
+        fillCard(before, 'p1')
+        before.currentPlayerId = 'p2'
+
+        const state = leave(before, 'p2')
+
+        expect(isGameOver(state)).toBe(true)
+    })
+
+    it('should not change the state it was given', () => {
+        const state = roll(createThreePlayerVirtualGame(), 'p1', [], [1, 2, 3, 4, 5])
+        const snapshot = structuredClone(state)
+
+        leave(state, 'p1')
+
+        expect(state).toEqual(snapshot)
+    })
+
+    it('should throw an Error, not a GameRuleError, for a player missing from the state', () => {
+        const action = () => leave(createThreePlayerVirtualGame(), 'missing')
+
+        expect(action).toThrow(Error)
+        expect(action).not.toThrow(GameRuleError)
+    })
+
+    it('should throw an Error, not a GameRuleError, for a player whose card is already full', () => {
+        const state = leave(createThreePlayerVirtualGame(), 'p2')
+        const action = () => leave(state, 'p2')
+
+        expect(action).toThrow(Error)
+        expect(action).not.toThrow(GameRuleError)
     })
 })
