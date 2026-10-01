@@ -9,11 +9,13 @@ import { LeaveIcon } from '../ui/icons';
 import { Drawer } from '../ui/drawer';
 import { DrawerHandle } from '../ui/drawerHandle';
 import DiceEntry from '../dice/diceEntry';
+import VirtualDice from '../dice/virtualDice';
+import { canReroll, toggleHeld } from '../dice/virtualTurn';
 import TurnPill from '../dice/turnPill';
 import PlayersPanel from '../players/playersPanel';
 import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
 import GameOver from '../results/gameOver';
-import { scoreCategory, submitRoll, leaveGame } from '../../api/games';
+import { leaveGame, rerollDice, scoreCategory, submitRoll } from '../../api/games';
 import useGameLog from '../../hooks/useGameLog';
 import { useErrorToast } from '../ui/toast';
 
@@ -83,12 +85,15 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     return () => observer.disconnect();
   }, []);
 
-  const { participants, currentPlayerId } = game;
+  const { participants, currentPlayerId, myParticipantId } = game;
   const log = useGameLog(game.id, game.revision);
   // the screen stays as it was after the last category; only entering dice is closed
   const finished = game.status === 'COMPLETED';
-  // not the host's device: the game is only watched, nothing on it can be changed
-  const watching = !game.isHost;
+  const online = game.diceSource === 'VIRTUAL';
+  // this device does not play in the game: it is only watched, nothing on it can be changed
+  const watching = myParticipantId === null;
+  // online, each player moves on their own turn; locally the host moves for everyone
+  const myTurn = online ? currentPlayerId === myParticipantId : !watching;
   const leaveLabel = watching ? 'Leave spectating' : 'Leave game';
   const { tray, layout, scorecard } = pickLayout(gridWidth, labelWidth, participants.length);
   const columns = layout !== 'stack';
@@ -100,6 +105,16 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   const round = current
     ? Object.values(current.scoreCard).filter((value) => value !== null).length + 1
     : 0;
+
+  // dice this device marked to keep for the next roll; a new turn starts with none. A turn is the
+  // player and their round: alone in a game, the next turn is the same player's
+  const [held, setHeld] = useState<number[]>([]);
+  const turn = `${currentPlayerId}:${round}`;
+  const [heldTurn, setHeldTurn] = useState(turn);
+  if (heldTurn !== turn) {
+    setHeldTurn(turn);
+    setHeld([]);
+  }
 
   async function run(action: () => Promise<GameView>) {
     if (pendingRef.current) return
@@ -123,7 +138,11 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
 
   function saveCategory(category: Category) {
     if (!currentPlayerId) return;
-    run(() => scoreCategory(game.id, currentPlayerId, category));
+    run(() => scoreCategory(game.id, category, online ? undefined : currentPlayerId));
+  }
+
+  function reroll() {
+    run(() => rerollDice(game.id, held));
   }
 
   // Not through run(): the abandoned game must not reach onGameChange, or GameView swaps to its
@@ -151,6 +170,10 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
 
   // only the host leaving a game still going abandons it for everyone, so only that asks first;
   // a watcher, or anyone after the end, just goes back
+  const turnPill = current && (
+    <TurnPill name={current.name} seat={seat} round={round} totalRounds={CATEGORIES.length} />
+  );
+
   const leaveButton =
     watching || finished ? (
       <TopLeaveButton label={leaveLabel} onClick={leaveGameSubmit} />
@@ -202,8 +225,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
           <ScoreCard
             participants={participants}
             currentPlayerId={currentPlayerId}
-            // no dice, no score hints: a watcher has nothing to pick
-            turnDice={watching ? null : game.currentDice}
+            // no dice, no score hints: only the one who moves now has something to pick
+            turnDice={myTurn ? game.currentDice : null}
             selected={selected}
             onSelect={setSelected}
             onSave={saveCategory}
@@ -220,23 +243,28 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
         >
           {/* stays mounted across turns: it clears itself when the confirmed dice go, so the old
               ones can animate away */}
-          <DiceEntry
-            confirmedDice={game.currentDice}
-            pending={pending}
-            disabled={finished}
-            readOnly={watching}
-            onConfirm={confirmDice}
-            trayFooter={
-              current && (
-                <TurnPill
-                  name={current.name}
-                  seat={seat}
-                  round={round}
-                  totalRounds={CATEGORIES.length}
-                />
-              )
-            }
-          />
+          {online ? (
+            <VirtualDice
+              dice={game.currentDice}
+              held={held}
+              rollNumber={game.rollNumber}
+              playing={myTurn && !finished}
+              canReroll={canReroll(game.rollNumber, myTurn && !finished, pending)}
+              pending={pending}
+              onToggle={(index) => setHeld((current) => toggleHeld(current, index))}
+              onReroll={reroll}
+              trayFooter={turnPill}
+            />
+          ) : (
+            <DiceEntry
+              confirmedDice={game.currentDice}
+              pending={pending}
+              disabled={finished}
+              readOnly={watching}
+              onConfirm={confirmDice}
+              trayFooter={turnPill}
+            />
+          )}
         </div>
 
         {layout === 'three' && (

@@ -4,6 +4,7 @@ import type {
   DiceRoll,
   GameView,
   RollInput,
+  RerollInput,
   ScoreInput,
   JoinGameInput,
   GameEventView
@@ -27,9 +28,17 @@ export function submitRoll(gameId: string, playerId: string, dice: DiceRoll) {
   return apiRequest<GameView>(`/games/${gameId}/roll`, { method: 'POST', body });
 }
 
-export function scoreCategory(gameId: string, playerId: string, category: Category) {
-  const body: ScoreInput = { playerId, category };
+// `playerId` only in a local game, where the host scores for whoever's turn it is; an online
+// player scores for themselves and the server refuses a player sent along
+export function scoreCategory(gameId: string, category: Category, playerId?: string) {
+  const body: ScoreInput = playerId === undefined ? { category } : { playerId, category };
   return apiRequest<GameView>(`/games/${gameId}/score`, { method: 'POST', body });
+}
+
+export function rerollDice(gameId: string, held: number[]): Promise<GameView> {
+  // TODO(Piotr): POST /games/:id/reroll with a RerollInput body; submitRoll above is the pattern
+  const body: RerollInput = {held}
+  return apiRequest<GameView>(`/games/${gameId}/reroll`, { method: 'POST', body });
 }
 
 export function leaveGame(gameId: string) {
