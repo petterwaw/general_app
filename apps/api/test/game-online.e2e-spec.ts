@@ -772,6 +772,16 @@ describe('Online games', () => {
         expect(abandoned.participants.map((participant) => participant.finalScore)).toEqual([null, null]);
       });
 
+      it('no longer offers the game to a host who left it while it goes on', async () => {
+        const { creator, game } = await startGameOfThree('leave-hosted');
+        await leave(creator, game.id, 'leave-hosted-leave').expect(201);
+
+        const response = await creator.get('/games/hosted').expect(200);
+
+        expect((response.body as ApiResponse<GameView | null>).data).toBeNull();
+        expect((await view(creator, game.id)).status).toBe('IN_PROGRESS');
+      });
+
       it('rejects leaving a second time with 400', async () => {
         const { player, game } = await startGameOfThree('leave-twice');
         await leave(player, game.id, 'leave-twice-first').expect(201);

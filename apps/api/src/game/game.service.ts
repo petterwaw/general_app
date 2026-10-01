@@ -725,6 +725,8 @@ export class GameService {
       where: {
         hostIdentityId: identityId,
         status: { in: ['LOBBY', 'IN_PROGRESS'] },
+        // the host of an online game may leave it while the others play on
+        participants: { some: { identityId, role: 'HOST', active: true } },
       },
       include: gameInclude,
     });
