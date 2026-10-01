@@ -8,6 +8,7 @@ export const PUBLIC_EVENT_TYPES = [
   'diceConfirmation',
   'diceRolled',
   'saveCategory',
+  'playerLeft',
 ] as const;
 
 type StoredPayload = {
@@ -55,6 +56,9 @@ export function toGameEventView(event: EventLog): GameEventView {
         category: payload.category!,
         points: payload.points ?? null,
       };
+
+    case 'playerLeft':
+      return { ...base, type: 'playerLeft', playerId: payload.playerId! };
 
     default:
       throw new Error(`Event type ${event.actionType} is not public`);

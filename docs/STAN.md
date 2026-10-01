@@ -22,9 +22,9 @@ to uwagę. Rzeczy z listy „Świadomie POZA MVP" niżej nie proponuj.
 | [4](etapy/etap-4.md) | Frontend gry lokalnej (MVP) | KRYTERIUM SPEŁNIONE (2026-09-27: pełna partia rozegrana przy stole, restart serwera w trakcie partii sprawdzony ręcznie, 2026-09-28 także testem e2e) — ekran gry złożony z komponentów, zatwierdzenie kości i zapis kategorii wołają API; wyjście z gry, `/games` w nowym designie i karta niedokończonej gry hosta (PR #8); zakończona gra zostaje na ekranie gry z zablokowanymi kośćmi; log gry pod graczami, ekran gry dopasowany do telefonów; ekran końca gry z wynikami i animacje stołu (`ux/game-end-and-dice-motion`); ekrany błędów (PR #11) i widok tylko do oglądania dla nie-hosta (`feat/view-only-guests`); nowa reguła sekcji dolnej (zero zawsze wolno), testy restartu i równoczesnych żądań, typecheck i build w CI (`test/coverage-gaps`); poprawianie kości po „Confirm” świadomie odłożone |
 | [5](etapy/etap-5.md) | Konta i goście | odłożone (2026-09-28) |
 | [6](etapy/etap-6.md) | Realtime | KRYTERIUM SPEŁNIONE (2026-09-28: stan gry na żywo przez Socket.IO, powrót po zerwanym połączeniu po `revision`, test wifi ręcznie i e2e — PR #17) |
-| [7](etapy/etap-7.md) | Kości wirtualne | KRYTERIUM SPEŁNIONE (2026-09-30: pełna partia online dwóch urządzeń przez API w teście e2e) — obejmuje backend gry online z etapu 9, „którym graczem jestem” i realtime dla graczy; zostaje `/etap-review` i PR |
+| [7](etapy/etap-7.md) | Kości wirtualne | KRYTERIUM SPEŁNIONE (2026-09-30: pełna partia online dwóch urządzeń przez API w teście e2e) — obejmuje backend gry online z etapu 9, „którym graczem jestem” i realtime dla graczy (PR #18) |
 | [8](etapy/etap-8.md) | Statystyki globalne | odłożone (2026-09-28) |
-| [9](etapy/etap-9.md) | Online przez zaproszenie | nierozpoczęte — backend przeniesiony do etapu 7 (2026-09-29), tu zostaje front |
+| [9](etapy/etap-9.md) | Online przez zaproszenie | W TOKU — backend przeniesiony do etapu 7 (2026-09-29), tu zostaje front; zaczęte od wyjścia gracza z gry online (2026-10-01) |
 | [10](etapy/etap-10.md) | Utwardzanie i produkcja | nierozpoczęte |
 
 ## Kierunek od 2026-09-28
@@ -38,6 +38,5 @@ odłożone — bez kont nie ma statystyk.
 - Matchmaking — online tylko przez zaproszenie
 - Limit 90 s na turę i wyrzucanie za przekroczenia — dojdą później
 - Przekazanie roli hosta innemu urządzeniu
-- Zaliczanie wygranej przy porzuconej grze po progu 10/15 kategorii
 - Statystyki gościa zapisywane po tokenie urządzenia
 - Boty / gra z komputerem *(nigdy nie było omawiane — nie zakładaj, że mają być)*

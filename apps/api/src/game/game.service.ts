@@ -62,7 +62,7 @@ export class GameService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly updates: GameUpdates,
-  ) { }
+  ) {}
 
   /**
    * Creates a game with this device's participant as its host: the host of a local game plays for
@@ -92,7 +92,11 @@ export class GameService {
     try {
       const game = await this.prisma.$transaction(async (tx) => {
         const hostIdentityId = newHostSecret
-          ? (await tx.identity.create({ data: { secretHash: hashSecret(newHostSecret) } })).id
+          ? (
+              await tx.identity.create({
+                data: { secretHash: hashSecret(newHostSecret) },
+              })
+            ).id
           : identity!.id;
 
         return tx.game.create({
@@ -114,7 +118,10 @@ export class GameService {
         });
       });
 
-      return { game: toGameView(game, true, hostParticipantId(game)), hostSecret: newHostSecret };
+      return {
+        game: toGameView(game, true, hostParticipantId(game)),
+        hostSecret: newHostSecret,
+      };
     } catch (error) {
       if (isUniqueViolation(error)) {
         // Lost a race: either to the same Idempotency-Key, or to another game of this device.
@@ -148,11 +155,18 @@ export class GameService {
   async findOne(id: string, hostSecret: string | undefined): Promise<GameView> {
     const game = await loadGame(this.prisma, id);
     const participant = await this.findParticipant(id, hostSecret);
-    return toGameView(game, participant?.role === 'HOST', participant?.id ?? null);
+    return toGameView(
+      game,
+      participant?.role === 'HOST',
+      participant?.id ?? null,
+    );
   }
 
   async events(id: string, query: GameEventsQuery): Promise<GameEventView[]> {
-    const game = await this.prisma.game.findUnique({ where: { id }, select: { id: true } });
+    const game = await this.prisma.game.findUnique({
+      where: { id },
+      select: { id: true },
+    });
 
     if (!game) {
       throw new NotFoundException('Game not found');
@@ -198,12 +212,20 @@ export class GameService {
     // action is replayed or loses a race; an identity without a participant only watches.
     const newSecret = identity ? null : randomBytes(32).toString('hex');
     const identityId = newSecret
-      ? (await this.prisma.identity.create({ data: { secretHash: hashSecret(newSecret) } })).id
+      ? (
+          await this.prisma.identity.create({
+            data: { secretHash: hashSecret(newSecret) },
+          })
+        ).id
       : identity!.id;
 
     try {
-      const game = await this.runAction(id, idempotencyKey, { kind: 'anyone' }, (tx, game) =>
-        addPlayer(tx, game, input.name, MAX_ONLINE_PLAYERS, identityId),
+      const game = await this.runAction(
+        id,
+        idempotencyKey,
+        { kind: 'anyone' },
+        (tx, game) =>
+          addPlayer(tx, game, input.name, MAX_ONLINE_PLAYERS, identityId),
       );
       // The device became a participant only inside the action, so runAction could not know it
       // as the one asking. Looked up afterwards, it is found on a replayed join as well.
@@ -211,7 +233,10 @@ export class GameService {
         where: { gameId: id, identityId },
         select: { id: true },
       });
-      return { game: { ...game, myParticipantId: joined?.id ?? null }, newSecret };
+      return {
+        game: { ...game, myParticipantId: joined?.id ?? null },
+        newSecret,
+      };
     } catch (error) {
       // The one-active-game-per-device index. Checked here rather than up front, so that a
       // replayed join returns its game instead of finding the device already in it.
@@ -222,64 +247,49 @@ export class GameService {
     }
   }
 
-  start(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
-    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, (_tx, game) => {
-      if (game.status !== 'LOBBY') {
-        throw new BadRequestException('Game has already started');
-      }
+  start(
+    id: string,
+    idempotencyKey: string | undefined,
+    hostSecret: string | undefined,
+  ) {
+    return this.runAction(
+      id,
+      idempotencyKey,
+      { kind: 'host', secret: hostSecret },
+      (_tx, game) => {
+        if (game.status !== 'LOBBY') {
+          throw new BadRequestException('Game has already started');
+        }
 
-      if (game.participants.length < 2 && game.diceSource === 'VIRTUAL') {
-        throw new BadRequestException('Needs atleast 2 players to start');
-      }
+        const firstPlayer = game.participants[0];
 
-      const firstPlayer = game.participants[0];
+        if (!firstPlayer) {
+          throw new BadRequestException('Game needs at least one player');
+        }
 
-      if (!firstPlayer) {
-        throw new BadRequestException('Game needs at least one player');
-      }
+        if (game.diceSource === 'PHYSICAL') {
+          return {
+            actionType: 'gameStarted',
+            payload: { firstPlayerId: firstPlayer.id },
+            update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id },
+          };
+        }
 
-      if (game.diceSource === 'PHYSICAL') {
+        const { update, autoRoll } = openTurn({
+          diceSource: 'VIRTUAL',
+          players: playersOf(game),
+          currentPlayerId: firstPlayer.id,
+          turn: { rollNumber: 0 },
+        });
+
         return {
           actionType: 'gameStarted',
           payload: { firstPlayerId: firstPlayer.id },
-          update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id },
+          update: { ...update, status: 'IN_PROGRESS' },
+          autoRoll,
         };
-      }
-
-      const players = game.participants.map((player) => ({
-        id: player.id,
-        name: player.name,
-        card: scoreCardSchema.parse(player.scoreCard),
-      }))
-
-      const state: GameState = {
-        diceSource: 'VIRTUAL',
-        players: players,
-        currentPlayerId: players[0].id,
-        turn: { rollNumber: 0 },
-      };
-
-      const rolled = reducer(state, {
-        type: 'roll',
-        playerId: state.currentPlayerId,
-        held: [],
-        rolled: drawDice(),
-      });
-
-
-      if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
-        throw new Error('The first roll did not happen');
-      }
-      const { dice, rollNumber, heldInLastRoll } = rolled.turn;
-
-      return {
-        actionType: 'gameStarted',
-        payload: { firstPlayerId: firstPlayer.id },
-        update: { status: 'IN_PROGRESS', currentPlayerId: firstPlayer.id, currentDice: dice, rollNumber: rollNumber, heldInLastRoll: heldInLastRoll },
-        autoRoll: { playerId: firstPlayer.id, roll: dice, held: heldInLastRoll }
-      };
-
-    });
+      },
+    );
   }
 
   roll(
@@ -288,24 +298,30 @@ export class GameService {
     idempotencyKey: string | undefined,
     hostSecret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, (_tx, game) => {
+    return this.runAction(
+      id,
+      idempotencyKey,
+      { kind: 'host', secret: hostSecret },
+      (_tx, game) => {
+        if (game.diceSource === 'VIRTUAL') {
+          throw new BadRequestException(
+            'Dice are entered by hand only in local games',
+          );
+        }
 
-      if (game.diceSource === 'VIRTUAL') {
-        throw new BadRequestException('Dice are entered by hand only in local games')
-      }
+        assertPlayersTurn(game, input.playerId);
 
-      assertPlayersTurn(game, input.playerId);
+        if (game.currentDice) {
+          throw new BadRequestException('Roll was already made');
+        }
 
-      if (game.currentDice) {
-        throw new BadRequestException('Roll was already made');
-      }
-
-      return {
-        actionType: 'diceConfirmation',
-        payload: { playerId: input.playerId, roll: input.dice },
-        update: { currentDice: input.dice },
-      };
-    });
+        return {
+          actionType: 'diceConfirmation',
+          payload: { playerId: input.playerId, roll: input.dice },
+          update: { currentDice: input.dice },
+        };
+      },
+    );
   }
 
   reroll(
@@ -314,69 +330,52 @@ export class GameService {
     idempotencyKey: string | undefined,
     secret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { kind: 'player', secret }, (_tx, game, asking) => {
-      if (game.diceSource !== 'VIRTUAL') {
-        throw new BadRequestException('Dice must be virtual');
-      }
-      if (game.status !== 'IN_PROGRESS') {
-        throw new BadRequestException('Game must be in progress');
-      }
-      if (!game.currentPlayerId) {
-        throw new Error('Game in progress has no current player')
-      }
-
-      const players = game.participants.map((player) => ({
-        id: player.id,
-        name: player.name,
-        card: scoreCardSchema.parse(player.scoreCard),
-      }))
-
-      const rollNumber = game.rollNumber;
-      if (rollNumber !== 1 && rollNumber !== 2 && rollNumber !== 3) {
-        throw new Error('Stored turn has no valid roll number');
-      }
-
-      const state: GameState = {
-        diceSource: 'VIRTUAL',
-        players,
-        currentPlayerId: game.currentPlayerId,
-        turn: {
-          rollNumber,
-          dice: diceRollSchema.parse(game.currentDice),
-          heldInLastRoll: game.heldInLastRoll,
-        },
-      };
-
-      let rolled: GameState;
-      try {
-        rolled = reducer(state, {
-          type: 'roll',
-          playerId: asking!.id,
-          held: input.held,
-          rolled: drawDice(),
-        });
-      } catch (error) {
-        if (error instanceof GameRuleError) {
-          throw new BadRequestException(error.message);
+    return this.runAction(
+      id,
+      idempotencyKey,
+      { kind: 'player', secret },
+      (_tx, game, asking) => {
+        if (game.diceSource !== 'VIRTUAL') {
+          throw new BadRequestException('Dice must be virtual');
         }
-        throw error;
-      }
+        if (game.status !== 'IN_PROGRESS') {
+          throw new BadRequestException('Game must be in progress');
+        }
+        let rolled: GameState;
+        try {
+          rolled = reducer(gameStateOf(game), {
+            type: 'roll',
+            playerId: asking!.id,
+            held: input.held,
+            rolled: drawDice(),
+          });
+        } catch (error) {
+          if (error instanceof GameRuleError) {
+            throw new BadRequestException(error.message);
+          }
+          throw error;
+        }
 
-      if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
-        throw new Error('The roll did not happen');
-      }
-      const turn = rolled.turn;
+        if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
+          throw new Error('The roll did not happen');
+        }
+        const turn = rolled.turn;
 
-      return {
-        actionType: 'diceRolled',
-        payload: { playerId: asking!.id, roll: turn.dice, held: turn.heldInLastRoll },
-        update: {
-          currentDice: turn.dice,
-          rollNumber: turn.rollNumber,
-          heldInLastRoll: turn.heldInLastRoll,
-        },
-      };
-    })
+        return {
+          actionType: 'diceRolled',
+          payload: {
+            playerId: asking!.id,
+            roll: turn.dice,
+            held: turn.heldInLastRoll,
+          },
+          update: {
+            currentDice: turn.dice,
+            rollNumber: turn.rollNumber,
+            heldInLastRoll: turn.heldInLastRoll,
+          },
+        };
+      },
+    );
   }
 
   async score(
@@ -387,152 +386,119 @@ export class GameService {
   ) {
     const { diceSource } = await findGameOrThrow(this.prisma, id);
     const access: ActionAccess =
-      diceSource === 'PHYSICAL' ? { kind: 'host', secret } : { kind: 'player', secret };
+      diceSource === 'PHYSICAL'
+        ? { kind: 'host', secret }
+        : { kind: 'player', secret };
 
-    return this.runAction(id, idempotencyKey, access, async (tx, game, asking) => {
-      const playerId = scoringPlayerId(diceSource, input, asking!);
-      assertPlayersTurn(game, playerId);
+    return this.runAction(
+      id,
+      idempotencyKey,
+      access,
+      async (tx, game, asking) => {
+        const playerId = scoringPlayerId(diceSource, input, asking!);
+        assertPlayersTurn(game, playerId);
 
-      if (!game.currentDice) {
-        throw new BadRequestException('There is no dice roll to score');
-      }
-      const currentPlayerId = game.currentPlayerId;
-      if (!currentPlayerId) {
-        throw new Error('Game in progress has no current player');
-      }
-
-      let newState: GameState;
-      try {
-        const base = {
-          players: game.participants.map((player) => ({
-            id: player.id,
-            name: player.name,
-            card: scoreCardSchema.parse(player.scoreCard),
-          })),
-          currentPlayerId: currentPlayerId,
-        };
-
-        let state: GameState;
-        if (diceSource === 'VIRTUAL') {
-          const rollNumber = game.rollNumber;
-          if (rollNumber !== 1 && rollNumber !== 2 && rollNumber !== 3) {
-            throw new Error('Stored turn has no valid roll number');
-          }
-          state = {
-            ...base,
-            diceSource: 'VIRTUAL',
-            turn: {
-              rollNumber,
-              dice: diceRollSchema.parse(game.currentDice),
-              heldInLastRoll: game.heldInLastRoll,
-            },
-          };
-        } else {
-          state = { ...base, diceSource: 'PHYSICAL' };
+        if (!game.currentDice) {
+          throw new BadRequestException('There is no dice roll to score');
         }
-        newState = reducer(
-          state,
-          {
+
+        let newState: GameState;
+        try {
+          newState = reducer(gameStateOf(game), {
             type: 'saveCategory',
             playerId: playerId,
             category: input.category,
-            ...(diceSource === 'PHYSICAL' && { dice: diceRollSchema.parse(game.currentDice) }),
-          },
+            ...(diceSource === 'PHYSICAL' && {
+              dice: diceRollSchema.parse(game.currentDice),
+            }),
+          });
+        } catch (error) {
+          // a move against the rules is the client's mistake; anything else stays a 500
+          if (error instanceof GameRuleError) {
+            throw new BadRequestException(error.message);
+          }
+          throw error;
+        }
+
+        const gameOver = isGameOver(newState);
+        // points as the reducer computed them — never taken from the client
+        const points = newState.players.find(
+          (player) => player.id === playerId,
+        )!.card[input.category];
+
+        // Persist the reducer's whole result, not just the scoring player's card: the reducer
+        // decides what a move changes, so the service does not second-guess it.
+        await Promise.all(
+          newState.players.map((player) =>
+            tx.participant.update({
+              where: { id: player.id },
+              data: {
+                scoreCard: player.card,
+                // the final result is recorded once, in the same transaction that ends the game
+                ...(gameOver && {
+                  finalScore: totalScore(player.card),
+                  upperBonus: upperBonus(player.card),
+                  active: false,
+                }),
+              },
+            }),
+          ),
         );
-      } catch (error) {
-        // a move against the rules is the client's mistake; anything else stays a 500
-        if (error instanceof GameRuleError) {
-          throw new BadRequestException(error.message);
+
+        const saved = {
+          actionType: 'saveCategory',
+          payload: { playerId, category: input.category, points },
+        };
+
+        if (diceSource === 'VIRTUAL' && !gameOver) {
+          return { ...saved, ...openTurn(newState) };
         }
-        throw error;
-      }
-
-      const gameOver = isGameOver(newState);
-      // points as the reducer computed them — never taken from the client
-      const points = newState.players.find((player) => player.id === playerId)!.card[input.category];
-
-      // Persist the reducer's whole result, not just the scoring player's card: the reducer
-      // decides what a move changes, so the service does not second-guess it.
-      await Promise.all(
-        newState.players.map((player) =>
-          tx.participant.update({
-            where: { id: player.id },
-            data: {
-              scoreCard: player.card,
-              // the final result is recorded once, in the same transaction that ends the game
-              ...(gameOver && {
-                finalScore: totalScore(player.card),
-                upperBonus: upperBonus(player.card),
-                active: false,
-              }),
-            },
-          }),
-        ),
-      );
-
-      const saved = {
-        actionType: 'saveCategory',
-        payload: { playerId, category: input.category, points },
-      };
-
-      // The next player's turn opens with its first roll already made (docs/DECYZJE.md §4).
-      if (diceSource === 'VIRTUAL' && !gameOver) {
-        const rolled = reducer(newState, {
-          type: 'roll',
-          playerId: newState.currentPlayerId,
-          held: [],
-          rolled: drawDice(),
-        });
-        if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
-          throw new Error("The next player's first roll did not happen");
-        }
-        const { dice, rollNumber, heldInLastRoll } = rolled.turn;
 
         return {
           ...saved,
           update: {
-            currentPlayerId: rolled.currentPlayerId,
-            currentDice: dice,
-            rollNumber,
-            heldInLastRoll,
+            currentDice: Prisma.DbNull,
+            rollNumber: null,
+            heldInLastRoll: [],
+            status: gameOver ? 'COMPLETED' : 'IN_PROGRESS',
+            currentPlayerId: gameOver ? null : newState.currentPlayerId,
           },
-          autoRoll: { playerId: rolled.currentPlayerId, roll: dice, held: heldInLastRoll },
         };
-      }
-
-      return {
-        ...saved,
-        update: {
-          currentDice: Prisma.DbNull,
-          rollNumber: null,
-          heldInLastRoll: [],
-          status: gameOver ? 'COMPLETED' : 'IN_PROGRESS',
-          currentPlayerId: gameOver ? null : newState.currentPlayerId,
-        },
-      };
-    });
+      },
+    );
   }
 
-  // Host leaves: the game is abandoned, which frees the host's active-game slot; abandoned games
-  // never count towards statistics. Players leaving on their own comes with accounts.
-  leave(id: string, idempotencyKey: string | undefined, hostSecret: string | undefined) {
-    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, async (tx, game) => {
-      if (game.status !== 'LOBBY' && game.status !== 'IN_PROGRESS') {
-        throw new BadRequestException('Game is already over');
-      }
+  // This device's participant leaves (docs/DECYZJE.md §5). The host of a local game, or of an
+  // online game still in the lobby, abandons it; anyone else leaves alone and the game goes on.
+  leave(
+    id: string,
+    idempotencyKey: string | undefined,
+    secret: string | undefined,
+  ) {
+    return this.runAction(
+      id,
+      idempotencyKey,
+      { kind: 'player', secret },
+      async (tx, game, asking) => {
+        if (game.status !== 'LOBBY' && game.status !== 'IN_PROGRESS') {
+          throw new BadRequestException('Game is already over');
+        }
 
-      await tx.participant.updateMany({ where: { gameId: id }, data: { active: false } });
+        if (game.diceSource === 'PHYSICAL') {
+          if (asking!.role !== 'HOST')
+            throw new ForbiddenException('Only the host leaves a local game');
+          return abandon(tx, game);
+        }
 
-      return {
-        actionType: 'hostLeft',
-        payload: {},
-        update: {
-          status: 'ABANDONED',
-          currentPlayerId: null,
-          currentDice: Prisma.DbNull,
-        },
-      };
-    });
+        if (game.status === 'LOBBY') {
+          return asking!.role === 'HOST'
+            ? abandon(tx, game)
+            : leaveLobby(tx, game, asking!);
+        }
+
+        return leaveMidGame(tx, game, asking!);
+      },
+    );
   }
 
   // The host removes a player — only in the lobby, before the game starts.
@@ -542,39 +508,37 @@ export class GameService {
     idempotencyKey: string | undefined,
     hostSecret: string | undefined,
   ) {
-    return this.runAction(id, idempotencyKey, { kind: 'host', secret: hostSecret }, async (tx, game) => {
-      if (game.status !== 'LOBBY') {
-        throw new BadRequestException('Players can only be removed in the lobby');
-      }
+    return this.runAction(
+      id,
+      idempotencyKey,
+      { kind: 'host', secret: hostSecret },
+      async (tx, game) => {
+        if (game.status !== 'LOBBY') {
+          throw new BadRequestException(
+            'Players can only be removed in the lobby',
+          );
+        }
 
-      const player = game.participants.find((participant) => participant.id === participantId);
+        const player = game.participants.find(
+          (participant) => participant.id === participantId,
+        );
 
-      if (!player) {
-        throw new NotFoundException('Player not found');
-      }
+        if (!player) {
+          throw new NotFoundException('Player not found');
+        }
 
-      if (player.role === 'HOST') {
-        throw new BadRequestException('The host cannot remove themselves');
-      }
+        if (player.role === 'HOST') {
+          throw new BadRequestException('The host cannot remove themselves');
+        }
 
-      await tx.participant.delete({ where: { id: participantId } });
+        await removeFromLobby(tx, game, participantId);
 
-      // Keep turn order contiguous (1..n) after the removal.
-      const remaining = game.participants.filter((participant) => participant.id !== participantId);
-      await Promise.all(
-        remaining.map((participant, index) =>
-          tx.participant.update({
-            where: { id: participant.id },
-            data: { turnOrder: index + 1 },
-          }),
-        ),
-      );
-
-      return {
-        actionType: 'playerRemoved',
-        payload: { playerId: participantId },
-      };
-    });
+        return {
+          actionType: 'playerRemoved',
+          payload: { playerId: participantId },
+        };
+      },
+    );
   }
 
   /**
@@ -593,7 +557,6 @@ export class GameService {
       asking: Participant | null,
     ) => GameAction | Promise<GameAction>,
   ): Promise<GameView> {
-
     let asking: Participant | null;
     switch (access.kind) {
       case 'host':
@@ -602,7 +565,9 @@ export class GameService {
       case 'player':
         asking = await this.findParticipant(id, access.secret);
         if (!asking) {
-          throw new ForbiddenException('This device does not play in this game');
+          throw new ForbiddenException(
+            'This device does not play in this game',
+          );
         }
         break;
       case 'anyone':
@@ -617,11 +582,19 @@ export class GameService {
     try {
       const view = await this.prisma.$transaction(async (tx) => {
         if (await findEvent(tx, id, key)) {
-          return toGameView(await loadGame(tx, id), asking?.role === 'HOST', asking?.id ?? null);
+          return toGameView(
+            await loadGame(tx, id),
+            asking?.role === 'HOST',
+            asking?.id ?? null,
+          );
         }
 
         const game = await loadGame(tx, id);
-        const { actionType, payload, update, autoRoll } = await apply(tx, game, asking);
+        const { actionType, payload, update, autoRoll } = await apply(
+          tx,
+          game,
+          asking,
+        );
 
         // Optimistic lock: the update matches nothing (P2025) if another action bumped the revision.
         const updatedGame = await tx.game
@@ -636,7 +609,9 @@ export class GameService {
           })
           .catch((error: unknown) => {
             if (isRecordNotFound(error)) {
-              throw new ConflictException('Game state changed. Please retry the action.');
+              throw new ConflictException(
+                'Game state changed. Please retry the action.',
+              );
             }
             throw error;
           });
@@ -646,7 +621,9 @@ export class GameService {
             gameId: id,
             actionType,
             payload,
-            revisionAfter: autoRoll ? updatedGame.revision - 1 : updatedGame.revision,
+            revisionAfter: autoRoll
+              ? updatedGame.revision - 1
+              : updatedGame.revision,
             idempotencyKey: key,
           },
         });
@@ -663,7 +640,11 @@ export class GameService {
           });
         }
         updatedGameToSend = updatedGame;
-        return toGameView(updatedGame, asking?.role === 'HOST', asking?.id ?? null);
+        return toGameView(
+          updatedGame,
+          asking?.role === 'HOST',
+          asking?.id ?? null,
+        );
       });
 
       // The transaction has committed: only now may other clients see the new state.
@@ -674,7 +655,11 @@ export class GameService {
     } catch (error) {
       // A concurrent request with the same key won the race — return its result.
       if (isUniqueViolation(error) && (await findEvent(this.prisma, id, key))) {
-        return toGameView(await loadGame(this.prisma, id), asking?.role === 'HOST', asking?.id ?? null);
+        return toGameView(
+          await loadGame(this.prisma, id),
+          asking?.role === 'HOST',
+          asking?.id ?? null,
+        );
       }
 
       throw error;
@@ -724,16 +709,23 @@ export class GameService {
       return null;
     }
 
-    return this.prisma.identity.findFirst({ where: { secretHash: hashSecret(secret) } });
+    return this.prisma.identity.findFirst({
+      where: { secretHash: hashSecret(secret) },
+    });
   }
 
   private findActiveParticipation(identityId: string) {
-    return this.prisma.participant.findFirst({ where: { identityId, active: true } });
+    return this.prisma.participant.findFirst({
+      where: { identityId, active: true },
+    });
   }
 
   private findActiveHostedGame(identityId: string) {
     return this.prisma.game.findFirst({
-      where: { hostIdentityId: identityId, status: { in: ['LOBBY', 'IN_PROGRESS'] } },
+      where: {
+        hostIdentityId: identityId,
+        status: { in: ['LOBBY', 'IN_PROGRESS'] },
+      },
       include: gameInclude,
     });
   }
@@ -749,7 +741,10 @@ export class GameService {
 }
 
 async function findGameOrThrow(client: Prisma.TransactionClient, id: string) {
-  const game = await client.game.findUnique({ where: { id }, select: { diceSource: true } });
+  const game = await client.game.findUnique({
+    where: { id },
+    select: { diceSource: true },
+  });
 
   if (!game) {
     throw new NotFoundException('Game not found');
@@ -770,7 +765,9 @@ async function addPlayer(
   }
 
   if (game.participants.length >= maxPlayers) {
-    throw new BadRequestException(`A game can have at most ${maxPlayers} players`);
+    throw new BadRequestException(
+      `A game can have at most ${maxPlayers} players`,
+    );
   }
 
   const lastTurnOrder = game.participants.at(-1)?.turnOrder ?? 0;
@@ -807,15 +804,24 @@ function hashSecret(secret: string) {
 }
 
 function isUniqueViolation(error: unknown) {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  );
 }
 
 function isRecordNotFound(error: unknown) {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025';
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2025'
+  );
 }
 
 async function loadGame(client: Prisma.TransactionClient, id: string) {
-  const game = await client.game.findUnique({ where: { id }, include: gameInclude });
+  const game = await client.game.findUnique({
+    where: { id },
+    include: gameInclude,
+  });
 
   if (!game) {
     throw new NotFoundException('Game not found');
@@ -824,7 +830,11 @@ async function loadGame(client: Prisma.TransactionClient, id: string) {
   return game;
 }
 
-function findEvent(client: Prisma.TransactionClient, gameId: string, idempotencyKey: string) {
+function findEvent(
+  client: Prisma.TransactionClient,
+  gameId: string,
+  idempotencyKey: string,
+) {
   return client.eventLog.findUnique({
     where: { gameId_idempotencyKey: { gameId, idempotencyKey } },
   });
@@ -837,7 +847,9 @@ function scoringPlayerId(
 ): string {
   if (diceSource === 'VIRTUAL') {
     if (input.playerId !== undefined) {
-      throw new BadRequestException('An online player scores only for themselves');
+      throw new BadRequestException(
+        'An online player scores only for themselves',
+      );
     }
     return asking.id;
   }
@@ -856,4 +868,188 @@ function assertPlayersTurn(game: GameWithParticipants, playerId: string) {
   if (game.currentPlayerId !== playerId) {
     throw new BadRequestException("It is not this player's turn");
   }
+}
+
+const NO_TURN = {
+  currentPlayerId: null,
+  currentDice: Prisma.DbNull,
+  rollNumber: null,
+  heldInLastRoll: [],
+} satisfies Prisma.GameUncheckedUpdateInput;
+
+// Frees every participant's active-game slot; an abandoned game never counts towards statistics.
+async function abandon(
+  tx: Prisma.TransactionClient,
+  game: GameWithParticipants,
+): Promise<GameAction> {
+  await tx.participant.updateMany({
+    where: { gameId: game.id },
+    data: { active: false },
+  });
+
+  return {
+    actionType: 'hostLeft',
+    payload: {},
+    update: { ...NO_TURN, status: 'ABANDONED' },
+  };
+}
+
+// Deleting the participant also frees the device's active-game slot.
+async function removeFromLobby(
+  tx: Prisma.TransactionClient,
+  game: GameWithParticipants,
+  participantId: string,
+): Promise<void> {
+  await tx.participant.delete({ where: { id: participantId } });
+
+  // Keep turn order contiguous (1..n) after the removal.
+  const remaining = game.participants.filter(
+    (participant) => participant.id !== participantId,
+  );
+  await Promise.all(
+    remaining.map((participant, index) =>
+      tx.participant.update({
+        where: { id: participant.id },
+        data: { turnOrder: index + 1 },
+      }),
+    ),
+  );
+}
+
+// A player of an online game leaves before it starts and is gone from it.
+async function leaveLobby(
+  tx: Prisma.TransactionClient,
+  game: GameWithParticipants,
+  leaving: Participant,
+): Promise<GameAction> {
+  await removeFromLobby(tx, game, leaving.id);
+
+  return {
+    actionType: 'playerLeftLobby',
+    payload: { playerId: leaving.id },
+  };
+}
+
+// Anyone leaves an online game in progress (docs/DECYZJE.md §5): their free categories get zeros
+// and their turns are skipped. Whoever is left alone plays on; once everyone has left, the game
+// is abandoned.
+async function leaveMidGame(
+  tx: Prisma.TransactionClient,
+  game: GameWithParticipants,
+  leaving: Participant,
+): Promise<GameAction> {
+  if (!leaving.active) {
+    throw new BadRequestException('This player has already left the game');
+  }
+
+  const newState = reducer(gameStateOf(game), {
+    type: 'leave',
+    playerId: leaving.id,
+  });
+
+  const stillPlaying = game.participants.filter(
+    (participant) => participant.active && participant.id !== leaving.id,
+  );
+  const abandoned = stillPlaying.length === 0;
+  const completed = !abandoned && isGameOver(newState);
+
+  await Promise.all(
+    newState.players.map((player) =>
+      tx.participant.update({
+        where: { id: player.id },
+        data: {
+          scoreCard: player.card,
+          ...(player.id === leaving.id && { active: false }),
+          ...(completed && {
+            finalScore: totalScore(player.card),
+            upperBonus: upperBonus(player.card),
+            active: false,
+          }),
+        },
+      }),
+    ),
+  );
+
+  const left = { actionType: 'playerLeft', payload: { playerId: leaving.id } };
+
+  if (abandoned) {
+    return { ...left, update: { ...NO_TURN, status: 'ABANDONED' } };
+  }
+  if (completed) {
+    return { ...left, update: { ...NO_TURN, status: 'COMPLETED' } };
+  }
+  if (game.currentPlayerId === leaving.id) {
+    return { ...left, ...openTurn(newState) };
+  }
+  return left;
+}
+
+function playersOf(game: GameWithParticipants): GameState['players'] {
+  return game.participants.map((player) => ({
+    id: player.id,
+    name: player.name,
+    card: scoreCardSchema.parse(player.scoreCard),
+  }));
+}
+
+// The reducer's state of a game in progress, read back from the database.
+function gameStateOf(game: GameWithParticipants): GameState {
+  if (!game.currentPlayerId) {
+    throw new Error('Game in progress has no current player');
+  }
+  const base = {
+    players: playersOf(game),
+    currentPlayerId: game.currentPlayerId,
+  };
+
+  if (game.diceSource === 'PHYSICAL') {
+    return { ...base, diceSource: 'PHYSICAL' };
+  }
+
+  // A virtual turn is stored only after its first roll, so the roll number is always 1–3.
+  const rollNumber = game.rollNumber;
+  if (rollNumber !== 1 && rollNumber !== 2 && rollNumber !== 3) {
+    throw new Error('Stored turn has no valid roll number');
+  }
+  return {
+    ...base,
+    diceSource: 'VIRTUAL',
+    turn: {
+      rollNumber,
+      dice: diceRollSchema.parse(game.currentDice),
+      heldInLastRoll: game.heldInLastRoll,
+    },
+  };
+}
+
+// A virtual turn opens with its first roll already made (docs/DECYZJE.md §4), for the player
+// whose turn `state` gives.
+function openTurn(state: GameState): {
+  update: Prisma.GameUncheckedUpdateInput;
+  autoRoll: Prisma.InputJsonValue;
+} {
+  const rolled = reducer(state, {
+    type: 'roll',
+    playerId: state.currentPlayerId,
+    held: [],
+    rolled: drawDice(),
+  });
+  if (rolled.diceSource !== 'VIRTUAL' || rolled.turn.rollNumber === 0) {
+    throw new Error("The turn's first roll did not happen");
+  }
+  const { dice, rollNumber, heldInLastRoll } = rolled.turn;
+
+  return {
+    update: {
+      currentPlayerId: rolled.currentPlayerId,
+      currentDice: dice,
+      rollNumber,
+      heldInLastRoll,
+    },
+    autoRoll: {
+      playerId: rolled.currentPlayerId,
+      roll: dice,
+      held: heldInLastRoll,
+    },
+  };
 }

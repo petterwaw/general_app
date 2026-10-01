@@ -1,4 +1,5 @@
 import type { Category, DiceRoll, DiceSource, ScoreCard, TurnState } from './types.js'
+import { CATEGORIES } from './types.js'
 import { dispatchPoints } from './scoring.js'
 import { GameRuleError } from './errors.js'
 import { canRoll, isCategoryFree, isLowerSectionCategory, isLowerSectionUnlocked } from './validation.js'
@@ -18,9 +19,11 @@ export type GameState =
 export type Action =
     | { type: 'saveCategory', playerId: string, category: Category, dice?: DiceRoll }
     | { type: 'roll', playerId: string, held: number[], rolled: DiceRoll }
+    | { type: 'leave', playerId: string }
 
 type SaveCategoryAction = Extract<Action, { type: 'saveCategory' }>
 type RollAction = Extract<Action, { type: 'roll' }>
+type LeaveAction = Extract<Action, { type: 'leave' }>
 
 export function createEmptyScoreCard(): ScoreCard {
     return {
@@ -56,8 +59,16 @@ export function nextPlayerId(gameState: GameState): Player['id'] {
         throw new Error(`Player ${gameState.currentPlayerId} does not exist in the state`)
     }
 
-    const nextIndex = (currentIndex + 1) % gameState.players.length
-    return gameState.players[nextIndex].id
+    for (let step = 1; step <= gameState.players.length; step++) {
+        const index = (currentIndex + step) % gameState.players.length
+        const player = gameState.players[index]
+
+        if (Object.entries(player.card).some(([category, value]) => value === null)) {
+            return player.id
+        }
+    }
+
+    throw new Error('No player has a free category left')
 }
 
 export function isGameOver(gameState: GameState): boolean {
@@ -113,6 +124,36 @@ function applySaveCategory(gameState: GameState, action: SaveCategoryAction): Ga
     )
 
     const currentPlayerId = nextPlayerId(gameState)
+
+    return gameState.diceSource === 'VIRTUAL'
+        ? { ...gameState, players, currentPlayerId, turn: { rollNumber: 0 } }
+        : { ...gameState, players, currentPlayerId }
+}
+
+function applyLeave(gameState: GameState, action: LeaveAction): GameState {
+    const leaving = findPlayer(gameState, action.playerId)
+
+    if (Object.values(leaving.card).every((value) => value !== null)) {
+        throw new Error(`Player ${action.playerId} has no free category to leave with`)
+    }
+
+    const card = { ...leaving.card }
+    for (const category of CATEGORIES) {
+        if (card[category] === null) card[category] = 0
+    }
+
+    const players = gameState.players.map(player =>
+        player.id === action.playerId ? { ...player, card } : player
+    )
+
+    if (!isPlayerTurn(gameState, action.playerId)) {
+        return { ...gameState, players }
+    }
+
+    const updated = { ...gameState, players }
+    if (isGameOver(updated)) return updated
+
+    const currentPlayerId = nextPlayerId(updated)
 
     return gameState.diceSource === 'VIRTUAL'
         ? { ...gameState, players, currentPlayerId, turn: { rollNumber: 0 } }
@@ -179,6 +220,8 @@ export function reducer(gameState: GameState, action: Action): GameState {
             return applySaveCategory(gameState, action)
         case 'roll':
             return applyRoll(gameState, action)
+        case 'leave':
+            return applyLeave(gameState, action)
         default: {
             const unknownAction: { type: string } = action
             throw new Error(`Unknown action type: ${unknownAction.type}`)

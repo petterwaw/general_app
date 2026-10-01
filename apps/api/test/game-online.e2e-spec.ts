@@ -230,13 +230,16 @@ describe('Online games', () => {
       expect(response.status).toBe(403);
     });
 
-    it('rejects a start with the creator alone with 400', async () => {
+    it('starts a game with the creator alone, with the first roll made', async () => {
       const creator = device();
       const game = await createOnlineGame(creator, 'Piotr', 'online-start-alone-create');
 
       const response = await start(creator, game.id, 'online-start-alone');
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(201);
+      const started = gameFrom(response.body);
+      expect(started.status).toBe('IN_PROGRESS');
+      expect(started.currentDice).toHaveLength(5);
     });
 
     it('returns the same roll when the start is replayed', async () => {
@@ -613,6 +616,180 @@ describe('Online games', () => {
       const response = await join(player, next.id, 'Ania', 'full-online-free-join');
 
       expect(response.status).toBe(201);
+    });
+  });
+
+  describe('leaving', () => {
+    function leave(agent: Agent, gameId: string, key: string) {
+      return agent.post(`/games/${gameId}/leave`).set('Idempotency-Key', key).send();
+    }
+
+    async function view(agent: Agent, gameId: string) {
+      return gameFrom((await agent.get(`/games/${gameId}`).expect(200)).body);
+    }
+
+    // A started game of three; turns go creator, Ania, Kasia.
+    async function startGameOfThree(key: string) {
+      const { creator, player, game: lobby } = await createLobbyOfTwo(key);
+      const third = device();
+      await join(third, lobby.id, 'Kasia', `${key}-join-third`).expect(201);
+      const game = gameFrom((await start(creator, lobby.id, `${key}-start`).expect(201)).body);
+
+      return { creator, player, third, game };
+    }
+
+    describe('in the lobby', () => {
+      it('takes a player who leaves off the game', async () => {
+        const { creator, player, game } = await createLobbyOfTwo('leave-lobby');
+
+        const response = await leave(player, game.id, 'leave-lobby');
+
+        expect(response.status).toBe(201);
+        const after = await view(creator, game.id);
+        expect(after.status).toBe('LOBBY');
+        expect(after.participants.map((participant) => participant.name)).toEqual(['Piotr']);
+      });
+
+      it('lets a player who left the lobby join another game', async () => {
+        const { player, game } = await createLobbyOfTwo('leave-lobby-rejoin');
+        await leave(player, game.id, 'leave-lobby-rejoin-leave').expect(201);
+        const other = await createOnlineGame(device(), 'Kasia', 'leave-lobby-rejoin-other');
+
+        const response = await join(player, other.id, 'Ania', 'leave-lobby-rejoin');
+
+        expect(response.status).toBe(201);
+      });
+
+      it('abandons the game when the host leaves and frees every device', async () => {
+        const { creator, player, game } = await createLobbyOfTwo('leave-lobby-host');
+
+        const response = await leave(creator, game.id, 'leave-lobby-host');
+
+        expect(response.status).toBe(201);
+        expect(gameFrom(response.body).status).toBe('ABANDONED');
+        await createOnlineGame(player, 'Ania', 'leave-lobby-host-next');
+      });
+    });
+
+    describe('during the game', () => {
+      it('fills the free categories of a player who leaves off turn with zeros and keeps the turn', async () => {
+        const { creator, third, game } = await startGameOfThree('leave-off-turn');
+        await score(creator, game.id, 'chance', 'leave-off-turn-score').expect(201);
+        const before = await view(creator, game.id);
+
+        await leave(creator, game.id, 'leave-off-turn').expect(201);
+
+        const after = await view(third, game.id);
+        const leaver = after.participants[0];
+        expect(leaver.left).toBe(true);
+        expect(leaver.scoreCard.chance).toBe(sum(game.currentDice!));
+        for (const category of CATEGORIES.filter((category) => category !== 'chance')) {
+          expect(leaver.scoreCard[category]).toBe(0);
+        }
+        expect(after.participants.slice(1).map((participant) => participant.left)).toEqual([false, false]);
+        expect(after.status).toBe('IN_PROGRESS');
+        expect(after.currentPlayerId).toBe(before.currentPlayerId);
+        expect(after.currentDice).toEqual(before.currentDice);
+        expect(after.rollNumber).toBe(before.rollNumber);
+      });
+
+      it('passes the turn with its first roll when the host leaves on their turn, and the game goes on', async () => {
+        const { creator, player, game } = await startGameOfThree('leave-on-turn');
+        await reroll(creator, game.id, [], 'leave-on-turn-reroll').expect(201);
+
+        await leave(creator, game.id, 'leave-on-turn').expect(201);
+
+        const after = await view(player, game.id);
+        expect(after.status).toBe('IN_PROGRESS');
+        expect(after.currentPlayerId).toBe(game.participants[1].id);
+        expect(after.rollNumber).toBe(1);
+        expect(after.heldInLastRoll).toEqual([]);
+        expect(after.currentDice).toHaveLength(5);
+      });
+
+      it('skips the turns of a player who left', async () => {
+        const { creator, player, third, game } = await startGameOfThree('leave-skip');
+        await leave(player, game.id, 'leave-skip-leave').expect(201);
+
+        const response = await score(creator, game.id, 'chance', 'leave-skip-score');
+
+        expect(gameFrom(response.body).currentPlayerId).toBe(game.participants[2].id);
+        expect((await reroll(player, game.id, [], 'leave-skip-reroll')).status).toBe(400);
+        await reroll(third, game.id, [], 'leave-skip-third-reroll').expect(201);
+      });
+
+      it("logs the player leaving and then the next player's first roll", async () => {
+        const { creator, player, game } = await startGameOfThree('leave-log');
+
+        const left = gameFrom((await leave(creator, game.id, 'leave-log')).body);
+
+        const events = eventsFrom((await player.get(`/games/${game.id}/events`).expect(200)).body);
+        expect(events.slice(-2)).toEqual([
+          expect.objectContaining({
+            type: 'playerLeft',
+            playerId: game.participants[0].id,
+            revision: left.revision - 1,
+          }),
+          expect.objectContaining({
+            type: 'diceRolled',
+            playerId: game.participants[1].id,
+            revision: left.revision,
+          }),
+        ]);
+      });
+
+      it('lets the player left alone play the game to the end', async () => {
+        const { creator, player, game: started } = await startGameOfTwo('leave-alone');
+        await leave(creator, started.id, 'leave-alone-leave').expect(201);
+
+        let game = await view(player, started.id);
+        for (const category of CATEGORIES) {
+          expect(game.currentPlayerId).toBe(started.participants[1].id);
+          game = gameFrom(
+            (await score(player, game.id, category, `leave-alone-score-${category}`).expect(201)).body,
+          );
+        }
+
+        expect(game.status).toBe('COMPLETED');
+        for (const participant of game.participants) {
+          expect(participant.finalScore).toBe(totalScore(participant.scoreCard));
+        }
+        expect(game.participants[0].finalScore).toBe(0);
+      });
+
+      it('abandons the game without final scores once everyone has left', async () => {
+        const { creator, player, game } = await startGameOfTwo('leave-everyone');
+        await leave(player, game.id, 'leave-everyone-player').expect(201);
+
+        const response = await leave(creator, game.id, 'leave-everyone-creator');
+
+        expect(response.status).toBe(201);
+        const abandoned = gameFrom(response.body);
+        expect(abandoned.status).toBe('ABANDONED');
+        expect(abandoned.currentPlayerId).toBeNull();
+        expect(abandoned.currentDice).toBeNull();
+        expect(abandoned.rollNumber).toBeNull();
+        expect(abandoned.participants.map((participant) => participant.finalScore)).toEqual([null, null]);
+      });
+
+      it('rejects leaving a second time with 400', async () => {
+        const { player, game } = await startGameOfThree('leave-twice');
+        await leave(player, game.id, 'leave-twice-first').expect(201);
+
+        const response = await leave(player, game.id, 'leave-twice-second');
+
+        expect(response.status).toBe(400);
+      });
+
+      it('lets a device that left join another game while the game goes on', async () => {
+        const { player, game } = await startGameOfThree('leave-mid-rejoin');
+        await leave(player, game.id, 'leave-mid-rejoin-leave').expect(201);
+        const other = await createOnlineGame(device(), 'Ola', 'leave-mid-rejoin-other');
+
+        const response = await join(player, other.id, 'Ania', 'leave-mid-rejoin');
+
+        expect(response.status).toBe(201);
+      });
     });
   });
 });
