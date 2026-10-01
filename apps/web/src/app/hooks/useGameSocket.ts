@@ -14,7 +14,13 @@ export default function useGameSocket(
     revisionRef.current = game?.revision ?? 0;
   }, [game]);
 
+  // The server puts a socket in the room of whoever the device is when it subscribes, and never
+  // moves it. So the socket opens once the game is known, and opens again when the device joins
+  // the game or stops playing in it.
+  const seat = game ? (game.myParticipantId ?? 'watching') : null;
+
   useEffect(() => {
+    if (seat === null) return;
     const socket = io(resolveApiUrl() ?? '', { withCredentials: true });
 
     socket.on('connect', () => {
@@ -30,5 +36,5 @@ export default function useGameSocket(
     return () => {
       socket.disconnect();
     };
-  }, [gameId, setGame]);
+  }, [gameId, setGame, seat]);
 }

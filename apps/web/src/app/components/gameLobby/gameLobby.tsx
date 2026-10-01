@@ -12,6 +12,7 @@ import { joinGame, leaveGame, removeParticipant, startGame } from '../../api/gam
 import { randomId } from '../../api/randomId';
 import { useErrorToast } from '../ui/toast';
 import { InviteLinkButton } from './inviteLinkButton';
+import { JoinGameForm } from './joinGameForm';
 
 type GameLobbyProps = {
   game: GameView;
@@ -265,9 +266,18 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
 
         {/* a watcher has nothing to start: leaving is their only button, so it looks like one */}
         {watching ? (
-          <Button size="lg" variant="secondary" onClick={leave}>
-            Leave spectating
-          </Button>
+          <div className="grid gap-3">
+            {/* an online lobby takes anyone with the link, until it is full */}
+            {online && participants.length < MAX_ONLINE_PLAYERS && (
+              <JoinGameForm gameId={game.id} seat={participants.length} onJoined={onGameChange} />
+            )}
+            {online && participants.length >= MAX_ONLINE_PLAYERS && (
+              <p className="text-center text-sm font-semibold text-ink-muted">This game is full</p>
+            )}
+            <Button size="lg" variant="secondary" onClick={leave}>
+              Leave spectating
+            </Button>
+          </div>
         ) : !isHost ? (
           // only the host starts the game; a player leaving goes alone, so nothing to ask first
           <div className="grid gap-3">
