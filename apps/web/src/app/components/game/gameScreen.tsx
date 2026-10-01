@@ -247,6 +247,8 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
             <VirtualDice
               dice={game.currentDice}
               held={held}
+              heldInLastRoll={game.heldInLastRoll}
+              rollKey={`${turn}:${game.rollNumber}`}
               rollNumber={game.rollNumber}
               playing={myTurn && !finished}
               canReroll={canReroll(game.rollNumber, myTurn && !finished, pending)}

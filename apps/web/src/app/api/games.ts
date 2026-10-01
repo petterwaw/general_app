@@ -36,7 +36,6 @@ export function scoreCategory(gameId: string, category: Category, playerId?: str
 }
 
 export function rerollDice(gameId: string, held: number[]): Promise<GameView> {
-  // TODO(Piotr): POST /games/:id/reroll with a RerollInput body; submitRoll above is the pattern
   const body: RerollInput = {held}
   return apiRequest<GameView>(`/games/${gameId}/reroll`, { method: 'POST', body });
 }

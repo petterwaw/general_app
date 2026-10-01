@@ -19,10 +19,19 @@ type DieProps = {
   // tiny flat die next to an upper category name; decorative, hidden from screen readers
   mini?: boolean;
   className?: string;
+  // e.g. an animation delay; the die's own size stays
+  style?: React.CSSProperties;
 };
 
-export default function Die({ value, size = '64px', held = false, mini = false, className = '' }: DieProps) {
-  const style = { '--s': mini ? '16px' : size } as React.CSSProperties;
+export default function Die({
+  value,
+  size = '64px',
+  held = false,
+  mini = false,
+  className = '',
+  style: extraStyle,
+}: DieProps) {
+  const style = { ...extraStyle, '--s': mini ? '16px' : size } as React.CSSProperties;
 
   if (value === null) {
     return (
