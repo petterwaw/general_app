@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { GameView } from '@dice-app/contracts';
+import type { CreateGameInput, GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
 import PlayerNameRow from '../players/playerNameRow';
@@ -31,8 +31,7 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
   const showError = useErrorToast();
   const router = useRouter();
 
-  // online play is outside the MVP; the switch does not let it be picked yet
-  const canCreate = mode === 'offline' && name.trim() !== '' && !pending;
+  const canCreate = name.trim() !== '' && !pending;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -41,7 +40,11 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
     pendingRef.current = true;
     setPending(true);
     try {
-      const game = await createGame([name.trim()]);
+      const input: CreateGameInput =
+        mode === 'online'
+          ? { mode: 'ONLINE', name: name.trim() }
+          : { mode: 'LOCAL', players: [name.trim()] };
+      const game = await createGame(input);
       router.push(`/games/${game.id}`);
     } catch (err) {
       // The game may exist after all: the response got lost on the way, or another tab of this

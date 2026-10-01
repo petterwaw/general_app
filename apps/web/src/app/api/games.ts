@@ -10,9 +10,8 @@ import type {
 } from '@dice-app/contracts';
 import { apiRequest } from './client';
 
-export function createGame(players: string[]) {
-  const body: CreateGameInput = { mode: 'LOCAL', players };
-  return apiRequest<GameView>('/games', { method: 'POST', body });
+export function createGame(input: CreateGameInput) {
+  return apiRequest<GameView>('/games', { method: 'POST', body: input });
 }
 
 export function getGame(gameId: string) {
