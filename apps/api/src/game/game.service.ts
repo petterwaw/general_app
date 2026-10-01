@@ -137,12 +137,15 @@ export class GameService {
     }
   }
 
-  // The LOBBY / IN_PROGRESS game hosted by this device, or null.
-  async hosted(hostSecret: string | undefined): Promise<GameView | null> {
-    const identity = await this.findIdentity(hostSecret);
-    const game = identity && (await this.findActiveHostedGame(identity.id));
+  // The LOBBY / IN_PROGRESS game this device plays in, as host or player, or null.
+  async active(secret: string | undefined): Promise<GameView | null> {
+    const identity = await this.findIdentity(secret);
+    const game = identity && (await this.findActiveGame(identity.id));
+    if (!game) return null;
+    const player = await this.findParticipant(game.id, secret);
+    if (!player) return null;
 
-    return game ? toGameView(game, true, hostParticipantId(game)) : null;
+    return toGameView(game, player.role === 'HOST', player.id);
   }
 
   async findAll(): Promise<GameView[]> {
@@ -720,13 +723,11 @@ export class GameService {
     });
   }
 
-  private findActiveHostedGame(identityId: string) {
+  private findActiveGame(identityId: string) {
     return this.prisma.game.findFirst({
       where: {
-        hostIdentityId: identityId,
         status: { in: ['LOBBY', 'IN_PROGRESS'] },
-        // the host of an online game may leave it while the others play on
-        participants: { some: { identityId, role: 'HOST', active: true } },
+        participants: { some: { identityId, active: true } },
       },
       include: gameInclude,
     });

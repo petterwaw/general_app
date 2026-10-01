@@ -639,6 +639,16 @@ describe('Online games', () => {
     }
 
     describe('in the lobby', () => {
+      it('offers a player their lobby, and the host theirs as the host', async () => {
+        const { creator, player, game } = await createLobbyOfTwo('active-lobby');
+
+        const forPlayer = (await player.get('/games/active').expect(200)).body as ApiResponse<GameView | null>;
+        const forHost = (await creator.get('/games/active').expect(200)).body as ApiResponse<GameView | null>;
+
+        expect(forPlayer.data).toMatchObject({ id: game.id, isHost: false, myParticipantId: game.participants[1].id });
+        expect(forHost.data).toMatchObject({ id: game.id, isHost: true, myParticipantId: game.participants[0].id });
+      });
+
       it('takes a player who leaves off the game', async () => {
         const { creator, player, game } = await createLobbyOfTwo('leave-lobby');
 
@@ -772,11 +782,31 @@ describe('Online games', () => {
         expect(abandoned.participants.map((participant) => participant.finalScore)).toEqual([null, null]);
       });
 
+      it('offers a player their game in progress, as the participant they play', async () => {
+        const { player, game } = await startGameOfThree('active-player');
+
+        const response = await player.get('/games/active').expect(200);
+
+        const active = (response.body as ApiResponse<GameView | null>).data;
+        expect(active?.id).toBe(game.id);
+        expect(active?.isHost).toBe(false);
+        expect(active?.myParticipantId).toBe(game.participants[1].id);
+      });
+
+      it('no longer offers the game to a player who left it', async () => {
+        const { player, game } = await startGameOfThree('active-player-left');
+        await leave(player, game.id, 'active-player-left-leave').expect(201);
+
+        const response = await player.get('/games/active').expect(200);
+
+        expect((response.body as ApiResponse<GameView | null>).data).toBeNull();
+      });
+
       it('no longer offers the game to a host who left it while it goes on', async () => {
         const { creator, game } = await startGameOfThree('leave-hosted');
         await leave(creator, game.id, 'leave-hosted-leave').expect(201);
 
-        const response = await creator.get('/games/hosted').expect(200);
+        const response = await creator.get('/games/active').expect(200);
 
         expect((response.body as ApiResponse<GameView | null>).data).toBeNull();
         expect((await view(creator, game.id)).status).toBe('IN_PROGRESS');

@@ -40,8 +40,9 @@ model Participant {
   userId      String?
   identityId  String?
   identity    Identity?       @relation(fields: [identityId], references: [id])
-  // True while the game is LOBBY / IN_PROGRESS. A partial unique index on identityId (hand-written
-  // SQL in the migration) allows one active game per device, local or online.
+  // True while the participant is still in a LOBBY / IN_PROGRESS game: false once the game ends or
+  // they leave it. A partial unique index on identityId (hand-written SQL in the migration) allows
+  // one active game per device, local or online.
   active      Boolean         @default(true)
   currentGame Game?           @relation("CurrentPlayerGame")
   gameId      String

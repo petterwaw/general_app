@@ -22,8 +22,9 @@ function formatCreatedAt(iso: string) {
   });
 }
 
-// Shown instead of Create / Join while the host still runs a game: a host runs one game at a
-// time (DECYZJE.md §5), so a new one waits until this one is finished or left.
+// Shown instead of Create / Join while this device is still in a game, as host or player: a
+// device is in one game at a time (DECYZJE.md §5), so a new one waits until this one is finished
+// or left.
 export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCardProps) {
   // a link has no request to wait on: it spins from the click until the game screen replaces it
   const [goingBack, setGoingBack] = useState(false);
@@ -69,7 +70,7 @@ export function ActiveGameCard({ game, onLeave, pending = false }: ActiveGameCar
           </Button>
         </div>
         {/* a quiet text action, so leaving does not compete with going back; it asks first,
-            since leaving abandons the game */}
+            since the host leaving the lobby abandons the game */}
         {/* at least as wide as the "Leave?" question, so it opens on the button instead of
             growing past the card's edge */}
         <div className="grid min-w-40 grow" inert={goingBack}>

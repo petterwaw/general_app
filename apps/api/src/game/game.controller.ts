@@ -1,4 +1,15 @@
-import { Controller, Req, Get, Post, Delete, Body, Param, Headers, Res, Query } from '@nestjs/common';
+import {
+  Controller,
+  Req,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Headers,
+  Res,
+  Query,
+} from '@nestjs/common';
 import type { Response, Request } from 'express';
 import {
   createGameSchema,
@@ -20,7 +31,7 @@ import { hostCookieOptions } from '../utils/host-cookie';
 
 @Controller('games')
 export class GameController {
-  constructor(private readonly gameService: GameService) { }
+  constructor(private readonly gameService: GameService) {}
 
   @Post()
   async create(
@@ -29,7 +40,11 @@ export class GameController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.gameService.create(input, idempotencyKey, hostSecretFrom(request));
+    const result = await this.gameService.create(
+      input,
+      idempotencyKey,
+      hostSecretFrom(request),
+    );
 
     if (result.hostSecret) {
       response.cookie('host_secret', result.hostSecret, hostCookieOptions);
@@ -43,10 +58,10 @@ export class GameController {
     return this.gameService.findAll();
   }
 
-  // Declared before ':id', so that "hosted" is not read as a game id.
-  @Get('hosted')
-  hosted(@Req() request: Request) {
-    return this.gameService.hosted(hostSecretFrom(request));
+  // Declared before ':id', so that "active" is not read as a game id.
+  @Get('active')
+  active(@Req() request: Request) {
+    return this.gameService.active(hostSecretFrom(request));
   }
 
   @Get(':id')
@@ -70,7 +85,12 @@ export class GameController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const result = await this.gameService.join(id, input, idempotencyKey, hostSecretFrom(request));
+    const result = await this.gameService.join(
+      id,
+      input,
+      idempotencyKey,
+      hostSecretFrom(request),
+    );
 
     if (result.newSecret) {
       response.cookie('host_secret', result.newSecret, hostCookieOptions);
@@ -95,7 +115,12 @@ export class GameController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request,
   ) {
-    return this.gameService.removePlayer(id, participantId, idempotencyKey, hostSecretFrom(request));
+    return this.gameService.removePlayer(
+      id,
+      participantId,
+      idempotencyKey,
+      hostSecretFrom(request),
+    );
   }
 
   @Post(':id/start')
@@ -114,7 +139,12 @@ export class GameController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request,
   ) {
-    return this.gameService.roll(id, input, idempotencyKey, hostSecretFrom(request));
+    return this.gameService.roll(
+      id,
+      input,
+      idempotencyKey,
+      hostSecretFrom(request),
+    );
   }
 
   @Post(':id/reroll')
@@ -124,7 +154,12 @@ export class GameController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request,
   ) {
-    return this.gameService.reroll(id, input, idempotencyKey, hostSecretFrom(request));
+    return this.gameService.reroll(
+      id,
+      input,
+      idempotencyKey,
+      hostSecretFrom(request),
+    );
   }
 
   @Post(':id/score')
@@ -134,7 +169,12 @@ export class GameController {
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: Request,
   ) {
-    return this.gameService.score(id, input, idempotencyKey, hostSecretFrom(request));
+    return this.gameService.score(
+      id,
+      input,
+      idempotencyKey,
+      hostSecretFrom(request),
+    );
   }
 }
 

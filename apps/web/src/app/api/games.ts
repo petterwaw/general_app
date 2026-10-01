@@ -49,8 +49,8 @@ export function joinGame(gameId: string, name: string) {
   return apiRequest<GameView>(`/games/${gameId}/join`, { method: 'POST', body });
 }
 
-export function getHostedGame() {
-  return apiRequest<GameView | null>(`/games/hosted`);
+export function getActiveGame() {
+  return apiRequest<GameView | null>(`/games/active`);
 }
 
 export function getGameEvents(gameId: string, after?: number) {
