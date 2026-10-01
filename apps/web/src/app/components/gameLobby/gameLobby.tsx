@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MAX_PLAYERS, type GameView } from '@dice-app/contracts';
+import { MAX_ONLINE_PLAYERS, MAX_PLAYERS, type GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
 import { ConfirmLeave } from '../ui/confirmLeave';
@@ -11,6 +11,7 @@ import LogItem from '../gameLog/logItem';
 import { joinGame, leaveGame, removeParticipant, startGame } from '../../api/games';
 import { randomId } from '../../api/randomId';
 import { useErrorToast } from '../ui/toast';
+import { InviteLinkButton } from './inviteLinkButton';
 
 type GameLobbyProps = {
   game: GameView;
@@ -38,9 +39,12 @@ function formatTime(date: Date) {
 
 // TODO: the log is local — GET /games/:id/events does not expose joins and removals (DECYZJE.md §13)
 export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
-  const { participants } = game;
-  // not the host's device: the list is only watched, so every lobby action is hidden
-  const watching = !game.isHost;
+  const { participants, isHost, myParticipantId } = game;
+  // online, everyone joins from their own device; locally, the host adds the players by name
+  const online = game.diceSource === 'VIRTUAL';
+  const maxPlayers = online ? MAX_ONLINE_PLAYERS : MAX_PLAYERS;
+  // this device does not play in the game: the list is only watched
+  const watching = myParticipantId === null;
   const [log, setLog] = useState<LobbyLogEntry[]>([]);
   const [joining, setJoining] = useState<JoiningPlayer[]>([]);
   // removals sent and not back yet: their X is hidden, so a double click sends one DELETE
@@ -89,7 +93,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
     const name = newName.trim();
     setNewName('');
     setAdding(false);
-    if (!name || playerCount >= MAX_PLAYERS) return;
+    if (!name || playerCount >= maxPlayers) return;
 
     const pendingPlayer = { id: randomId(), name };
     setJoining((current) => [...current, pendingPlayer]);
@@ -175,15 +179,16 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           <h2 className="pl-2 text-xl font-bold">
             Players{' '}
             <span className="text-sm font-semibold text-ink-muted tabular-nums">
-              {playerCount}/{MAX_PLAYERS}
+              {playerCount}/{maxPlayers}
             </span>
           </h2>
 
-          {!watching && (
+          {online && !watching && <InviteLinkButton gameId={game.id} />}
+          {!online && isHost && (
             <button
               type="button"
               onClick={startAdding}
-              disabled={adding || closing || playerCount >= MAX_PLAYERS}
+              disabled={adding || closing || playerCount >= maxPlayers}
               className={[
                 'cursor-pointer rounded-full px-2 py-1 font-bold text-primary transition-colors duration-150',
                 'hover:text-primary-hover disabled:cursor-not-allowed disabled:text-ink-faint',
@@ -198,7 +203,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           {participants.map((participant, seat) => {
             const isRemoving = removing.includes(participant.id);
             // the host always stays in their own game (the server refuses it too)
-            const removable = !watching && participant.role !== 'HOST' && !isRemoving && !closing;
+            const removable = isHost && participant.role !== 'HOST' && !isRemoving && !closing;
             return (
               <div
                 key={participant.id}
@@ -263,6 +268,16 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           <Button size="lg" variant="secondary" onClick={leave}>
             Leave spectating
           </Button>
+        ) : !isHost ? (
+          // only the host starts the game; a player leaving goes alone, so nothing to ask first
+          <div className="grid gap-3">
+            <p className="text-center text-sm font-semibold text-ink-muted">
+              Waiting for the host to start the game
+            </p>
+            <Button size="lg" variant="secondary" onClick={leave} loading={closingAction === 'leave'}>
+              Leave game
+            </Button>
+          </div>
         ) : (
           // two equal columns, whatever the labels: the "Leave?" question then fits on its half
           <div className="grid grid-cols-2 items-center gap-3">
