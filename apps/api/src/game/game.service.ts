@@ -41,7 +41,7 @@ import {
   type GameWithParticipants,
 } from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
-import { GameUpdates } from './game-updates';
+import { GameUpdates, type GameUpdate } from './game-updates';
 
 type GameAction = {
   actionType: string;
@@ -50,6 +50,8 @@ type GameAction = {
   // The next turn's first roll, made by the server in the same transaction and logged as its
   // own event right after this one.
   autoRoll?: Prisma.InputJsonValue;
+  // Participants this action deleted from the game; their sockets become viewers.
+  departedIds?: string[];
 };
 
 type ActionAccess =
@@ -539,6 +541,7 @@ export class GameService {
         return {
           actionType: 'playerRemoved',
           payload: { playerId: participantId },
+          departedIds: [participantId],
         };
       },
     );
@@ -580,7 +583,7 @@ export class GameService {
 
     const key = requireIdempotencyKey(idempotencyKey);
     // Set only when an action really ran (not on a key replay), published after the commit.
-    let updatedGameToSend: GameWithParticipants | undefined;
+    let updateToSend: GameUpdate | undefined;
 
     try {
       const view = await this.prisma.$transaction(async (tx) => {
@@ -593,7 +596,7 @@ export class GameService {
         }
 
         const game = await loadGame(tx, id);
-        const { actionType, payload, update, autoRoll } = await apply(
+        const { actionType, payload, update, autoRoll, departedIds } = await apply(
           tx,
           game,
           asking,
@@ -642,7 +645,7 @@ export class GameService {
             },
           });
         }
-        updatedGameToSend = updatedGame;
+        updateToSend = { game: updatedGame, departedIds: departedIds ?? [] };
         return toGameView(
           updatedGame,
           asking?.role === 'HOST',
@@ -651,8 +654,8 @@ export class GameService {
       });
 
       // The transaction has committed: only now may other clients see the new state.
-      if (updatedGameToSend) {
-        this.updates.publish(updatedGameToSend);
+      if (updateToSend) {
+        this.updates.publish(updateToSend);
       }
       return view;
     } catch (error) {
@@ -930,6 +933,7 @@ async function leaveLobby(
   return {
     actionType: 'playerLeftLobby',
     payload: { playerId: leaving.id },
+    departedIds: [leaving.id],
   };
 }
 
