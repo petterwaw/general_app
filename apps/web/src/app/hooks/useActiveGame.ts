@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { GameView } from '@dice-app/contracts';
-import { getHostedGame } from '../api/games';
+import { getActiveGame } from '../api/games';
 
-export default function useHostedGame() {
+export default function useActiveGame() {
   const [game, setGame] = useState<GameView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function useHostedGame() {
       try {
         setLoading(true);
         setError(null);
-        setGame(await getHostedGame());
+        setGame(await getActiveGame());
       } catch (err) {
         setError(
           err instanceof Error

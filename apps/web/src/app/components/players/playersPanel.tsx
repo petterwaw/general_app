@@ -66,6 +66,7 @@ export default function PlayersPanel({ participants, log }: PlayersPanelProps) {
             key={participant.id}
             name={participant.name}
             seat={seat}
+            left={participant.left}
           />
         ))}
       </div>

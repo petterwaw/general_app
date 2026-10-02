@@ -11,7 +11,7 @@ import { ActiveGameCard } from "../components/gameCreate/activeGameCard";
 import { ErrorScreen } from "../components/errors/errorScreen";
 import { useErrorToast } from "../components/ui/toast";
 import { CreateGameForm } from "../components/gameCreate/createGameForm";
-import useHostedGame from '../hooks/useHostedGame'
+import useActiveGame from '../hooks/useActiveGame'
 import { leaveGame } from '../api/games'
 
 type View = "start" | "create";
@@ -22,14 +22,14 @@ export default function GamesPage() {
   const [pending, setPending] = useState(false);
   const showError = useErrorToast();
 
-  const { game: hostedGame, loading, error, setGame, retry } = useHostedGame();
+  const { game: activeGame, loading, error, setGame, retry } = useActiveGame();
 
-  async function leaveHostedGame() {
+  async function leaveActiveGame() {
     // checked before try, so an early return does not reach finally and unlock the button
-    if (pending || !hostedGame) return;
+    if (pending || !activeGame) return;
     setPending(true);
     try {
-      await leaveGame(hostedGame.id);
+      await leaveGame(activeGame.id);
       setGame(null);
     } catch (err) {
       showError(err);
@@ -52,11 +52,11 @@ export default function GamesPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-[480px] gap-5">
-        {/* a host runs one game at a time (DECYZJE.md §5): with a game going, the only choices
+        {/* a device is in one game at a time (DECYZJE.md §5): with a game going, the only choices
             are going back to it or leaving it; until the check is back nothing is shown */}
-        {loading ? null : hostedGame ? (
+        {loading ? null : activeGame ? (
           <div className="motion-safe:animate-rise">
-            <ActiveGameCard game={hostedGame} onLeave={leaveHostedGame} pending={pending}/>
+            <ActiveGameCard game={activeGame} onLeave={leaveActiveGame} pending={pending}/>
           </div>
         ) : (
           // keyed by view, so the swapped-in card plays the fade-in
@@ -81,7 +81,7 @@ export default function GamesPage() {
                   <h2 className="text-xl font-bold">New game</h2>
                 </div>
 
-                <CreateGameForm onHostedGame={setGame} />
+                <CreateGameForm onActiveGame={setGame} />
               </>
             )}
           </Card>

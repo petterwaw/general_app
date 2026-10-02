@@ -41,7 +41,7 @@ import {
   type GameWithParticipants,
 } from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
-import { GameUpdates } from './game-updates';
+import { GameUpdates, type GameUpdate } from './game-updates';
 
 type GameAction = {
   actionType: string;
@@ -50,6 +50,8 @@ type GameAction = {
   // The next turn's first roll, made by the server in the same transaction and logged as its
   // own event right after this one.
   autoRoll?: Prisma.InputJsonValue;
+  // Participants this action deleted from the game; their sockets become viewers.
+  departedIds?: string[];
 };
 
 type ActionAccess =
@@ -137,12 +139,15 @@ export class GameService {
     }
   }
 
-  // The LOBBY / IN_PROGRESS game hosted by this device, or null.
-  async hosted(hostSecret: string | undefined): Promise<GameView | null> {
-    const identity = await this.findIdentity(hostSecret);
-    const game = identity && (await this.findActiveHostedGame(identity.id));
+  // The LOBBY / IN_PROGRESS game this device plays in, as host or player, or null.
+  async active(secret: string | undefined): Promise<GameView | null> {
+    const identity = await this.findIdentity(secret);
+    const game = identity && (await this.findActiveGame(identity.id));
+    if (!game) return null;
+    const player = await this.findParticipant(game.id, secret);
+    if (!player) return null;
 
-    return game ? toGameView(game, true, hostParticipantId(game)) : null;
+    return toGameView(game, player.role === 'HOST', player.id);
   }
 
   async findAll(): Promise<GameView[]> {
@@ -536,6 +541,7 @@ export class GameService {
         return {
           actionType: 'playerRemoved',
           payload: { playerId: participantId },
+          departedIds: [participantId],
         };
       },
     );
@@ -577,7 +583,7 @@ export class GameService {
 
     const key = requireIdempotencyKey(idempotencyKey);
     // Set only when an action really ran (not on a key replay), published after the commit.
-    let updatedGameToSend: GameWithParticipants | undefined;
+    let updateToSend: GameUpdate | undefined;
 
     try {
       const view = await this.prisma.$transaction(async (tx) => {
@@ -590,7 +596,7 @@ export class GameService {
         }
 
         const game = await loadGame(tx, id);
-        const { actionType, payload, update, autoRoll } = await apply(
+        const { actionType, payload, update, autoRoll, departedIds } = await apply(
           tx,
           game,
           asking,
@@ -639,7 +645,7 @@ export class GameService {
             },
           });
         }
-        updatedGameToSend = updatedGame;
+        updateToSend = { game: updatedGame, departedIds: departedIds ?? [] };
         return toGameView(
           updatedGame,
           asking?.role === 'HOST',
@@ -648,8 +654,8 @@ export class GameService {
       });
 
       // The transaction has committed: only now may other clients see the new state.
-      if (updatedGameToSend) {
-        this.updates.publish(updatedGameToSend);
+      if (updateToSend) {
+        this.updates.publish(updateToSend);
       }
       return view;
     } catch (error) {
@@ -720,11 +726,11 @@ export class GameService {
     });
   }
 
-  private findActiveHostedGame(identityId: string) {
+  private findActiveGame(identityId: string) {
     return this.prisma.game.findFirst({
       where: {
-        hostIdentityId: identityId,
         status: { in: ['LOBBY', 'IN_PROGRESS'] },
+        participants: { some: { identityId, active: true } },
       },
       include: gameInclude,
     });
@@ -927,6 +933,7 @@ async function leaveLobby(
   return {
     actionType: 'playerLeftLobby',
     payload: { playerId: leaving.id },
+    departedIds: [leaving.id],
   };
 }
 

@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { GameView } from '@dice-app/contracts';
+import type { CreateGameInput, GameView } from '@dice-app/contracts';
 
 import { Button } from '../ui/button';
 import PlayerNameRow from '../players/playerNameRow';
 import { GameModeSwitch } from './gameModeSwitch';
-import { createGame, getHostedGame } from '../../api/games';
+import { createGame, getActiveGame } from '../../api/games';
 import { useErrorToast } from '../ui/toast';
 
 type GameMode = 'offline' | 'online';
@@ -18,12 +18,12 @@ const MODE_DESCRIPTIONS: Record<GameMode, string> = {
 };
 
 type CreateGameFormProps = {
-  // called when creating failed but this device turns out to host a game after all
-  onHostedGame: (game: GameView) => void;
+  // called when creating failed but this device turns out to be in a game after all
+  onActiveGame: (game: GameView) => void;
 };
 
 // Only the host's name here: the other players are added in the lobby.
-export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
+export function CreateGameForm({ onActiveGame }: CreateGameFormProps) {
   const [name, setName] = useState('');
   const [mode, setMode] = useState<GameMode>('offline');
   const pendingRef = useRef(false);
@@ -31,8 +31,7 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
   const showError = useErrorToast();
   const router = useRouter();
 
-  // online play is outside the MVP; the switch does not let it be picked yet
-  const canCreate = mode === 'offline' && name.trim() !== '' && !pending;
+  const canCreate = name.trim() !== '' && !pending;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -41,14 +40,18 @@ export function CreateGameForm({ onHostedGame }: CreateGameFormProps) {
     pendingRef.current = true;
     setPending(true);
     try {
-      const game = await createGame([name.trim()]);
+      const input: CreateGameInput =
+        mode === 'online'
+          ? { mode: 'ONLINE', name: name.trim() }
+          : { mode: 'LOCAL', players: [name.trim()] };
+      const game = await createGame(input);
       router.push(`/games/${game.id}`);
     } catch (err) {
       // The game may exist after all: the response got lost on the way, or another tab of this
       // device created one first (409). Show that game instead of the error.
-      const hostedGame = await getHostedGame().catch(() => null);
-      if (hostedGame) {
-        onHostedGame(hostedGame);
+      const activeGame = await getActiveGame().catch(() => null);
+      if (activeGame) {
+        onActiveGame(activeGame);
         return;
       }
       showError(err);

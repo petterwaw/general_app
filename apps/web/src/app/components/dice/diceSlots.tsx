@@ -15,11 +15,11 @@ type DiceSlotsProps = {
 };
 
 // 100cqi minus tray padding (36), slot padding (16) and gaps (40); 6px spare for the active outline
-const SLOT_SIZE = 'clamp(36px, calc((100cqi - 92px) / 5 - 6px), 72px)';
+export const SLOT_SIZE = 'clamp(36px, calc((100cqi - 92px) / 5 - 6px), 72px)';
 // leaving dice pop one after another, left to right
 const LEAVE_STAGGER_MS = 70;
 
-const ROW = 'flex items-center justify-center gap-2.5 px-2 pt-9 pb-14';
+export const ROW = 'flex items-center justify-center gap-2.5 px-2 pt-9 pb-14';
 
 // Five slots on the felt, filled one after another like a one-time-code field.
 export default function DiceSlots({ dice, activeIndex, onSlotClick, leaving, onLeft }: DiceSlotsProps) {

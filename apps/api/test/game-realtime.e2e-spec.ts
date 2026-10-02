@@ -265,6 +265,95 @@ describe('Realtime', () => {
       );
     });
 
+    // An online lobby of two, each on their own device; key keeps two lobbies in one test apart.
+    async function createOnlineLobby(key: string) {
+      const created = await request(server)
+        .post('/games')
+        .set('Idempotency-Key', `${key}-create`)
+        .send({ mode: 'ONLINE', name: 'Piotr' })
+        .expect(201);
+      const gameId = gameFrom(created.body).id;
+
+      const joined = await request(server)
+        .post(`/games/${gameId}/join`)
+        .set('Idempotency-Key', `${key}-join`)
+        .send({ name: 'Ania' })
+        .expect(201);
+      const [, player] = gameFrom(joined.body).participants;
+
+      return { gameId, player, creatorCookie: cookieFrom(created), playerCookie: cookieFrom(joined) };
+    }
+
+    it('turns the open screen of a player removed from the lobby into a viewer', async () => {
+      const { gameId, player, creatorCookie, playerCookie } = await createOnlineLobby('realtime-remove');
+      const removed = connect(playerCookie);
+      expect((await subscribe(removed, gameId)).myParticipantId).toBe(player.id);
+
+      const removal = next<GameView>(removed, 'game');
+      await request(server)
+        .delete(`/games/${gameId}/participants/${player.id}`)
+        .set('Cookie', creatorCookie)
+        .set('Idempotency-Key', 'realtime-remove')
+        .expect(200);
+
+      const afterRemoval = await removal;
+      expect(afterRemoval).toEqual(expect.objectContaining({ isHost: false, myParticipantId: null }));
+      expect(afterRemoval.participants.map((participant) => participant.id)).not.toContain(player.id);
+
+      // still in the viewer room for what comes next
+      const afterStart = next<GameView>(removed, 'game');
+      await request(server)
+        .post(`/games/${gameId}/start`)
+        .set('Cookie', creatorCookie)
+        .set('Idempotency-Key', 'realtime-remove-start')
+        .expect(201);
+      expect(await afterStart).toEqual(
+        expect.objectContaining({ status: 'IN_PROGRESS', myParticipantId: null }),
+      );
+    });
+
+    it('turns the other open tab of a player who left the lobby into a viewer', async () => {
+      const { gameId, player, playerCookie } = await createOnlineLobby('realtime-leave');
+      const otherTab = connect(playerCookie);
+      expect((await subscribe(otherTab, gameId)).myParticipantId).toBe(player.id);
+
+      const afterLeaving = next<GameView>(otherTab, 'game');
+      await request(server)
+        .post(`/games/${gameId}/leave`)
+        .set('Cookie', playerCookie)
+        .set('Idempotency-Key', 'realtime-leave')
+        .expect(201);
+
+      expect(await afterLeaving).toEqual(expect.objectContaining({ isHost: false, myParticipantId: null }));
+    });
+
+    it('does not push a removal to screens of another game', async () => {
+      const { gameId, player, creatorCookie } = await createOnlineLobby('realtime-remove-a');
+      const other = await createOnlineLobby('realtime-remove-b');
+      const outsider = connect(other.playerCookie);
+      await subscribe(outsider, other.gameId);
+
+      const pushedGameIds: string[] = [];
+      outsider.on('game', (state: GameView) => pushedGameIds.push(state.id));
+
+      await request(server)
+        .delete(`/games/${gameId}/participants/${player.id}`)
+        .set('Cookie', creatorCookie)
+        .set('Idempotency-Key', 'realtime-remove-a')
+        .expect(200);
+
+      // a push of its own game comes after anything the removal could have sent on this connection
+      const ownUpdate = next<GameView>(outsider, 'game');
+      await request(server)
+        .post(`/games/${other.gameId}/start`)
+        .set('Cookie', other.creatorCookie)
+        .set('Idempotency-Key', 'realtime-remove-b-start')
+        .expect(201);
+      await ownUpdate;
+
+      expect(pushedGameIds).toEqual([other.gameId]);
+    });
+
     it('tells a player who they are when they subscribe', async () => {
       const { gameId, player, playerCookie } = await startOnlineGame();
 

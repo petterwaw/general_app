@@ -4,15 +4,15 @@ import type {
   DiceRoll,
   GameView,
   RollInput,
+  RerollInput,
   ScoreInput,
   JoinGameInput,
   GameEventView
 } from '@dice-app/contracts';
 import { apiRequest } from './client';
 
-export function createGame(players: string[]) {
-  const body: CreateGameInput = { mode: 'LOCAL', players };
-  return apiRequest<GameView>('/games', { method: 'POST', body });
+export function createGame(input: CreateGameInput) {
+  return apiRequest<GameView>('/games', { method: 'POST', body: input });
 }
 
 export function getGame(gameId: string) {
@@ -28,9 +28,16 @@ export function submitRoll(gameId: string, playerId: string, dice: DiceRoll) {
   return apiRequest<GameView>(`/games/${gameId}/roll`, { method: 'POST', body });
 }
 
-export function scoreCategory(gameId: string, playerId: string, category: Category) {
-  const body: ScoreInput = { playerId, category };
+// `playerId` only in a local game, where the host scores for whoever's turn it is; an online
+// player scores for themselves and the server refuses a player sent along
+export function scoreCategory(gameId: string, category: Category, playerId?: string) {
+  const body: ScoreInput = playerId === undefined ? { category } : { playerId, category };
   return apiRequest<GameView>(`/games/${gameId}/score`, { method: 'POST', body });
+}
+
+export function rerollDice(gameId: string, held: number[]): Promise<GameView> {
+  const body: RerollInput = {held}
+  return apiRequest<GameView>(`/games/${gameId}/reroll`, { method: 'POST', body });
 }
 
 export function leaveGame(gameId: string) {
@@ -42,8 +49,8 @@ export function joinGame(gameId: string, name: string) {
   return apiRequest<GameView>(`/games/${gameId}/join`, { method: 'POST', body });
 }
 
-export function getHostedGame() {
-  return apiRequest<GameView | null>(`/games/hosted`);
+export function getActiveGame() {
+  return apiRequest<GameView | null>(`/games/active`);
 }
 
 export function getGameEvents(gameId: string, after?: number) {

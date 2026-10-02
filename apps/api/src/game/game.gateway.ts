@@ -32,7 +32,15 @@ export class GameGateway {
     // Called by Nest once the Socket.IO server exists; from then on every committed game
     // state goes out to the game's rooms.
     afterInit() {
-        this.updates.changes$.subscribe((game) => {
+        this.updates.changes$.subscribe(({ game, departedIds }) => {
+            // Departed participants are gone from game.participants; as viewers their open
+            // screens still get the viewer emit below.
+            for (const id of departedIds) {
+                const oldRoom = `game:${game.id}:participant:${id}`
+                this.server.in(oldRoom).socketsJoin(`game:${game.id}:viewer`)
+                this.server.in(oldRoom).socketsLeave(`game:${game.id}:participant:${id}`)
+            }
+
             for (const participant of game.participants) {
                 this.server
                     .to(`game:${game.id}:participant:${participant.id}`)

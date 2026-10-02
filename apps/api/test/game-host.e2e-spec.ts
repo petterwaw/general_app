@@ -14,7 +14,7 @@ function gameFrom(body: unknown): GameView {
   return (body as ApiResponse<GameView>).data;
 }
 
-function hostedFrom(body: unknown): GameView | null {
+function activeFrom(body: unknown): GameView | null {
   return (body as ApiResponse<GameView | null>).data;
 }
 
@@ -140,32 +140,32 @@ describe('Host rules', () => {
     });
   });
 
-  describe('GET /games/hosted', () => {
+  describe('GET /games/active', () => {
     it("returns the device's active game", async () => {
       const { agent, game } = await createHostedGame(['Piotr'], 'hosted-active');
 
-      const response = await agent.get('/games/hosted');
+      const response = await agent.get('/games/active');
 
       expect(response.status).toBe(200);
-      expect(hostedFrom(response.body)?.id).toBe(game.id);
+      expect(activeFrom(response.body)?.id).toBe(game.id);
     });
 
     it('returns null without a host cookie', async () => {
       await createHostedGame(['Piotr'], 'hosted-no-cookie');
 
-      const response = await request(app.getHttpServer()).get('/games/hosted');
+      const response = await request(app.getHttpServer()).get('/games/active');
 
       expect(response.status).toBe(200);
-      expect(hostedFrom(response.body)).toBeNull();
+      expect(activeFrom(response.body)).toBeNull();
     });
 
     it('returns null once the host has left the game', async () => {
       const { agent, game } = await createHostedGame(['Piotr'], 'hosted-left');
       await leave(agent, game.id, 'hosted-left-leave');
 
-      const response = await agent.get('/games/hosted');
+      const response = await agent.get('/games/active');
 
-      expect(hostedFrom(response.body)).toBeNull();
+      expect(activeFrom(response.body)).toBeNull();
     });
   });
 
@@ -197,7 +197,7 @@ describe('Host rules', () => {
       const issued = hostCookieFrom(created.get('Set-Cookie'));
 
       const visit = await request(app.getHttpServer())
-        .get('/games/hosted')
+        .get('/games/active')
         .set('Cookie', `host_secret=${secretFrom(issued)}`);
       const refreshed = hostCookieFrom(visit.get('Set-Cookie'));
 
@@ -206,7 +206,7 @@ describe('Host rules', () => {
     });
 
     it('issues no cookie on a visit without one', async () => {
-      const response = await request(app.getHttpServer()).get('/games/hosted');
+      const response = await request(app.getHttpServer()).get('/games/active');
 
       expect(hostCookieFrom(response.get('Set-Cookie'))).toBeUndefined();
     });

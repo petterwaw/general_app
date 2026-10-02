@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import Die from "../dice/die";
-import { ComingSoon } from "../ui/comingSoon";
 
 type GameMode = "offline" | "online";
 
@@ -43,10 +42,9 @@ function OnlineArt({ hop }: { hop: string }) {
   );
 }
 
-// `soon`: shown but not selectable yet (online play is outside the MVP)
-const MODES: { value: GameMode; label: string; Art: typeof OfflineArt; soon?: boolean }[] = [
-  { value: "offline", label: "Offline", Art: OfflineArt },
-  { value: "online", label: "Online", Art: OnlineArt, soon: true },
+const MODES: { value: GameMode; label: string; Art: typeof OfflineArt }[] = [
+  { value: "offline", label: "Physical", Art: OfflineArt },
+  { value: "online", label: "Virtual", Art: OnlineArt },
 ];
 
 // Two tiles in the player rows' shape and white. The picked one gets the violet ring (primary
@@ -57,7 +55,7 @@ export function GameModeSwitch({ mode, onChange, disabled = false }: GameModeSwi
 
   return (
     <div role="group" aria-label="Game mode" className="grid grid-cols-2 gap-3">
-      {MODES.map(({ value, label, Art, soon }) => {
+      {MODES.map(({ value, label, Art }) => {
         const selected = mode === value;
         const option = (
           <button
@@ -68,7 +66,7 @@ export function GameModeSwitch({ mode, onChange, disabled = false }: GameModeSwi
               setPicked(true);
               onChange(value);
             }}
-            disabled={disabled || soon}
+            disabled={disabled}
             aria-pressed={selected}
             className={[
               "grid w-full cursor-pointer place-items-center gap-3 rounded-panel px-3 pt-5 pb-3.5",
@@ -83,7 +81,7 @@ export function GameModeSwitch({ mode, onChange, disabled = false }: GameModeSwi
             <span
               key={String(selected)}
               aria-hidden="true"
-              className={["grid h-[52px] place-items-center", soon ? "opacity-50" : ""].join(" ")}
+              className={["grid h-[52px] place-items-center"].join(" ")}
             >
               <Art hop={selected && picked ? "motion-safe:animate-hop" : ""} />
             </span>
@@ -91,13 +89,8 @@ export function GameModeSwitch({ mode, onChange, disabled = false }: GameModeSwi
           </button>
         );
 
-        return soon ? (
-          <ComingSoon key={value} className="grid">
-            {option}
-          </ComingSoon>
-        ) : (
-          option
-        );
+        return option
+
       })}
     </div>
   );
