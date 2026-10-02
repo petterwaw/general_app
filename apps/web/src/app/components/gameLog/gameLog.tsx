@@ -34,6 +34,30 @@ function describe(event: GameEventView, name: string): React.ReactNode {
       );
     case 'categorySaved':
       return categorySaved(name, event.category, event.points);
+    case 'diceRolled':
+      const diceHeld = event.dice.filter((_,index) => event.held.includes(index))
+      return (
+        <>
+          {name} rolled{' '}
+          <span className="font-bold tabular-nums">
+            {event.dice.join(' ')}{' '}
+          </span>
+          {diceHeld.length > 0 && 'held:'}
+          <span className="font-bold tabular-nums"> 
+            {diceHeld.length > 0 && ` ${diceHeld.join(' ')}`}
+          </span>
+        </>
+      ); 
+    case 'playerLeft':
+      return (
+        <>
+          <span className="font-bold tabular-nums">{name}</span> left the game
+        </>
+      );
+    default: {
+      const unhandled: never = event;
+      return unhandled;
+    }
   }
 }
 
