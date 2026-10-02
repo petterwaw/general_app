@@ -11,7 +11,7 @@ import {
 
 import Avatar from '../players/avatar';
 import Die from '../dice/die';
-import ScoreCell, { type ScoreCellState } from './scoreCell';
+import ScoreCell, { DIMMED, type ScoreCellState } from './scoreCell';
 import { CHANCE_ROW, LOWER_ROWS, UPPER_ROWS } from './categories';
 import { prefersReducedMotion } from '../ui/reducedMotion';
 
@@ -188,6 +188,7 @@ export default function ScoreCard({
           key={participant.id}
           categoryLabel={label}
           isActive={isCurrent}
+          dimmed={participant.left}
           tickOnLeft={seat === count - 1}
           state={cellState(category, participant.scoreCard, isCurrent, turnDice, selected, onSelect, onSave)}
         />
@@ -239,6 +240,7 @@ export default function ScoreCard({
                 className={[
                   'rounded-t-[10px] px-2 py-[3px] align-bottom text-[.88rem] font-bold',
                   participant.id === currentPlayerId ? 'bg-primary-soft' : '',
+                  participant.left ? DIMMED : '',
                 ].join(' ')}
               >
                 {/* avatars only: names do not fit narrow columns; the players panel has them */}
@@ -281,6 +283,7 @@ export default function ScoreCard({
                     cellBase,
                     'text-center tabular-nums',
                     participant.id === currentPlayerId ? 'bg-primary-soft' : 'bg-surface-sunken',
+                    participant.left ? DIMMED : '',
                   ].join(' ')}
                 >
                   {sum >= UPPER_BONUS_THRESHOLD ? (
