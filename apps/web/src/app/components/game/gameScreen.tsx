@@ -168,12 +168,12 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
     }
   }
 
-  // only the host leaving a game still going abandons it for everyone, so only that asks first;
-  // a watcher, or anyone after the end, just goes back
   const turnPill = current && (
     <TurnPill name={current.name} seat={seat} round={round} totalRounds={CATEGORIES.length} />
   );
 
+  // Leaving a game still in progress costs the player their free categories (or ends a local
+  // game), so it asks first; a watcher, or anyone after the end, just goes back.
   const leaveButton =
     watching || finished ? (
       <TopLeaveButton label={leaveLabel} onClick={leaveGameSubmit} />
