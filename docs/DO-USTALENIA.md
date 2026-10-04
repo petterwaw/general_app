@@ -33,12 +33,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       kategorii, przekazanie tury bez zapisu, coś innego?
 - [ ] **Ile czeka lobby przed startem gry online?** (dotyczy matchmakingu)
 
-## Blokujące kod zaproszenia (etap 9, po froncie gry online)
-
-- [ ] **Jak wygląda kod?** Długość i alfabet (np. bez mylących `0/O`, `1/I`).
-- [ ] **Jak długo kod działa?** Tylko w lobby, czy też w trakcie gry (do oglądania)? Czy
-      zwalnia się po zakończeniu gry, żeby mógł wrócić w innej?
-
 ## Niezablokowane, ale otwarte
 
 - [ ] **Tryb ciemny** — interfejs ma dziś jeden, jasny motyw (`DESIGN.md`). Czy potrzebny

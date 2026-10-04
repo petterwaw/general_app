@@ -29,6 +29,12 @@ W trybie online kości fizyczne **nie istnieją**, a w lokalnym — wirtualne.
 sekrecie w ciasteczku urządzenia, tak jak dziś host. Dołączanie przez link / kod zaproszenia;
 matchmaking może dojść później.
 
+**Kod zaproszenia** (ustalone 2026-10-04):
+
+- 6 znaków, litery i cyfry bez mylących się par (`0/O`, `1/I`); wielkość liter bez znaczenia.
+- Działa przez całą grę: w lobby dołącza jako gracz, w trakcie gry przenosi do oglądania.
+- Po zakończeniu gry (także porzuceniu) kod się zwalnia i może trafić do innej gry.
+
 **Liczba graczy w grze lokalnej: od 1 do 8** (ustalone 2026-09-24). Limit egzekwuje serwer —
 zarówno przy tworzeniu gry, jak i przy dołączaniu (`MAX_PLAYERS` w `packages/contracts`).
 Dla trybu online obowiązuje osobno 1–5 (zmienione 2026-10-01 z 2–5) — można zacząć grę samemu.
