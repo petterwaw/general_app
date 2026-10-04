@@ -5,6 +5,9 @@ import type { Category, DiceRoll, DiceSource, ScoreCard } from '@dice-app/game-c
 export const MAX_PLAYERS = 8;
 export const MAX_ONLINE_PLAYERS = 5;
 export const PLAYER_NAME_MAX_LENGTH = 50;
+export const INVITE_CODE_LENGTH = 6;
+// Digits and uppercase letters without the look-alike pairs 0/O and 1/I.
+export const INVITE_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 export { CATEGORIES };
 
@@ -77,12 +80,19 @@ export const subscribeSchema = z.strictObject({
   revision: z.number().int().min(0)
 })
 
+export const inviteCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(new RegExp(`^[${INVITE_CODE_ALPHABET}]{${INVITE_CODE_LENGTH}}$`));
+
 export type CreateGameInput = z.infer<typeof createGameSchema>;
 export type JoinGameInput = z.infer<typeof joinGameSchema>;
 export type RollInput = z.infer<typeof rollSchema>;
 export type RerollInput = z.infer<typeof rerollSchema>;
 export type ScoreInput = z.infer<typeof scoreSchema>;
 export type SubscribeInput = z.infer<typeof subscribeSchema>
+export type InviteCodeInput = z.infer<typeof inviteCodeSchema>
 
 // GET /games/:id/events?after=<revision> — only events newer than the revision the client already has.
 export const gameEventsQuerySchema = z.strictObject({
@@ -128,6 +138,7 @@ export type GameView = {
   // Worked out per request from the cookie and never stored.
   isHost: boolean;
   myParticipantId: string | null
+  inviteCode: string | null
 };
 
 // Public shape of a game-log entry. Only the events worth showing are exposed: the game start,
