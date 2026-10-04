@@ -681,6 +681,22 @@ export class GameService {
     }
   }
 
+  async findByInviteCode(code: string, hostSecret: string | undefined): Promise<GameView> {
+    const game = await this.prisma.game.findFirst({
+      where: {
+        inviteCode: code,
+        diceSource: 'VIRTUAL',
+        status: { in: ['LOBBY', 'IN_PROGRESS'] },
+      },
+      select: { id: true },
+    });
+    if (!game) {
+      throw new NotFoundException('No active game with this invite code');
+    }
+
+    return this.findOne(game.id, hostSecret);
+  }
+
   private async verifyHost(gameId: string, hostSecret: string | undefined) {
     const host = await this.findHost(gameId, hostSecret);
 

@@ -1,6 +1,12 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { CATEGORIES, type ApiResponse, type GameEventView, type GameView } from '@dice-app/contracts';
+import {
+  CATEGORIES,
+  inviteCodeSchema,
+  type ApiResponse,
+  type GameEventView,
+  type GameView,
+} from '@dice-app/contracts';
 import { totalScore, upperBonus } from '@dice-app/game-core';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { cleanDatabase, createGame, createTestApp } from './test-app';
@@ -830,6 +836,67 @@ describe('Online games', () => {
 
         expect(response.status).toBe(201);
       });
+    });
+  });
+  describe('invite code', () => {
+    function findByCode(agent: Agent, code: string) {
+      return agent.get(`/games/by-code/${code}`);
+    }
+
+    it('gives an online game a code in the invite code format and a local game none', async () => {
+      const online = await createOnlineGame(device(), 'Piotr', 'code-online');
+      const { game: local } = await createGame(app, ['Ania'], 'code-local');
+
+      expect(inviteCodeSchema.parse(online.inviteCode)).toBe(online.inviteCode);
+      expect((local as GameView).inviteCode).toBeNull();
+    });
+
+    it('finds a game in the lobby by its code, whatever the letter case', async () => {
+      const { game } = await createLobbyOfTwo('code-lobby');
+
+      const response = await findByCode(device(), game.inviteCode!.toLowerCase()).expect(200);
+
+      expect(gameFrom(response.body).id).toBe(game.id);
+      expect(gameFrom(response.body).isHost).toBe(false);
+      expect(gameFrom(response.body).myParticipantId).toBeNull();
+    });
+
+    it('finds a game in progress by its code, so a newcomer can watch it', async () => {
+      const { creator, game } = await createLobbyOfTwo('code-in-progress');
+      await start(creator, game.id, 'code-in-progress-start').expect(201);
+
+      const response = await findByCode(device(), game.inviteCode!).expect(200);
+
+      expect(gameFrom(response.body)).toMatchObject({ id: game.id, status: 'IN_PROGRESS' });
+    });
+
+    it('answers 404 for a code no active game has and 400 for a malformed one', async () => {
+      await createOnlineGame(device(), 'Piotr', 'code-unknown');
+
+      await findByCode(device(), '222222').expect(404);
+      await findByCode(device(), 'O0I1AB').expect(400);
+    });
+
+    it('frees the code of an abandoned game for another game', async () => {
+      const creator = device();
+      const abandoned = await createOnlineGame(creator, 'Piotr', 'code-freed-first');
+      await creator.post(`/games/${abandoned.id}/leave`).set('Idempotency-Key', 'code-freed-leave').expect(201);
+      await findByCode(device(), abandoned.inviteCode!).expect(404);
+
+      const next = await createOnlineGame(device(), 'Ania', 'code-freed-next');
+      await prisma.game.update({ where: { id: next.id }, data: { inviteCode: abandoned.inviteCode } });
+
+      const response = await findByCode(device(), abandoned.inviteCode!).expect(200);
+      expect(gameFrom(response.body).id).toBe(next.id);
+    });
+
+    it('does not let two active games share a code', async () => {
+      const first = await createOnlineGame(device(), 'Piotr', 'code-shared-first');
+      const second = await createOnlineGame(device(), 'Ania', 'code-shared-second');
+
+      await expect(
+        prisma.game.update({ where: { id: second.id }, data: { inviteCode: first.inviteCode } }),
+      ).rejects.toThrow();
     });
   });
 });

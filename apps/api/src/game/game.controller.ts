@@ -18,12 +18,14 @@ import {
   rollSchema,
   rerollSchema,
   scoreSchema,
+  inviteCodeSchema,
   type CreateGameInput,
   type GameEventsQuery,
   type JoinGameInput,
   type RollInput,
   type RerollInput,
   type ScoreInput,
+  type InviteCodeInput,
 } from '@dice-app/contracts';
 import { GameService } from './game.service';
 import { ZodValidationPipe } from '../utils/zod-validation.pipe';
@@ -58,7 +60,6 @@ export class GameController {
     return this.gameService.findAll();
   }
 
-  // Declared before ':id', so that "active" is not read as a game id.
   @Get('active')
   active(@Req() request: Request) {
     return this.gameService.active(hostSecretFrom(request));
@@ -175,6 +176,14 @@ export class GameController {
       idempotencyKey,
       hostSecretFrom(request),
     );
+  }
+
+  @Get('by-code/:code')
+  findByInviteCode(
+    @Param('code', new ZodValidationPipe(inviteCodeSchema)) code: InviteCodeInput,
+    @Req() request: Request,
+  ) {
+    return this.gameService.findByInviteCode(code, hostSecretFrom(request));
   }
 }
 
