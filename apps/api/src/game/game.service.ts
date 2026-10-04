@@ -42,6 +42,9 @@ import {
 } from './game.view';
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view';
 import { GameUpdates, type GameUpdate } from './game-updates';
+import { generateInviteCode } from './invite-code';
+
+const MAX_INVITE_CODE_ATTEMPTS = 5;
 
 type GameAction = {
   actionType: string;
@@ -91,51 +94,57 @@ export class GameService {
     const newHostSecret = identity ? null : randomBytes(32).toString('hex');
     const names = input.mode === 'LOCAL' ? input.players : [input.name];
 
-    try {
-      const game = await this.prisma.$transaction(async (tx) => {
-        const hostIdentityId = newHostSecret
-          ? (
-              await tx.identity.create({
-                data: { secretHash: hashSecret(newHostSecret) },
-              })
-            ).id
-          : identity!.id;
+    for (let attempt = 1; ; attempt++) {
+      const inviteCode = input.mode === 'LOCAL' ? null : generateInviteCode();
 
-        return tx.game.create({
-          data: {
-            creationKey: key,
-            hostIdentityId,
-            diceSource: input.mode === 'LOCAL' ? 'PHYSICAL' : 'VIRTUAL',
-            participants: {
-              create: names.map((name, index) => ({
-                name,
-                scoreCard: createEmptyScoreCard(),
-                turnOrder: index + 1,
-                role: index === 0 ? 'HOST' : 'PLAYER',
-                ...(index === 0 && { identityId: hostIdentityId }),
-              })),
+      try {
+        const game = await this.prisma.$transaction(async (tx) => {
+          const hostIdentityId = newHostSecret
+            ? (
+                await tx.identity.create({
+                  data: { secretHash: hashSecret(newHostSecret) },
+                })
+              ).id
+            : identity!.id;
+
+          return tx.game.create({
+            data: {
+              creationKey: key,
+              hostIdentityId,
+              diceSource: input.mode === 'LOCAL' ? 'PHYSICAL' : 'VIRTUAL',
+              inviteCode,
+              participants: {
+                create: names.map((name, index) => ({
+                  name,
+                  scoreCard: createEmptyScoreCard(),
+                  turnOrder: index + 1,
+                  role: index === 0 ? 'HOST' : 'PLAYER',
+                  ...(index === 0 && { identityId: hostIdentityId }),
+                })),
+              },
             },
-          },
-          include: gameInclude,
+            include: gameInclude,
+          });
         });
-      });
 
-      return {
-        game: toGameView(game, true, hostParticipantId(game)),
-        hostSecret: newHostSecret,
-      };
-    } catch (error) {
-      if (isUniqueViolation(error)) {
-        // Lost a race: either to the same Idempotency-Key, or to another game of this device.
+        return {
+          game: toGameView(game, true, hostParticipantId(game)),
+          hostSecret: newHostSecret,
+        };
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+
+        // Three unique indexes can reject the insert: the Idempotency-Key, the device's one active
+        // game and the invite code. Only the last one is fixed by drawing a new code.
         const existingGame = await this.findCreatedGame(key);
         if (existingGame) {
           return { game: existingGame, hostSecret: null };
         }
-
-        throw new ConflictException('This device is already in a game');
+        if (identity && (await this.findActiveParticipation(identity.id))) {
+          throw new ConflictException('This device is already in a game');
+        }
+        if (attempt === MAX_INVITE_CODE_ATTEMPTS) throw error;
       }
-
-      throw error;
     }
   }
 
@@ -670,6 +679,22 @@ export class GameService {
 
       throw error;
     }
+  }
+
+  async findByInviteCode(code: string, hostSecret: string | undefined): Promise<GameView> {
+    const game = await this.prisma.game.findFirst({
+      where: {
+        inviteCode: code,
+        diceSource: 'VIRTUAL',
+        status: { in: ['LOBBY', 'IN_PROGRESS'] },
+      },
+      select: { id: true },
+    });
+    if (!game) {
+      throw new NotFoundException('No active game with this invite code');
+    }
+
+    return this.findOne(game.id, hostSecret);
   }
 
   private async verifyHost(gameId: string, hostSecret: string | undefined) {

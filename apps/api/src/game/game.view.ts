@@ -37,7 +37,8 @@ export function toGameView(game: GameWithParticipants, isHost: boolean, myPartic
     })),
     createdAt: game.createdAt.toISOString(),
     isHost,
-    myParticipantId
+    myParticipantId,
+    inviteCode: game.diceSource === 'VIRTUAL' && (game.status === 'IN_PROGRESS' || game.status === 'LOBBY') ? game.inviteCode : null
   };
 }
 

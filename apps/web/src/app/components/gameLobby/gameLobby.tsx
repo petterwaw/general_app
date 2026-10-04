@@ -11,7 +11,7 @@ import LogItem from '../gameLog/logItem';
 import { joinGame, leaveGame, removeParticipant, startGame } from '../../api/games';
 import { randomId } from '../../api/randomId';
 import { useErrorToast } from '../ui/toast';
-import { InviteLinkButton } from './inviteLinkButton';
+import { InviteCodeButton } from './inviteCodeButton';
 import { JoinGameForm } from './joinGameForm';
 
 type GameLobbyProps = {
@@ -184,7 +184,7 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
             </span>
           </h2>
 
-          {online && !watching && <InviteLinkButton gameId={game.id} />}
+          {online && !watching && game.inviteCode && <InviteCodeButton code={game.inviteCode} />}
           {!online && isHost && (
             <button
               type="button"

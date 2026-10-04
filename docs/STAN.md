@@ -24,7 +24,7 @@ to uwagę. Rzeczy z listy „Świadomie POZA MVP" niżej nie proponuj.
 | [6](etapy/etap-6.md) | Realtime | KRYTERIUM SPEŁNIONE (2026-09-28: stan gry na żywo przez Socket.IO, powrót po zerwanym połączeniu po `revision`, test wifi ręcznie i e2e — PR #17) |
 | [7](etapy/etap-7.md) | Kości wirtualne | KRYTERIUM SPEŁNIONE (2026-09-30: pełna partia online dwóch urządzeń przez API w teście e2e) — obejmuje backend gry online z etapu 9, „którym graczem jestem” i realtime dla graczy (PR #18) |
 | [8](etapy/etap-8.md) | Statystyki globalne | odłożone (2026-09-28) |
-| [9](etapy/etap-9.md) | Online przez zaproszenie | KRYTERIUM SPEŁNIONE (2026-10-02: pełna partia online na osobnych urządzeniach z linku, bez odświeżania) — lobby z linkiem, dołączanie, ekran gry z rzutami, wyjście gracza; zostaje kod zaproszenia (`DO-USTALENIA.md`) |
+| [9](etapy/etap-9.md) | Online przez zaproszenie | KRYTERIUM SPEŁNIONE (2026-10-02: pełna partia online na osobnych urządzeniach z linku, bez odświeżania) — lobby, dołączanie, ekran gry z rzutami, wyjście gracza; kod zaproszenia (2026-10-04) — etap domknięty |
 | [10](etapy/etap-10.md) | Utwardzanie i produkcja | nierozpoczęte |
 
 ## Kierunek od 2026-09-28

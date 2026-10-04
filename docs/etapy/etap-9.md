@@ -1,8 +1,7 @@
 # Etap 9 — Online przez zaproszenie
 
 **Postęp: KRYTERIUM SPEŁNIONE** (2026-10-02: pełna partia online na osobnych urządzeniach
-z linku zaproszenia, bez odświeżania). Zostaje kod zaproszenia — zablokowany przez
-`DO-USTALENIA.md`.
+z linku zaproszenia, bez odświeżania). Kod zaproszenia dokończony 2026-10-04 — etap domknięty.
 
 Zakres zawężony 2026-09-28 — online dla gości, bez kont:
 
@@ -59,3 +58,27 @@ Szczegóły kodu — `DO-USTALENIA.md`.
   testach z telefonu po adresie w sieci lokalnej link trzeba skopiować z paska adresu.
   Świadomie bez obejścia — produkcja będzie na HTTPS.
 - Limit rzutów na turę jest powtórzony po stronie frontu jako podpowiedź UI; rozstrzyga serwer.
+
+## Kod zaproszenia — 2026-10-04
+
+- **Kod** wg `DECYZJE.md` §1: 6 znaków bez `0/O` i `1/I`, wielkość liter bez znaczenia. Alfabet,
+  długość i schemat walidacji są w `packages/contracts`, więc generator w API i walidacja nie
+  mogą się rozjechać. Gra online dostaje kod przy zakładaniu, lokalna — nie.
+- **Unikalność tylko wśród aktywnych gier** — częściowy indeks unikalny w bazie; kod zakończonej
+  albo porzuconej gry zwalnia się sam ze zmianą statusu, bez sprzątania. Kolumna na grze, nie
+  osobna tabela: kod jest jeden na grę i żyje tyle co ona.
+- **Kolizja przy zakładaniu** — serwer losuje kod ponownie (do 5 prób); konflikt klucza
+  idempotencji albo „urządzenie już w grze” nie jest ponawiany.
+- **`GET /games/by-code/:code`** zwraca aktywną grę online o tym kodzie albo 404. Tylko odczyt —
+  dołączanie zostaje w lobby.
+- **Front.** `/join/<kod>` przenosi na ekran gry, który sam pokazuje lobby z formularzem
+  dołączenia albo grę do oglądania; „Join game” na `/games` to pole na kod. W lobby zamiast
+  linku jest pigułka z kodem do skopiowania.
+- **Testy e2e** kodu: format, wielkość liter, lobby i gra w toku, 404 / 400, zwolnienie kodu
+  po porzuceniu, brak dwóch aktywnych gier z tym samym kodem. Test ręczny na urządzeniach —
+  przeszedł.
+
+**Dług, który zostaje:**
+
+- Brak testu samego ponawiania przy kolizji kodu — wymagałby podmiany generatora w e2e.
+- Kopiowanie kodu, jak wcześniej linku, wymaga bezpiecznego kontekstu (HTTPS / `localhost`).

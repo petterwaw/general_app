@@ -54,3 +54,12 @@ export function CheckIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function CopyIcon(props: IconProps) {
+  return (
+    <Icon size={16} {...props}>
+      <rect x="9" y="9" width="11" height="11" rx="2.5" />
+      <path d="M5 15V6.5A1.5 1.5 0 0 1 6.5 5H15" />
+    </Icon>
+  );
+}

@@ -23,6 +23,9 @@ model Game {
   heldInLastRoll  Int[]        @default([])
   hostIdentityId  String?
   hostIdentity    Identity?    @relation("HostedGames", fields: [hostIdentityId], references: [id])
+  // Online games only. Unique among LOBBY / IN_PROGRESS games (partial index in the migration),
+  // so a finished game frees its code for another one.
+  inviteCode      String?
   events          EventLog[]
   participants    Participant[]
 }
