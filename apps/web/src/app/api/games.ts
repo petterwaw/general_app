@@ -19,6 +19,10 @@ export function getGame(gameId: string) {
   return apiRequest<GameView>(`/games/${gameId}`);
 }
 
+export function findGameByInviteCode(code: string) {
+  return apiRequest<GameView>(`/games/by-code/${encodeURIComponent(code)}`);
+}
+
 export function startGame(gameId: string) {
   return apiRequest<GameView>(`/games/${gameId}/start`, { method: 'POST' });
 }

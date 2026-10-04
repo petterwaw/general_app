@@ -4,17 +4,17 @@ import { useState } from "react";
 
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { ComingSoon } from "../components/ui/comingSoon";
 import { IconButton } from "../components/ui/iconButton";
 import { ChevronLeftIcon } from "../components/ui/icons";
 import { ActiveGameCard } from "../components/gameCreate/activeGameCard";
 import { ErrorScreen } from "../components/errors/errorScreen";
 import { useErrorToast } from "../components/ui/toast";
 import { CreateGameForm } from "../components/gameCreate/createGameForm";
+import { JoinCodeForm } from "../components/gameJoin/joinCodeForm";
 import useActiveGame from '../hooks/useActiveGame'
 import { leaveGame } from '../api/games'
 
-type View = "start" | "create";
+type View = "start" | "create" | "join";
 
 export default function GamesPage() {
   const [view, setView] = useState<View>("start");
@@ -66,11 +66,9 @@ export default function GamesPage() {
                 <Button size="lg" onClick={() => setView("create")}>
                   Create game
                 </Button>
-                <ComingSoon>
-                  <Button size="lg" variant="ghost" disabled>
-                    Join game
-                  </Button>
-                </ComingSoon>
+                <Button size="lg" variant="ghost" onClick={() => setView("join")}>
+                  Join game
+                </Button>
               </>
             ) : (
               <>
@@ -78,10 +76,12 @@ export default function GamesPage() {
                   <IconButton aria-label="Back" onClick={() => setView("start")}>
                     <ChevronLeftIcon />
                   </IconButton>
-                  <h2 className="text-xl font-bold">New game</h2>
+                  <h2 className="text-xl font-bold">
+                    {view === "create" ? "New game" : "Join a game"}
+                  </h2>
                 </div>
 
-                <CreateGameForm onActiveGame={setGame} />
+                {view === "create" ? <CreateGameForm onActiveGame={setGame} /> : <JoinCodeForm />}
               </>
             )}
           </Card>
