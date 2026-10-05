@@ -7,6 +7,7 @@ import useGame from '../../hooks/useGame';
 import useGameSocket from '../../hooks/useGameSocket';
 import { ErrorScreen } from '../errors/errorScreen';
 import { Button } from '../ui/button';
+import { ThreeBodySpinner } from '../ui/threeBodySpinner';
 import GameLobby from '../gameLobby/gameLobby';
 import GameScreen from './gameScreen';
 
@@ -14,7 +15,14 @@ export default function GameView({ gameId }: { gameId: string }) {
   const { game, loading, error, setGame, retry } = useGame(gameId);
   useGameSocket(gameId, game, setGame);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div role="status" className="flex flex-1 items-center justify-center text-primary">
+        <ThreeBodySpinner size="3rem" />
+        <span className="sr-only">Loading</span>
+      </div>
+    );
+  }
   if (error instanceof ApiError && error.statusCode === 404) {
     return (
       <ErrorScreen title="No game here. Someone must have pocketed the dice">
