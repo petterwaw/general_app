@@ -47,9 +47,15 @@ importers:
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       pg:
         specifier: ^8.23.0
         version: 8.23.0
+      prisma:
+        specifier: 7.10.0
+        version: 7.10.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -102,9 +108,6 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       eslint:
         specifier: ^9.18.0
         version: 9.39.5(jiti@2.7.0)(supports-color@10.2.2)
@@ -123,9 +126,6 @@ importers:
       prettier:
         specifier: ^3.4.2
         version: 3.9.6
-      prisma:
-        specifier: 7.10.0
-        version: 7.10.0(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3)
       socket.io-client:
         specifier: ^4.8.4
         version: 4.8.4(supports-color@10.2.2)

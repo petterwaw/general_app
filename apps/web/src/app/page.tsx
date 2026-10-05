@@ -1,12 +1,6 @@
+import { redirect } from 'next/navigation';
+
+// No landing page yet; a temporary redirect keeps / free for one later.
 export default function Home() {
-  return (
-    <main>
-      <button>
-        New Game
-      </button>
-      <button>
-        Join Game
-      </button>
-    </main>
-  );
+  redirect('/games');
 }
