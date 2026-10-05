@@ -6,6 +6,12 @@ muszą być ustalone: nazwa aplikacji, hosting, `maxAge` ciasteczka urządzenia
 
 Rate limity, Sentry, kasowanie porzuconych gier, PWA.
 
+## Backup bazy
+
+Codzienny snapshot dysku serwera (EBS, Data Lifecycle Manager) o 03:00 UTC, trzymane 7 ostatnich
+(ustawione 2026-10-05). Zrzut samej bazy do S3 (`pg_dump`) — później, gdy dane zaczną mieć
+wartość (konta, statystyki). Próbne odtworzenie ze snapshotu jeszcze niezrobione.
+
 ## Do sprawdzenia przed wdrożeniem na produkcję
 
 - **`FRONTEND_URL` na produkcji** — lista originów CORS (po przecinku). Na produkcji ma w niej
