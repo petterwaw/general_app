@@ -1,0 +1,40 @@
+FROM node:22-alpine AS build
+
+RUN apk add --no-cache openssl && npm install -g pnpm@11.21.0
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/package.json
+COPY packages/game-core/package.json ./packages/game-core/package.json
+COPY packages/contracts/package.json ./packages/contracts/package.json
+
+RUN pnpm install --frozen-lockfile --filter api...
+
+COPY packages ./packages
+COPY apps/api ./apps/api
+
+RUN pnpm --filter "./packages/*" build \
+  && pnpm --filter api exec prisma generate \
+  && pnpm --filter api build
+
+# Reinstall without dev dependencies; the built dist/ folders stay in place.
+RUN rm -rf node_modules apps/api/node_modules packages/*/node_modules \
+  && pnpm install --frozen-lockfile --prod --filter api...
+
+FROM node:22-alpine
+
+RUN apk add --no-cache openssl
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+COPY --from=build /app ./
+
+WORKDIR /app/apps/api
+
+EXPOSE 3000
+
+# Migrations run before every start; a failed migration keeps the new version from starting.
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && exec node dist/src/main.js"]

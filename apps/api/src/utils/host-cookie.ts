@@ -4,7 +4,8 @@ const HOST_COOKIE_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 
 export const hostCookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: false,
+  // HTTPS-only in production; plain HTTP locally.
+  secure: process.env.COOKIE_SECURE === 'true',
   sameSite: 'lax',
   maxAge: HOST_COOKIE_MAX_AGE_MS,
 };
