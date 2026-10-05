@@ -3,6 +3,10 @@
 	reverse_proxy web:8080
 }
 
+{$WWW_ADDRESS} {
+	redir {$WEB_URL}{uri} permanent
+}
+
 {$API_ADDRESS} {
 	reverse_proxy api:3000
 }
