@@ -8,12 +8,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 ---
 
-## Blokujące etap 1 (fundament)
-
-- [ ] **Gdzie hostujemy?** Frontend i backend mogą stać osobno; backend musi być długo żyjącym
-      procesem (nie serverless). Prawdopodobnie AWS (2026-09-28) — decyzja przy wdrożeniu (etap 10).
-- [ ] **Nazwa aplikacji.** Nie może być „Yahtzee". Do czasu wyboru w kodzie: `dice-app`.
-
 ## Blokujące etap 5 (konta)
 
 - [ ] **Czym się logujemy?** E-mail + hasło, logowanie przez Google/Discord, magic link?

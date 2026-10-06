@@ -1,8 +1,8 @@
 # Etap 10 — Utwardzanie i produkcja
 
-Od 2026-09-28 to etap wdrożenia na produkcję (hosting: prawdopodobnie AWS). Przed wdrożeniem
-muszą być ustalone: nazwa aplikacji, hosting, `maxAge` ciasteczka urządzenia
-(`DO-USTALENIA.md`).
+Od 2026-09-28 to etap wdrożenia na produkcję. Hosting, nazwa i domena: `DECYZJE.md` §11 i §12.
+
+Środowiska: na razie tylko produkcja, bez środowiska dev (ustalone 2026-10-05).
 
 Rate limity, Sentry, kasowanie porzuconych gier, PWA.
 

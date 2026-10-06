@@ -34,6 +34,7 @@ matchmaking może dojść później.
 - 6 znaków, litery i cyfry bez mylących się par (`0/O`, `1/I`); wielkość liter bez znaczenia.
 - Działa przez całą grę: w lobby dołącza jako gracz, w trakcie gry przenosi do oglądania.
 - Po zakończeniu gry (także porzuceniu) kod się zwalnia i może trafić do innej gry.
+- Lobby udostępnia kod, nie link.
 
 **Liczba graczy w grze lokalnej: od 1 do 8** (ustalone 2026-09-24). Limit egzekwuje serwer —
 zarówno przy tworzeniu gry, jak i przy dołączaniu (`MAX_PLAYERS` w `packages/contracts`).
@@ -278,7 +279,8 @@ zdarzenia albo cały stan.
 | ORM | Prisma | ustalone |
 | Auth | — | **DO USTALENIA** |
 | Testy | Vitest (jednostkowe) + Playwright (e2e) | rekomendacja |
-| Hosting | — | **DO USTALENIA** |
+| Hosting | AWS EC2 (Sztokholm), docker compose: Caddy, web, api, Postgres; deploy po zielonym CI na `main` | ustalone (2026-10-05) |
+| Analityka | Umami Cloud — bez ciasteczek, więc bez banera zgody | ustalone (2026-10-05) |
 
 **Ważne przy hostingu:** NestJS z WebSocketami wymaga długo żyjącego procesu. Nie zadziała na
 serverless. Next może stać osobno.
@@ -301,6 +303,8 @@ między instancjami). Nie dodawaj go wcześniej.
 
 ## 12. Wygląd i język (ustalone 2026-09-24)
 
+- Nazwa aplikacji: **Dice Table**, domena `dice-table.com` (ustalone 2026-10-05). Identyfikatory
+  w kodzie i konfiguracji (`dice-app`) zostają.
 - Interfejs jest **po angielsku**.
 - Krój pisma: **Nunito**. Paleta, tokeny i zasady stylu: `DESIGN.md` (wartości w
   `apps/web/src/app/globals.css`).
