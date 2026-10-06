@@ -13,7 +13,7 @@ import { subscribeSchema, type SubscribeInput } from '@dice-app/contracts';
 import { WsExceptionFilter } from '../utils/ws-exception.filter'
 import { hostSecretFromCookieHeader } from '../utils/host-cookie';
 import { GameUpdates } from './game-updates';
-import { toGameView } from './game.view'
+import { toSharedGameView } from './game.view'
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view'
 
 @UseFilters(new WsExceptionFilter)
@@ -42,12 +42,13 @@ export class GameGateway {
                 this.server.in(oldRoom).socketsLeave(`game:${game.id}:participant:${id}`)
             }
 
+            const shared = toSharedGameView(game);
             for (const participant of game.participants) {
                 this.server
                     .to(`game:${game.id}:participant:${participant.id}`)
-                    .emit('game', toGameView(game, participant.role === 'HOST', participant.id))
+                    .emit('game', { ...shared, isHost: participant.role === 'HOST', myParticipantId: participant.id })
             }
-            this.server.to(`game:${game.id}:viewer`).emit('game', toGameView(game, false, null))
+            this.server.to(`game:${game.id}:viewer`).emit('game', { ...shared, isHost: false, myParticipantId: null })
 
             const publicEvents = events
                 .filter((event) => (PUBLIC_EVENT_TYPES as readonly string[]).includes(event.actionType))
