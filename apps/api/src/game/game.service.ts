@@ -749,7 +749,7 @@ export class GameService {
       return null;
     }
 
-    return this.prisma.identity.findFirst({
+    return this.prisma.identity.findUnique({
       where: { secretHash: hashSecret(secret) },
     });
   }
