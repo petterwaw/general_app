@@ -4,7 +4,7 @@ import type { Category, GameEventView, ParticipantView } from '@dice-app/contrac
 import LogItem from './logItem';
 import { prefersReducedMotion } from '../ui/reducedMotion';
 import { CHANCE_ROW, LOWER_ROWS, UPPER_ROWS } from '../scorecard/categories';
-import type { GameLogEntry } from '../../hooks/useGameLog';
+import type { GameLogEntry } from '../../hooks/useGameSocket';
 
 type GameLogProps = {
   entries: GameLogEntry[];

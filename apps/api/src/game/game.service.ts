@@ -186,11 +186,16 @@ export class GameService {
       throw new NotFoundException('Game not found');
     }
 
+    return this.publicEventsAfter(id, query.after ?? 0);
+  }
+
+  // The game log entries newer than the given revision, oldest first.
+  async publicEventsAfter(gameId: string, after: number): Promise<GameEventView[]> {
     const events = await this.prisma.eventLog.findMany({
       where: {
-        gameId: id,
+        gameId,
         actionType: { in: [...PUBLIC_EVENT_TYPES] },
-        revisionAfter: { gt: query.after ?? 0 },
+        revisionAfter: { gt: after },
       },
       orderBy: { revisionAfter: 'asc' },
     });
@@ -631,30 +636,34 @@ export class GameService {
             throw error;
           });
 
-        await tx.eventLog.create({
-          data: {
-            gameId: id,
-            actionType,
-            payload,
-            revisionAfter: autoRoll
-              ? updatedGame.revision - 1
-              : updatedGame.revision,
-            idempotencyKey: key,
-          },
-        });
-
-        if (autoRoll) {
+        const events = [
           await tx.eventLog.create({
             data: {
               gameId: id,
-              actionType: 'diceRolled',
-              payload: autoRoll,
-              revisionAfter: updatedGame.revision,
-              idempotencyKey: `${key}:roll`,
+              actionType,
+              payload,
+              revisionAfter: autoRoll
+                ? updatedGame.revision - 1
+                : updatedGame.revision,
+              idempotencyKey: key,
             },
-          });
+          }),
+        ];
+
+        if (autoRoll) {
+          events.push(
+            await tx.eventLog.create({
+              data: {
+                gameId: id,
+                actionType: 'diceRolled',
+                payload: autoRoll,
+                revisionAfter: updatedGame.revision,
+                idempotencyKey: `${key}:roll`,
+              },
+            }),
+          );
         }
-        updateToSend = { game: updatedGame, departedIds: departedIds ?? [] };
+        updateToSend = { game: updatedGame, departedIds: departedIds ?? [], events };
         return toGameView(
           updatedGame,
           asking?.role === 'HOST',
@@ -740,7 +749,7 @@ export class GameService {
       return null;
     }
 
-    return this.prisma.identity.findFirst({
+    return this.prisma.identity.findUnique({
       where: { secretHash: hashSecret(secret) },
     });
   }

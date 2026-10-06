@@ -3,7 +3,7 @@ import type { AddressInfo } from 'net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { io, type Socket } from 'socket.io-client';
-import type { ApiErrorResponse, ApiResponse, GameView } from '@dice-app/contracts';
+import type { ApiErrorResponse, ApiResponse, GameEventView, GameView } from '@dice-app/contracts';
 import type { PrismaService } from '../src/prisma/prisma.service';
 import { cleanDatabase, createTestApp } from './test-app';
 
@@ -66,8 +66,16 @@ describe('Realtime', () => {
   // A fresh game is at revision 0 and would send nothing, so callers start the game first.
   async function subscribe(socket: Socket, gameId: string) {
     const state = next<GameView>(socket, 'game');
-    socket.emit('subscribe', { gameId, revision: 0 });
+    socket.emit('subscribe', { gameId, revision: 0, eventsAfter: 0 });
     return state;
+  }
+
+  // Subscribes from scratch to a game in progress and waits for the whole game log as well, so
+  // a later 'events' is a push and not this catch-up.
+  async function subscribeWithLog(socket: Socket, gameId: string) {
+    const log = next<GameEventView[]>(socket, 'events');
+    await subscribe(socket, gameId);
+    return log;
   }
 
   async function createGame() {
@@ -131,7 +139,7 @@ describe('Realtime', () => {
 
     const back = connect();
     const caughtUp = next<GameView>(back, 'game');
-    back.emit('subscribe', { gameId: game.id, revision: seen.revision });
+    back.emit('subscribe', { gameId: game.id, revision: seen.revision, eventsAfter: seen.revision });
 
     expect(latest.revision).toBe(seen.revision + 2);
     expect(await caughtUp).toEqual({ ...latest, isHost: false, myParticipantId: null });
@@ -161,10 +169,29 @@ describe('Realtime', () => {
     expect(pushed).toEqual([rolled.revision, scored.revision]);
   });
 
+  it('catches a reconnecting screen up on the game log entries after eventsAfter', async () => {
+    const { game, act } = await createGame();
+    const started = await act('start', 'realtime-start');
+    const [piotr] = game.participants;
+    await act('roll', 'realtime-roll', { playerId: piotr.id, dice: [6, 6, 6, 2, 3] });
+    await act('score', 'realtime-score', { playerId: piotr.id, category: 'six' });
+
+    const viewer = connect();
+    const caughtUp = next<GameEventView[]>(viewer, 'events');
+    viewer.emit('subscribe', { gameId: game.id, revision: 0, eventsAfter: started.revision });
+
+    const fromEndpoint = await request(server)
+      .get(`/games/${game.id}/events?after=${started.revision}`)
+      .expect(200);
+    const missed = await caughtUp;
+    expect(missed.map((event) => event.type)).toEqual(['diceConfirmed', 'categorySaved']);
+    expect(missed).toEqual((fromEndpoint.body as ApiResponse<GameEventView[]>).data);
+  });
+
   it('answers an invalid subscribe with the API error shape', async () => {
     const viewer = connect();
     const error = next<ApiErrorResponse>(viewer, 'exception');
-    viewer.emit('subscribe', { gameId: 'no-such-game', revision: 0 });
+    viewer.emit('subscribe', { gameId: 'no-such-game', revision: 0, eventsAfter: 0 });
 
     expect(await error).toEqual({ statusCode: 404, message: 'Game not found', data: null });
   });
@@ -234,6 +261,28 @@ describe('Realtime', () => {
       const [toCreator, toPlayer] = await Promise.all([creatorUpdate, playerUpdate]);
       expect(toCreator).toEqual({ ...rerolled, isHost: true, myParticipantId: creator.id });
       expect(toPlayer).toEqual({ ...rerolled, isHost: false, myParticipantId: player.id });
+    });
+
+    it("pushes an action's game log entries to players and viewers alike", async () => {
+      const { gameId, creatorCookie, act } = await startOnlineGame();
+      const forCreator = connect(creatorCookie);
+      const viewer = connect();
+      await subscribeWithLog(forCreator, gameId);
+      await subscribeWithLog(viewer, gameId);
+
+      const pushes = Promise.all([
+        next<GameEventView[]>(forCreator, 'events'),
+        next<GameEventView[]>(viewer, 'events'),
+      ]);
+      const scored = await act(creatorCookie, 'score', 'realtime-online-log', { category: 'chance' });
+
+      const [toCreator, toViewer] = await pushes;
+      // the score and the next player's first roll, made in the same action
+      expect(toCreator.map((event) => [event.type, event.revision])).toEqual([
+        ['categorySaved', scored.revision - 1],
+        ['diceRolled', scored.revision],
+      ]);
+      expect(toViewer).toEqual(toCreator);
     });
 
     it('pushes the same view to every connection of one player', async () => {
@@ -352,6 +401,31 @@ describe('Realtime', () => {
       await ownUpdate;
 
       expect(pushedGameIds).toEqual([other.gameId]);
+    });
+
+    it('sends no game log entries while the game is in the lobby', async () => {
+      const { gameId, player, creatorCookie } = await createOnlineLobby('realtime-lobby-log');
+      const creatorScreen = connect(creatorCookie);
+      await subscribe(creatorScreen, gameId);
+      const pushed: string[][] = [];
+      creatorScreen.on('events', (events: GameEventView[]) => pushed.push(events.map((event) => event.type)));
+
+      await request(server)
+        .delete(`/games/${gameId}/participants/${player.id}`)
+        .set('Cookie', creatorCookie)
+        .set('Idempotency-Key', 'realtime-lobby-log-remove')
+        .expect(200);
+
+      // the start is the first entry of the log, so anything sent before it would show up first
+      const startLog = next<GameEventView[]>(creatorScreen, 'events');
+      await request(server)
+        .post(`/games/${gameId}/start`)
+        .set('Cookie', creatorCookie)
+        .set('Idempotency-Key', 'realtime-lobby-log-start')
+        .expect(201);
+      await startLog;
+
+      expect(pushed).toEqual([['gameStarted', 'diceRolled']]);
     });
 
     it('tells a player who they are when they subscribe', async () => {

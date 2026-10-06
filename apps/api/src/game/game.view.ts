@@ -11,9 +11,11 @@ export type GameWithParticipants = Prisma.GameGetPayload<{
   include: typeof gameInclude;
 }>;
 
-// The only place that decides which game fields leave the server. isHost describes the device
-// asking, not the game, so the caller works it out.
-export function toGameView(game: GameWithParticipants, isHost: boolean, myParticipantId: string | null): GameView {
+// The part of a game view that is the same for every device.
+export type SharedGameView = Omit<GameView, 'isHost' | 'myParticipantId'>;
+
+// The only place that decides which game fields leave the server.
+export function toSharedGameView(game: GameWithParticipants): SharedGameView {
   return {
     id: game.id,
     status: game.status,
@@ -36,10 +38,13 @@ export function toGameView(game: GameWithParticipants, isHost: boolean, myPartic
       upperBonus: game.status === 'COMPLETED' ? participant.upperBonus : null,
     })),
     createdAt: game.createdAt.toISOString(),
-    isHost,
-    myParticipantId,
     inviteCode: game.diceSource === 'VIRTUAL' && (game.status === 'IN_PROGRESS' || game.status === 'LOBBY') ? game.inviteCode : null
   };
+}
+
+// isHost describes the device asking, not the game, so the caller works it out.
+export function toGameView(game: GameWithParticipants, isHost: boolean, myParticipantId: string | null): GameView {
+  return { ...toSharedGameView(game), isHost, myParticipantId };
 }
 
 // The participant that the device creating or hosting the game plays as.
