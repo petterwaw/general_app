@@ -7,7 +7,6 @@ import type {
   RerollInput,
   ScoreInput,
   JoinGameInput,
-  GameEventView
 } from '@dice-app/contracts';
 import { apiRequest } from './client';
 
@@ -55,10 +54,6 @@ export function joinGame(gameId: string, name: string) {
 
 export function getActiveGame() {
   return apiRequest<GameView | null>(`/games/active`);
-}
-
-export function getGameEvents(gameId: string, after?: number) {
-  return apiRequest<GameEventView[]>(`/games/${gameId}/events${after !== undefined ? '?after=' + after: ''}`);
 }
 
 export function removeParticipant(gameId: string, participantId: string) {

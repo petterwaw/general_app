@@ -347,4 +347,5 @@ przyjęte od klienta.
 - wyjście gracza z gry w trakcie partii (ustalone 2026-10-01).
 
 Pozostałe zdarzenia (np. dołączenie gracza) zostają w bazie, ale nie wychodzą na zewnątrz.
-Parametr `after` służy też do dosyłania brakujących zdarzeń po ponownym połączeniu (§10).
+Ekran gry dostaje nowe wpisy logu przez WebSocket razem ze stanem gry. Po ponownym połączeniu
+podaje ostatni wpis, który ma, i serwer dosyła brakujące (§10).

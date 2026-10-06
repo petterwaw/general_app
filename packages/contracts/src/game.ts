@@ -75,9 +75,11 @@ export const scoreSchema = z.strictObject({
   category: categorySchema,
 });
 
+// eventsAfter: revision of the newest game log entry the screen holds, 0 when it holds none.
 export const subscribeSchema = z.strictObject({
   gameId: z.string().min(1),
-  revision: z.number().int().min(0)
+  revision: z.number().int().min(0),
+  eventsAfter: z.number().int().min(0),
 })
 
 export const inviteCodeSchema = z

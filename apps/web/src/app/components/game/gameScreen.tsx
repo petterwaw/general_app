@@ -16,11 +16,12 @@ import PlayersPanel from '../players/playersPanel';
 import ScoreCard, { MIN_PLAYER_COL } from '../scorecard/scoreCard';
 import GameOver from '../results/gameOver';
 import { leaveGame, rerollDice, scoreCategory, submitRoll } from '../../api/games';
-import useGameLog from '../../hooks/useGameLog';
+import type { GameLogEntry } from '../../hooks/useGameSocket';
 import { useErrorToast } from '../ui/toast';
 
 type GameScreenProps = {
   game: GameView;
+  log: GameLogEntry[];
   onGameChange: (game: GameView) => void;
 };
 
@@ -63,7 +64,7 @@ const gridByLayout: Record<Layout, string> = {
   stack: 'grid-cols-[minmax(0,1fr)]',
 };
 
-export default function GameScreen({ game, onGameChange }: GameScreenProps) {
+export default function GameScreen({ game, log, onGameChange }: GameScreenProps) {
   const gridRef = useRef<HTMLElement>(null);
   const pendingRef = useRef(false)
   const [gridWidth, setGridWidth] = useState(0);
@@ -86,7 +87,6 @@ export default function GameScreen({ game, onGameChange }: GameScreenProps) {
   }, []);
 
   const { participants, currentPlayerId, myParticipantId } = game;
-  const log = useGameLog(game.id, game.revision);
   // the screen stays as it was after the last category; only entering dice is closed
   const finished = game.status === 'COMPLETED';
   const online = game.diceSource === 'VIRTUAL';

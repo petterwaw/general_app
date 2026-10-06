@@ -13,7 +13,7 @@ import GameScreen from './gameScreen';
 
 export default function GameView({ gameId }: { gameId: string }) {
   const { game, loading, error, setGame, retry } = useGame(gameId);
-  useGameSocket(gameId, game, setGame);
+  const log = useGameSocket(gameId, game, setGame);
 
   if (loading) {
     return (
@@ -45,7 +45,7 @@ export default function GameView({ gameId }: { gameId: string }) {
   }
 
   if (game.status === 'COMPLETED') {
-    return <GameScreen game={game} onGameChange={setGame} />;
+    return <GameScreen game={game} log={log} onGameChange={setGame} />;
   }
 
   if (game.status === 'ABANDONED') {
@@ -69,7 +69,7 @@ export default function GameView({ gameId }: { gameId: string }) {
       return <div>Waiting for active player...</div>;
     }
 
-    return <GameScreen game={game} onGameChange={setGame} />;
+    return <GameScreen game={game} log={log} onGameChange={setGame} />;
   }
 
   return null;

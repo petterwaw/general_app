@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Subject } from 'rxjs';
+import type { EventLog } from '../../generated/prisma/client';
 import type { GameWithParticipants } from './game.view';
 
 // One committed game state. departedIds are participants the action deleted (removed or left
 // the lobby): they are no longer in game.participants, yet their sockets still sit in their
-// participant rooms.
+// participant rooms. events are the event log rows the action wrote, public or not.
 export type GameUpdate = {
   game: GameWithParticipants;
   departedIds: string[];
+  events: EventLog[];
 };
 
 // Committed game states: GameService publishes them, GameGateway pushes them to sockets.

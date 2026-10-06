@@ -3,7 +3,7 @@ import type { ParticipantView } from '@dice-app/contracts';
 
 import PlayerRow from './playerRow';
 import GameLog from '../gameLog/gameLog';
-import type { GameLogEntry } from '../../hooks/useGameLog';
+import type { GameLogEntry } from '../../hooks/useGameSocket';
 
 type PlayersPanelProps = {
   participants: ParticipantView[];
