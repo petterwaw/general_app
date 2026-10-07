@@ -51,7 +51,11 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-${{ matrix.app }}:latest
           # Links the package to this repo, so the workflow token may pull it on deploy.
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          build-args: NEXT_PUBLIC_API_URL=${{ vars.API_URL }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.API_URL }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.SENTRY_DSN_WEB }}
+          secrets: |
+            sentry_auth_token=${{ secrets.SENTRY_AUTH_TOKEN }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 

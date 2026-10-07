@@ -4,7 +4,7 @@ Od 2026-09-28 to etap wdrożenia na produkcję. Hosting, nazwa i domena: `DECYZJ
 
 Środowiska: na razie tylko produkcja, bez środowiska dev (ustalone 2026-10-05).
 
-Rate limity, Sentry, kasowanie porzuconych gier, PWA.
+Rate limity, Sentry, kasowanie porzuconych gier.
 
 ## Backup bazy
 
@@ -22,3 +22,44 @@ wartość (konta, statystyki). Próbne odtworzenie ze snapshotu jeszcze niezrobi
   `localhost` — sprawdzić, że produkcyjna wartość jej nie uruchamia.
 - **`allowedDevOrigins` w `apps/web/next.config.ts`** — dotyczy tylko `next dev`, na produkcji
   nie działa; do usunięcia, jeśli testy po IP nie będą już potrzebne.
+
+## Rate limity — 2026-10-07
+
+- **Limity wg `DECYZJE.md` §11** — `@nestjs/throttler`, licznik na trasę i IP, okno kroczące
+  bez dodatkowej blokady. Subskrypcja przez socket nie przechodzi przez guard HTTP, więc jest
+  liczona osobno, przez ten sam magazyn liczników.
+- **IP zza Caddy** — `trust proxy` = 1 pośrednik; dla socketów ta sama reguła ręcznie
+  (`socketClientIp`). Podrobione wpisy `X-Forwarded-For` z przodu nie zmieniają liczonego IP.
+- **`GET /games` usunięty**, front pokazuje komunikat 429 z serwera. Testy e2e domyślnie
+  z wyłączonym liczeniem, limity mają własne testy (PR #26).
+
+Sprawdzone na produkcji: telefon na danych komórkowych i komputer na wifi mają osobne liczniki
+— API widzi prawdziwe IP klientów zza Caddy.
+
+## Sentry — 2026-10-07
+
+- **Same błędy, bez tracingu, profilowania i logów.** Do Sentry idą tylko wyjątki inne niż
+  `HttpException` — 4xx i 429 to nie błędy aplikacji. Gatewaye nie dostają globalnych filtrów
+  Nest, więc filtr Sentry jest dopięty w gatewayu gry osobno.
+- **Prywatność** — Sentry 11 domyślnie wysyła ciasteczka, nagłówki, treść żądań, parametry
+  zapytań SQL i zmienne lokalne; wszystko to jest wyłączone, zostaje stack trace.
+- **Błędy z przeglądarki przez `/monitoring`** na serwerze Next — adblocki blokują `sentry.io`.
+  Ekrany błędów (`error.tsx`, `global-error.tsx`) zgłaszają błąd same, bo granica błędu
+  ukrywa go przed SDK.
+- **Bez DSN SDK jest wyłączone** — lokalnie, w testach i w CI nic nie wychodzi. DSN API jest
+  w `.env` na serwerze, DSN weba to zmienna w GitHub environment `production` (trafia do obrazu
+  przy buildzie), token do source map — sekret, przekazany do buildu jako BuildKit secret.
+- Sprawdzone lokalnie: błąd 500 z API trafia do Sentry ze stack trace'em, bez nagłówków; 404
+  nie trafia; odpowiedzi API dla klienta bez zmian.
+
+**Do sprawdzenia po deployu:** błąd z przeglądarki dochodzi przez `/monitoring`
+(`setTimeout(() => { throw new Error('sentry web test') })` w konsoli), a stack trace weba
+pokazuje kod źródłowy (source mapy z CI).
+
+**Dług, który zostaje:**
+
+- Błąd w gatewayu Socket.IO nie był wywołany na żywo — kod podpięty, nie sprawdzony.
+- Sentry wylicza lokalizację z IP nadawcy, przy błędach z przeglądarki to IP gracza. Wyłącza
+  się w ustawieniach projektu (Security & Privacy), bez zmian w kodzie — niezdecydowane.
+- `pnpm lint` w `apps/api` ma `--fix` i przeformatowuje prettierem pliki, które nie trzymają
+  się jego stylu — czyli prawie wszystkie. Lint nie jest w CI.
