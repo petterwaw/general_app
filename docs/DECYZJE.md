@@ -295,6 +295,20 @@ je oba końce. Serwer zwraca wyłącznie kształt z kontraktu — jedno miejsce 
 każdej gry (a ID wystarcza do oglądania) i czytał całą bazę naraz. Lista gier do dołączenia
 albo historia gier gracza, jeśli kiedyś dojdą, to osobne zapytania z filtrem i stronicowaniem.
 
+**Rate limity** (ustalone 2026-10-07): `@nestjs/throttler`, liczniki w pamięci procesu (zerują
+się przy restarcie — akceptowalne przy jednej instancji), osobny licznik na trasę i IP klienta.
+IP bierzemy zza Caddy (`trust proxy` = 1 pośrednik). Bez wyjątków dla żadnych adresów.
+
+| Trasy | Limit na IP |
+|---|---|
+| szukanie gry po kodzie, dołączanie | 10 / min, samo okno, bez dłuższej blokady |
+| tworzenie gry | 20 / h |
+| akcje w grze (start, rzut, zapis, wyjście, usunięcie gracza) | 120 / min |
+| pozostałe odczyty | 300 / min |
+| `/health` | bez limitu |
+
+Po przekroczeniu: 429 z komunikatem „Too many requests — try again in a moment”.
+
 **Przy Prismie — do sprawdzenia na etapie 3:** częściowy indeks unikalny wymagany przez §6
 (jedno konto = jedna aktywna gra) prawdopodobnie nie da się wyrazić w `schema.prisma` — trzeba
 go dopisać ręcznie jako SQL w wygenerowanej migracji. Zweryfikować w aktualnej dokumentacji

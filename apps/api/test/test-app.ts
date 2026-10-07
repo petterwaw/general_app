@@ -1,16 +1,36 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { ThrottlerStorage } from '@nestjs/throttler';
 
-export async function createTestApp() {
-    const moduleRef = await Test.createTestingModule({
+// Never blocks: the guard and the @Throttle decorators still run, only the counting is off.
+// All test requests come from one address, so the real limits would trip the tests.
+const unlimitedStorage: ThrottlerStorage = {
+    increment: async () => ({
+        totalHits: 0,          
+        timeToExpire: 0,       
+        isBlocked: false,         
+        timeToBlockExpire: 0,
+    }),
+};
+
+// Rate limits are off unless a test asks for them, as the rate-limit tests do.
+export async function createTestApp({ rateLimits = false } = {}) {
+    const builder = Test.createTestingModule({
         imports: [AppModule],
-    }).compile();
+    });
 
-    const app = moduleRef.createNestApplication();
+    if (!rateLimits) {
+        builder.overrideProvider(ThrottlerStorage).useValue(unlimitedStorage)
+    }
+
+    const moduleRef = await builder.compile();
+
+    const app = moduleRef.createNestApplication<NestExpressApplication>();
 
     configureApp(app, ['http://localhost:8080']);
 
