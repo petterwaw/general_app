@@ -3,15 +3,17 @@ import type { Category, GameEventView, ParticipantView } from '@dice-app/contrac
 
 import LogItem from './logItem';
 import { prefersReducedMotion } from '../ui/reducedMotion';
+import { useScrollFade } from '../ui/scrollFade';
 import { CHANCE_ROW, LOWER_ROWS, UPPER_ROWS } from '../scorecard/categories';
 import type { GameLogEntry } from '../../hooks/useGameSocket';
 
 type GameLogProps = {
   entries: GameLogEntry[];
   participants: ParticipantView[];
+  newestAtBottom: boolean;
 };
 
-// older entries slide down this long when new ones arrive on top
+// older entries slide away this long when new ones arrive
 const LOG_MOVE_MS = 500;
 
 const CATEGORY_LABELS = Object.fromEntries(
@@ -75,15 +77,17 @@ function categorySaved(name: string, category: Category, points: number | null) 
   );
 }
 
-// Newest on top, right under the players. Entries that do not fit are simply cut off, no
-// scrolling; the bottom fades out, so the oldest entries seem to sink into the background and a
-// cut row is already transparent (a mask, not an overlay: the drawer has a different background).
-export default function GameLog({ entries, participants }: GameLogProps) {
+// Entries come newest first. Newest at the bottom, the list is column-reverse: it fills from the
+// bottom up and the browser keeps it scrolled to the newest entry while that is where it is.
+// Entries that do not fit scroll, and the edge with more beyond it fades out, like the players.
+export default function GameLog({ entries, participants, newestAtBottom }: GameLogProps) {
+  const listRef = useRef<HTMLDivElement>(null);
   const items = useRef(new Map<number, HTMLDivElement>());
   const lastTops = useRef(new Map<number, number>());
+  const fade = useScrollFade(listRef, [entries], { reversed: newestAtBottom });
 
   // FLIP: the new entries take their room at once, and every older entry is drawn back where it
-  // was and slides down from there with a transform only.
+  // was and slides away from there with a transform only.
   useLayoutEffect(() => {
     const tops = new Map<number, number>();
     items.current.forEach((element, revision) => tops.set(revision, element.offsetTop));
@@ -104,11 +108,13 @@ export default function GameLog({ entries, participants }: GameLogProps) {
 
   return (
     <div
+      ref={listRef}
       aria-label="Game log"
+      style={fade}
       className={[
         // mt-auto: capped at half the screen, the log sits on the bottom edge; the free space goes above it
-        'relative mt-auto flex min-h-[30vh] max-h-[50vh] flex-1 flex-col gap-2 overflow-hidden',
-        '[mask-image:linear-gradient(to_bottom,#000_calc(100%-5rem),transparent)]',
+        'scrollbar-hidden relative mt-auto flex min-h-[30vh] max-h-[50vh] flex-1 gap-2 overflow-y-auto',
+        newestAtBottom ? 'flex-col-reverse' : 'flex-col',
       ].join(' ')}
     >
       {entries.map(({ event, isNew }) => {
@@ -125,7 +131,10 @@ export default function GameLog({ entries, participants }: GameLogProps) {
                 items.current.delete(event.revision);
               };
             }}
-            className={['shrink-0', isNew ? 'motion-safe:animate-log-in' : ''].join(' ')}
+            className={[
+              'shrink-0',
+              isNew ? (newestAtBottom ? 'motion-safe:animate-log-in-below' : 'motion-safe:animate-log-in') : '',
+            ].join(' ')}
           >
             <LogItem seat={seat === -1 ? undefined : seat} time={formatTime(event.createdAt)}>
               {describe(event, name)}

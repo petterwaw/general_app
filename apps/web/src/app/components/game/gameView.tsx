@@ -30,10 +30,11 @@ export default function GameView({ gameId }: { gameId: string }) {
       </ErrorScreen>
     );
   }
-  // the API is down, the network dropped, or the server failed: worth another go
+  // the API is down, the network dropped, the server failed or asked to slow down: worth another go
   if (error) {
+    const rateLimited = error instanceof ApiError && error.statusCode === 429;
     return (
-      <ErrorScreen title="Something went wrong. The table isn't answering">
+      <ErrorScreen title={rateLimited ? error.message : "Something went wrong. The table isn't answering"}>
         <Button onClick={retry}>Try again</Button>
       </ErrorScreen>
     );
