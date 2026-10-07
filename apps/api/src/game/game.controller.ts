@@ -30,11 +30,13 @@ import {
 import { GameService } from './game.service';
 import { ZodValidationPipe } from '../utils/zod-validation.pipe';
 import { hostCookieOptions } from '../utils/host-cookie';
+import { Throttle, minutes } from '@nestjs/throttler'
 
 @Controller('games')
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
+  @Throttle({default: { ttl: minutes(60), limit: 20 }})
   @Post()
   async create(
     @Body(new ZodValidationPipe(createGameSchema)) input: CreateGameInput,
@@ -55,11 +57,6 @@ export class GameController {
     return result.game;
   }
 
-  @Get()
-  findAll() {
-    return this.gameService.findAll();
-  }
-
   @Get('active')
   active(@Req() request: Request) {
     return this.gameService.active(hostSecretFrom(request));
@@ -78,6 +75,7 @@ export class GameController {
     return this.gameService.events(id, query);
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 10 }})
   @Post(':id/join')
   async join(
     @Param('id') id: string,
@@ -100,6 +98,7 @@ export class GameController {
     return result.game;
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 120 }})
   @Post(':id/leave')
   leave(
     @Param('id') id: string,
@@ -109,6 +108,7 @@ export class GameController {
     return this.gameService.leave(id, idempotencyKey, hostSecretFrom(request));
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 120 }})
   @Delete(':id/participants/:participantId')
   removePlayer(
     @Param('id') id: string,
@@ -124,6 +124,7 @@ export class GameController {
     );
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 120 }})
   @Post(':id/start')
   start(
     @Param('id') id: string,
@@ -133,6 +134,7 @@ export class GameController {
     return this.gameService.start(id, idempotencyKey, hostSecretFrom(request));
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 120 }})
   @Post(':id/roll')
   roll(
     @Param('id') id: string,
@@ -148,6 +150,7 @@ export class GameController {
     );
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 120 }})
   @Post(':id/reroll')
   reRoll(
     @Param('id') id: string,
@@ -163,6 +166,7 @@ export class GameController {
     );
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 120 }})
   @Post(':id/score')
   score(
     @Param('id') id: string,
@@ -178,6 +182,7 @@ export class GameController {
     );
   }
 
+  @Throttle({default: { ttl: minutes(1), limit: 10 }})
   @Get('by-code/:code')
   findByInviteCode(
     @Param('code', new ZodValidationPipe(inviteCodeSchema)) code: InviteCodeInput,

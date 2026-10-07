@@ -272,7 +272,7 @@ export default function GameScreen({ game, log, onGameChange }: GameScreenProps)
         {layout === 'three' && (
           <div className="flex min-h-0 flex-col gap-4" aria-label="Players and game log">
             <div className="flex justify-end">{leaveButton}</div>
-            <PlayersPanel participants={participants} log={log} />
+            <PlayersPanel participants={participants} log={log} newestAtBottom />
           </div>
         )}
       </section>
@@ -287,7 +287,7 @@ export default function GameScreen({ game, log, onGameChange }: GameScreenProps)
         >
           {/* room for the close button */}
           <div className="flex h-full flex-col pt-12">
-            <PlayersPanel participants={participants} log={log} />
+            <PlayersPanel participants={participants} log={log} newestAtBottom={false} />
           </div>
         </Drawer>
       )}

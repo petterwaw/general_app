@@ -31,10 +31,6 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
 
 - [ ] **Tryb ciemny** — interfejs ma dziś jeden, jasny motyw (`DESIGN.md`). Czy potrzebny
       jest ciemny?
-- [ ] **Do czego ma służyć `GET /games`?** Endpoint zostaje, ale dziś zwraca wszystkie gry
-      z pełnymi kartami wyników, bez filtra i stronicowania. Rozważana publiczna lista gier
-      w statusie LOBBY do dołączenia — nie ma jej w planie i zahacza o matchmaking (poza zakresem).
-      Historia gier gracza to osobne zapytanie po `userId` (etap 5+), nie ten endpoint.
 - [ ] **Czy jest historia rozegranych partii dostępna dla użytkownika?** Log zdarzeń to
       umożliwia, ale nie ustalono, czy ma być wystawiony w UI.
 

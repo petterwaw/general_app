@@ -256,13 +256,16 @@ export default function GameLobby({ game, onGameChange }: GameLobbyProps) {
           )}
         </div>
 
-        <div className="grid gap-2" aria-label="Game log">
-          {log.map((entry) => (
-            <LogItem key={entry.id} seat={entry.seat} time={entry.time}>
-              {entry.text}
-            </LogItem>
-          ))}
-        </div>
+        {/* locally the host typed every name in themselves, so a log of it tells them nothing */}
+        {online && (
+          <div className="grid gap-2" aria-label="Game log">
+            {log.map((entry) => (
+              <LogItem key={entry.id} seat={entry.seat} time={entry.time}>
+                {entry.text}
+              </LogItem>
+            ))}
+          </div>
+        )}
 
         {/* a watcher has nothing to start: leaving is their only button, so it looks like one */}
         {watching ? (

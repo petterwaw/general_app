@@ -159,12 +159,6 @@ export class GameService {
     return toGameView(game, player.role === 'HOST', player.id);
   }
 
-  async findAll(): Promise<GameView[]> {
-    const games = await this.prisma.game.findMany({ include: gameInclude });
-    // a list, not a game this device opened: nobody is treated as the host here
-    return games.map((game) => toGameView(game, false, null));
-  }
-
   // Anyone with the ID may look at a game; only the host's device gets isHost. Nothing is written.
   async findOne(id: string, hostSecret: string | undefined): Promise<GameView> {
     const game = await loadGame(this.prisma, id);
