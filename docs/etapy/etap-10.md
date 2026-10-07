@@ -33,8 +33,8 @@ wartość (konta, statystyki). Próbne odtworzenie ze snapshotu jeszcze niezrobi
 - **`GET /games` usunięty**, front pokazuje komunikat 429 z serwera. Testy e2e domyślnie
   z wyłączonym liczeniem, limity mają własne testy (PR #26).
 
-**Do sprawdzenia po deployu:** telefon na danych komórkowych i komputer na wifi mają osobne
-liczniki (API widzi prawdziwe IP klientów).
+Sprawdzone na produkcji: telefon na danych komórkowych i komputer na wifi mają osobne liczniki
+— API widzi prawdziwe IP klientów zza Caddy.
 
 ## Sentry — 2026-10-07
 
