@@ -17,8 +17,11 @@ import { toSharedGameView } from './game.view'
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view'
 import { ThrottlerStorage, minutes } from '@nestjs/throttler'
 import { RATE_LIMIT_MESSAGE, socketClientIp } from '../utils/rate-limit'
+import { SentryGlobalFilter } from '@sentry/nestjs/setup'
 
-@UseFilters(new WsExceptionFilter)
+// Global filters skip gateways, so Sentry is attached here; WsExceptionFilter answers
+// HttpExceptions first and SentryGlobalFilter reports the rest.
+@UseFilters(SentryGlobalFilter, new WsExceptionFilter)
 @WebSocketGateway()
 
 export class GameGateway {

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -10,7 +11,7 @@ import { RATE_LIMIT_MESSAGE } from './utils/rate-limit';
 
 
 @Module({
-  imports: [PrismaModule, GameModule,
+  imports: [SentryModule.forRoot(), PrismaModule, GameModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../../.env',
@@ -31,6 +32,9 @@ import { RATE_LIMIT_MESSAGE } from './utils/rate-limit';
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Reports what HttpExceptionFilter does not catch, i.e. real 500s; HTTP errors are expected
+    // and stay out of Sentry.
+    { provide: APP_FILTER, useClass: SentryGlobalFilter },
   ],
 })
 export class AppModule {}
