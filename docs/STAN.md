@@ -25,7 +25,7 @@ to uwagę. Rzeczy z listy „Świadomie POZA MVP" niżej nie proponuj.
 | [7](etapy/etap-7.md) | Kości wirtualne | KRYTERIUM SPEŁNIONE (2026-09-30: pełna partia online dwóch urządzeń przez API w teście e2e) — obejmuje backend gry online z etapu 9, „którym graczem jestem” i realtime dla graczy (PR #18) |
 | [8](etapy/etap-8.md) | Statystyki globalne | odłożone (2026-09-28) |
 | [9](etapy/etap-9.md) | Online przez zaproszenie | KRYTERIUM SPEŁNIONE (2026-10-02: pełna partia online na osobnych urządzeniach z linku, bez odświeżania) — lobby, dołączanie, ekran gry z rzutami, wyjście gracza; kod zaproszenia (2026-10-04) — etap domknięty |
-| [10](etapy/etap-10.md) | Utwardzanie i produkcja | nierozpoczęte |
+| [10](etapy/etap-10.md) | Utwardzanie i produkcja | W TRAKCIE — na produkcji pod `dice-table.com` (2026-10-05), rate limity (PR #26), Sentry (2026-10-07); zostaje kasowanie porzuconych gier (czeka na decyzję o czasie) |
 
 ## Kierunek od 2026-09-28
 

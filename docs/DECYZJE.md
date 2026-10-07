@@ -281,6 +281,7 @@ zdarzenia albo cały stan.
 | Testy | Vitest (jednostkowe) + Playwright (e2e) | rekomendacja |
 | Hosting | AWS EC2 (Sztokholm), docker compose: Caddy, web, api, Postgres; deploy po zielonym CI na `main` | ustalone (2026-10-05) |
 | Analityka | Umami Cloud — bez ciasteczek, więc bez banera zgody | ustalone (2026-10-05) |
+| Błędy | Sentry (region EU), same błędy — bez tracingu, ciasteczek, nagłówków i treści żądań; z przeglądarki przez własną domenę (`/monitoring`) | ustalone (2026-10-07) |
 
 **Ważne przy hostingu:** NestJS z WebSocketami wymaga długo żyjącego procesu. Nie zadziała na
 serverless. Next może stać osobno.

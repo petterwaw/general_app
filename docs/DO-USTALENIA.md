@@ -33,6 +33,10 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       jest ciemny?
 - [ ] **Czy jest historia rozegranych partii dostępna dla użytkownika?** Log zdarzeń to
       umożliwia, ale nie ustalono, czy ma być wystawiony w UI.
+- [ ] **Kasowanie porzuconych gier** — po jakim czasie gra `ABANDONED` znika z bazy? Czy
+      kasujemy też gry zakończone (`COMPLETED`)? Przy kontach będą potrzebne do statystyk.
+- [ ] **Wyszukiwarki** — czy rejestrujemy domenę w Google Search Console i czy strony
+      konkretnych gier mają być wyłączone z indeksowania (`noindex`)?
 
 ---
 
@@ -42,3 +46,4 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
   z założenia nie ma statystyk globalnych.
 - Statystyki gościa po tokenie urządzenia — odrzucone dla MVP.
 - Cofanie zatwierdzonej tury — odrzucone całkowicie, nie tylko dla MVP.
+- PWA (instalacja na telefonie, tryb offline) — odrzucone (2026-10-07).
