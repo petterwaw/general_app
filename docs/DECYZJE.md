@@ -297,14 +297,16 @@ albo historia gier gracza, jeśli kiedyś dojdą, to osobne zapytania z filtrem 
 
 **Rate limity** (ustalone 2026-10-07): `@nestjs/throttler`, liczniki w pamięci procesu (zerują
 się przy restarcie — akceptowalne przy jednej instancji), osobny licznik na trasę i IP klienta.
-IP bierzemy zza Caddy (`trust proxy` = 1 pośrednik). Bez wyjątków dla żadnych adresów.
+IP bierzemy zza Caddy (`trust proxy` = 1 pośrednik). Bez wyjątków dla żadnych adresów. Okno kroczące
+bez dodatkowej blokady: po przekroczeniu kolejne żądanie przechodzi, gdy najstarsze z okna wygaśnie.
 
 | Trasy | Limit na IP |
 |---|---|
-| szukanie gry po kodzie, dołączanie | 10 / min, samo okno, bez dłuższej blokady |
+| szukanie gry po kodzie, dołączanie | 10 / min |
 | tworzenie gry | 20 / h |
 | akcje w grze (start, rzut, zapis, wyjście, usunięcie gracza) | 120 / min |
 | pozostałe odczyty | 300 / min |
+| subskrypcja gry przez socket | 60 / min |
 | `/health` | bez limitu |
 
 Po przekroczeniu: 429 z komunikatem „Too many requests — try again in a moment”.

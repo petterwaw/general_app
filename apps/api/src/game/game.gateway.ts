@@ -6,7 +6,7 @@ import {
     WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io'
-import { Logger, UseFilters } from '@nestjs/common'
+import { HttpException, HttpStatus, Inject, Logger, UseFilters } from '@nestjs/common'
 import { GameService } from './game.service';
 import { ZodValidationPipe } from '../utils/zod-validation.pipe';
 import { subscribeSchema, type SubscribeInput } from '@dice-app/contracts';
@@ -15,6 +15,8 @@ import { hostSecretFromCookieHeader } from '../utils/host-cookie';
 import { GameUpdates } from './game-updates';
 import { toSharedGameView } from './game.view'
 import { PUBLIC_EVENT_TYPES, toGameEventView } from './game-event.view'
+import { ThrottlerStorage, minutes } from '@nestjs/throttler'
+import { RATE_LIMIT_MESSAGE, socketClientIp } from '../utils/rate-limit'
 
 @UseFilters(new WsExceptionFilter)
 @WebSocketGateway()
@@ -28,6 +30,7 @@ export class GameGateway {
     constructor(
         private readonly gameService: GameService,
         private readonly updates: GameUpdates,
+        @Inject(ThrottlerStorage) private readonly throttle: ThrottlerStorage,
     ) { }
 
     // Called by Nest once the Socket.IO server exists; from then on every committed game
@@ -77,6 +80,20 @@ export class GameGateway {
         @MessageBody(new ZodValidationPipe(subscribeSchema)) { gameId, revision, eventsAfter }: SubscribeInput,
         @ConnectedSocket() client: Socket
     ) {
+        // Counted per address, not per socket: a new socket would start from zero. Checked before
+        // the reads below, which are what a flood of subscribes would cost.
+        const { isBlocked } = await this.throttle.increment(
+            `ws-subscribe:${socketClientIp(client)}`,
+            minutes(1),
+            60,
+            // sliding window only, as for HTTP
+            0,
+            'ws-subscribe',
+        )
+        if (isBlocked) {
+            throw new HttpException(RATE_LIMIT_MESSAGE, HttpStatus.TOO_MANY_REQUESTS)
+        }
+
         const secret = hostSecretFromCookieHeader(client.handshake.headers.cookie)
         const participant = await this.gameService.findParticipant(gameId, secret)
 
