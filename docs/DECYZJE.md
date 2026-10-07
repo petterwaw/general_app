@@ -291,6 +291,10 @@ je oba końce. Serwer zwraca wyłącznie kształt z kontraktu — jedno miejsce 
 (`toGameView`) decyduje, które pola wychodzą; pola wewnętrzne (`creationKey`, `identityId`,
 `userId` itp.) nigdy nie trafiają do klienta. `class-validator` nie jest używany.
 
+**Nie ma listy wszystkich gier** (ustalone 2026-10-07). `GET /games` usunięty — ujawniał ID
+każdej gry (a ID wystarcza do oglądania) i czytał całą bazę naraz. Lista gier do dołączenia
+albo historia gier gracza, jeśli kiedyś dojdą, to osobne zapytania z filtrem i stronicowaniem.
+
 **Przy Prismie — do sprawdzenia na etapie 3:** częściowy indeks unikalny wymagany przez §6
 (jedno konto = jedna aktywna gra) prawdopodobnie nie da się wyrazić w `schema.prisma` — trzeba
 go dopisać ręcznie jako SQL w wygenerowanej migracji. Zweryfikować w aktualnej dokumentacji

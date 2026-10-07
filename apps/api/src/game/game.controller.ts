@@ -55,11 +55,6 @@ export class GameController {
     return result.game;
   }
 
-  @Get()
-  findAll() {
-    return this.gameService.findAll();
-  }
-
   @Get('active')
   active(@Req() request: Request) {
     return this.gameService.active(hostSecretFrom(request));
