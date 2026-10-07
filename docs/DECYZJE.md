@@ -281,6 +281,7 @@ zdarzenia albo cały stan.
 | Testy | Vitest (jednostkowe) + Playwright (e2e) | rekomendacja |
 | Hosting | AWS EC2 (Sztokholm), docker compose: Caddy, web, api, Postgres; deploy po zielonym CI na `main` | ustalone (2026-10-05) |
 | Analityka | Umami Cloud — bez ciasteczek, więc bez banera zgody | ustalone (2026-10-05) |
+| Wyszukiwarki | `robots.txt` z zakazem dla `/games/` i `/join/` (ID gry i kod zaproszenia wystarczają do wejścia), sitemap z samą stroną gier, bez daty zmiany | ustalone (2026-10-07) |
 | Błędy | Sentry (region EU), same błędy — bez tracingu, ciasteczek, nagłówków i treści żądań; z przeglądarki przez własną domenę (`/monitoring`) | ustalone (2026-10-07) |
 
 **Ważne przy hostingu:** NestJS z WebSocketami wymaga długo żyjącego procesu. Nie zadziała na
