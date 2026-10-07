@@ -52,9 +52,11 @@ Sprawdzone na produkcji: telefon na danych komórkowych i komputer na wifi mają
 - Sprawdzone lokalnie: błąd 500 z API trafia do Sentry ze stack trace'em, bez nagłówków; 404
   nie trafia; odpowiedzi API dla klienta bez zmian.
 
-**Do sprawdzenia po deployu:** błąd z przeglądarki dochodzi przez `/monitoring`
-(`setTimeout(() => { throw new Error('sentry web test') })` w konsoli), a stack trace weba
-pokazuje kod źródłowy (source mapy z CI).
+Sprawdzone na produkcji: błąd z przeglądarki (rzucony z konsoli) dochodzi do Sentry przez
+`/monitoring`, a błąd wysłany z kontenera API na serwerze — z DSN z `.env`.
+
+**Do sprawdzenia przy pierwszym prawdziwym błędzie weba:** stack trace pokazuje kod źródłowy
+(source mapy z CI) — błąd z konsoli nie ma pliku źródłowego, więc tego nie sprawdza.
 
 **Dług, który zostaje:**
 

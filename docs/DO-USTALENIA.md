@@ -35,8 +35,9 @@ do `DECYZJE.md` lub `ZASADY-GRY.md` i usuń pozycję stąd.
       umożliwia, ale nie ustalono, czy ma być wystawiony w UI.
 - [ ] **Kasowanie porzuconych gier** — po jakim czasie gra `ABANDONED` znika z bazy? Czy
       kasujemy też gry zakończone (`COMPLETED`)? Przy kontach będą potrzebne do statystyk.
-- [ ] **Wyszukiwarki** — czy rejestrujemy domenę w Google Search Console i czy strony
-      konkretnych gier mają być wyłączone z indeksowania (`noindex`)?
+- [ ] **Wyszukiwarki** — czy rejestrujemy domenę w Google Search Console i czy strony gier
+      dostają też `noindex` (pewniejsze niż `robots.txt`)? Ruch z wyszukiwarki wymagałby strony
+      startowej z treścią — dziś `/` przekierowuje na `/games` i jej nie ma w planie.
 
 ---
 
